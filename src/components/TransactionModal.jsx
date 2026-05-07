@@ -41,11 +41,11 @@ export default function TransactionModal({ transaction, onClose }) {
   }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-bold text-slate-800 text-base">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
+          <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
             {isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}
           </h2>
           <button className="btn-icon" onClick={onClose}>
@@ -55,14 +55,14 @@ export default function TransactionModal({ transaction, onClose }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Type toggle */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
             <button
               type="button"
               onClick={() => set('type', 'income')}
               className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 form.type === 'income'
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               <TrendingUp className="w-4 h-4" />
@@ -73,8 +73,8 @@ export default function TransactionModal({ transaction, onClose }) {
               onClick={() => set('type', 'expense')}
               className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 form.type === 'expense'
-                  ? 'bg-white text-red-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white dark:bg-slate-600 text-red-600 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               <TrendingDown className="w-4 h-4" />

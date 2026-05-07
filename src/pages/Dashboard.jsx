@@ -5,17 +5,18 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar
+  Tooltip, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { useFinance } from '../context/FinanceContext';
+import { useTheme } from '../context/ThemeContext';
 import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-3 text-xs">
-      <p className="font-semibold text-slate-700 mb-1">{label}</p>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg p-3 text-xs">
+      <p className="font-semibold text-slate-700 dark:text-slate-200 mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }}>{p.name}: {formatCurrency(p.value)}</p>
       ))}
@@ -25,6 +26,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Dashboard({ onNavigate }) {
   const { transactions, categories, getSummary } = useFinance();
+  const { darkMode } = useTheme();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
   const [year, setYear] = useState(now.year);
@@ -44,7 +46,6 @@ export default function Dashboard({ onNavigate }) {
     else setMonth(m => m + 1);
   };
 
-  // Last 6 months chart data
   const chartData = useMemo(() => {
     const data = [];
     for (let i = 5; i >= 0; i--) {
@@ -61,7 +62,6 @@ export default function Dashboard({ onNavigate }) {
     return data;
   }, [transactions, month, year]);
 
-  // Category pie
   const pieData = useMemo(() => {
     const map = {};
     monthTxs.filter(t => t.type === 'expense').forEach(t => {
@@ -80,37 +80,40 @@ export default function Dashboard({ onNavigate }) {
   );
 
   const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : 0;
+  const gridColor = darkMode ? '#334155' : '#f1f5f9';
+  const tickColor = '#94a3b8';
 
   return (
     <div className="space-y-5">
       {/* Month selector */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button className="btn-icon border border-slate-200" onClick={prevMonth}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={prevMonth}>
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-semibold text-slate-700 capitalize min-w-[150px] text-center">
+          <span className="font-semibold text-slate-700 dark:text-slate-200 capitalize min-w-[130px] text-center text-sm">
             {MONTHS[month - 1]} {year}
           </span>
-          <button className="btn-icon border border-slate-200" onClick={nextMonth}>
+          <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={nextMonth}>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn-primary text-sm" onClick={() => setShowModal(true)}>
           <Plus className="w-4 h-4" />
-          Novo Lançamento
+          <span className="hidden xs:inline">Novo Lançamento</span>
+          <span className="xs:hidden">Novo</span>
         </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="card p-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-slate-500 font-medium mb-1">Entradas</p>
-              <p className="text-xl font-bold text-emerald-600">{formatCurrency(income)}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Entradas</p>
+              <p className="text-lg font-bold text-emerald-600">{formatCurrency(income)}</p>
             </div>
-            <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
             </div>
           </div>
@@ -120,13 +123,13 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-slate-500 font-medium mb-1">Saídas</p>
-              <p className="text-xl font-bold text-red-600">{formatCurrency(expense)}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Saídas</p>
+              <p className="text-lg font-bold text-red-600">{formatCurrency(expense)}</p>
             </div>
-            <div className="w-9 h-9 bg-red-100 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
               <TrendingDown className="w-4 h-4 text-red-600" />
             </div>
           </div>
@@ -136,15 +139,15 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-slate-500 font-medium mb-1">Saldo</p>
-              <p className={`text-xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Saldo</p>
+              <p className={`text-lg font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                 {formatCurrency(balance)}
               </p>
             </div>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${balance >= 0 ? 'bg-blue-100' : 'bg-red-100'}`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${balance >= 0 ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}>
               <Wallet className={`w-4 h-4 ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
             </div>
           </div>
@@ -155,19 +158,19 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-slate-500 font-medium mb-1">Taxa de Poupança</p>
-              <p className={`text-xl font-bold ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Poupança</p>
+              <p className={`text-lg font-bold ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
                 {savingsRate}%
               </p>
             </div>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${savingsRate >= 20 ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-              <span className="text-base">{savingsRate >= 20 ? '😊' : savingsRate >= 0 ? '😐' : '😟'}</span>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${savingsRate >= 20 ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-amber-100 dark:bg-amber-900/40'}`}>
+              <span className="text-sm">{savingsRate >= 20 ? '😊' : savingsRate >= 0 ? '😐' : '😟'}</span>
             </div>
           </div>
-          <div className="mt-2 bg-slate-100 rounded-full h-1.5">
+          <div className="mt-2 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
             <div
               className={`h-1.5 rounded-full ${savingsRate >= 20 ? 'bg-emerald-500' : 'bg-amber-500'}`}
               style={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
@@ -176,12 +179,11 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* Charts row */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Area chart */}
         <div className="card lg:col-span-2">
-          <h3 className="font-semibold text-slate-700 text-sm mb-4">Evolução nos Últimos 6 Meses</h3>
-          <ResponsiveContainer width="100%" height={220}>
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm mb-4">Evolução nos Últimos 6 Meses</h3>
+          <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -193,9 +195,9 @@ export default function Dashboard({ onNavigate }) {
                   <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0)+'k' : v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0)+'k' : v}`} width={55} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="Entradas" stroke="#22c55e" strokeWidth={2} fill="url(#colorIncome)" />
               <Area type="monotone" dataKey="Saídas" stroke="#ef4444" strokeWidth={2} fill="url(#colorExpense)" />
@@ -203,23 +205,22 @@ export default function Dashboard({ onNavigate }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Pie chart */}
         <div className="card">
-          <h3 className="font-semibold text-slate-700 text-sm mb-4">Saídas por Categoria</h3>
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm mb-4">Saídas por Categoria</h3>
           {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="45%" outerRadius={70} innerRadius={40} dataKey="value" paddingAngle={3}>
+                <Pie data={pieData} cx="50%" cy="45%" outerRadius={65} innerRadius={38} dataKey="value" paddingAngle={3}>
                   {pieData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(v) => formatCurrency(v)} />
-                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 10 }}>{v}</span>} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[220px] flex items-center justify-center text-slate-400 text-sm">
+            <div className="h-[200px] flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
               Sem saídas neste mês
             </div>
           )}
@@ -229,16 +230,16 @@ export default function Dashboard({ onNavigate }) {
       {/* Recent transactions */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-700 text-sm">Lançamentos Recentes</h3>
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Lançamentos Recentes</h3>
           <button
-            className="text-xs text-blue-600 font-medium hover:text-blue-700"
+            className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700"
             onClick={() => onNavigate('transactions')}
           >
             Ver todos →
           </button>
         </div>
         {recentTxs.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-slate-400 dark:text-slate-500">
             <p className="text-3xl mb-2">📭</p>
             <p className="text-sm">Nenhum lançamento neste mês</p>
             <button className="btn-primary mt-3 mx-auto text-xs py-1.5 px-3" onClick={() => setShowModal(true)}>
@@ -247,11 +248,11 @@ export default function Dashboard({ onNavigate }) {
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {recentTxs.map(t => {
               const cat = categories.find(c => c.id === t.categoryId);
               return (
-                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
                     style={{ backgroundColor: (cat?.color || '#6b7280') + '20' }}
@@ -259,8 +260,8 @@ export default function Dashboard({ onNavigate }) {
                     {cat?.icon || '📋'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{t.description}</p>
-                    <p className="text-xs text-slate-400">{cat?.name} · {formatDate(t.date)}</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{t.description}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{cat?.name} · {formatDate(t.date)}</p>
                   </div>
                   <span className={`text-sm font-bold flex-shrink-0 ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}

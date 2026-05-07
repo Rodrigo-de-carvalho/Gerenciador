@@ -3,7 +3,6 @@ import { Plus, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 
 const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
-
 const DEFAULT_COLORS = ['#22c55e','#10b981','#3b82f6','#8b5cf6','#f97316','#f59e0b','#ef4444','#ec4899','#06b6d4','#a855f7','#d946ef','#6b7280'];
 
 export default function Categories() {
@@ -15,8 +14,7 @@ export default function Categories() {
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
-  const getCategoryUsage = (id) =>
-    transactions.filter(t => t.categoryId === id).length;
+  const getCategoryUsage = (id) => transactions.filter(t => t.categoryId === id).length;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,11 +24,8 @@ export default function Categories() {
   };
 
   const handleDelete = (id) => {
-    if (getCategoryUsage(id) > 0) {
-      setDeleteConfirm(id);
-    } else {
-      deleteCategory(id);
-    }
+    if (getCategoryUsage(id) > 0) setDeleteConfirm(id);
+    else deleteCategory(id);
   };
 
   const CatList = ({ cats, label, icon: Icon, color }) => (
@@ -39,8 +34,8 @@ export default function Categories() {
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>
           <Icon className="w-4 h-4 text-white" />
         </div>
-        <h3 className="font-semibold text-slate-700 text-sm">{label}</h3>
-        <span className="ml-auto bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+        <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{label}</h3>
+        <span className="ml-auto bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold px-2 py-0.5 rounded-full">
           {cats.length}
         </span>
       </div>
@@ -48,7 +43,7 @@ export default function Categories() {
         {cats.map(cat => {
           const usage = getCategoryUsage(cat.id);
           return (
-            <div key={cat.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 group">
+            <div key={cat.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 group transition-colors">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                 style={{ backgroundColor: cat.color + '25' }}
@@ -56,15 +51,12 @@ export default function Categories() {
                 {cat.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700">{cat.name}</p>
-                <p className="text-xs text-slate-400">{usage} lançamento{usage !== 1 ? 's' : ''}</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{cat.name}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">{usage} lançamento{usage !== 1 ? 's' : ''}</p>
               </div>
-              <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: cat.color }}
-              />
+              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
               <button
-                className="btn-icon opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                className="btn-icon opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 flex-shrink-0"
                 onClick={() => handleDelete(cat.id)}
                 title="Excluir"
               >
@@ -74,7 +66,7 @@ export default function Categories() {
           );
         })}
         {cats.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-4">Nenhuma categoria</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">Nenhuma categoria</p>
         )}
       </div>
     </div>
@@ -96,20 +88,22 @@ export default function Categories() {
 
       {/* New Category Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-800">Nova Categoria</h2>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800">
+              <h2 className="font-bold text-slate-800 dark:text-slate-100">Nova Categoria</h2>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
                 {(['expense', 'income']).map(t => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setForm(f => ({ ...f, type: t }))}
                     className={`py-2 rounded-lg text-sm font-semibold transition-all ${
-                      form.type === t ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'
+                      form.type === t
+                        ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100'
+                        : 'text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {t === 'income' ? '↑ Entrada' : '↓ Saída'}
@@ -131,14 +125,14 @@ export default function Categories() {
 
               <div>
                 <label className="label">Ícone</label>
-                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto scrollbar-thin p-1">
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto scrollbar-thin p-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                   {ICONS.map(icon => (
                     <button
                       key={icon}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, icon }))}
-                      className={`w-9 h-9 rounded-lg text-lg hover:bg-slate-100 transition-colors ${
-                        form.icon === icon ? 'bg-blue-100 ring-2 ring-blue-500' : ''
+                      className={`w-9 h-9 rounded-lg text-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors ${
+                        form.icon === icon ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500' : ''
                       }`}
                     >
                       {icon}
@@ -172,12 +166,12 @@ export default function Categories() {
               </div>
 
               {/* Preview */}
-              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
                   style={{ backgroundColor: form.color + '25' }}>
                   {form.icon}
                 </div>
-                <span className="text-sm font-medium text-slate-700">{form.name || 'Prévia'}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{form.name || 'Prévia'}</span>
                 <div className="w-3 h-3 rounded-full ml-auto" style={{ backgroundColor: form.color }} />
               </div>
 
@@ -197,9 +191,9 @@ export default function Categories() {
       {/* Delete with usage confirm */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="font-bold text-slate-800 mb-2">Categoria em uso</h3>
-            <p className="text-sm text-slate-500 mb-5">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2">Categoria em uso</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
               Esta categoria possui {getCategoryUsage(deleteConfirm)} lançamento(s). Ao excluí-la, esses lançamentos ficarão sem categoria.
             </p>
             <div className="flex gap-3">

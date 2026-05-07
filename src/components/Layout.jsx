@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
-  TrendingUp, Wallet
+  TrendingUp, Wallet, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,24 +14,25 @@ const navItems = [
 
 export default function Layout({ currentPage, onNavigate, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { darkMode, toggleDark } = useTheme();
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 shadow-lg
+        fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 shadow-lg
         transform transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-slate-700">
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-slate-800 text-sm leading-tight">Gerenciador</p>
-            <p className="text-xs text-slate-400">Financeiro</p>
+            <p className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">Gerenciador</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Financeiro</p>
           </div>
           <button
             className="ml-auto lg:hidden btn-icon"
@@ -49,12 +51,15 @@ export default function Layout({ currentPage, onNavigate, children }) {
               className={`
                 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
                 ${currentPage === id
-                  ? 'bg-blue-50 text-blue-700 shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200'
                 }
               `}
             >
-              <Icon className={`w-4.5 h-4.5 ${currentPage === id ? 'text-blue-600' : 'text-slate-400'}`} style={{ width: '18px', height: '18px' }} />
+              <Icon
+                className={`${currentPage === id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                style={{ width: '18px', height: '18px' }}
+              />
               {label}
             </button>
           ))}
@@ -79,18 +84,28 @@ export default function Layout({ currentPage, onNavigate, children }) {
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-100 px-4 lg:px-6 h-14 flex items-center gap-4 flex-shrink-0">
+        <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 lg:px-6 h-14 flex items-center gap-4 flex-shrink-0">
           <button
             className="lg:hidden btn-icon"
             onClick={() => setMobileOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-base font-semibold text-slate-800">
+          <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">
             {navItems.find(n => n.id === currentPage)?.label}
           </h1>
+          <button
+            className="ml-auto btn-icon"
+            onClick={toggleDark}
+            title={darkMode ? 'Modo claro' : 'Modo escuro'}
+          >
+            {darkMode
+              ? <Sun className="w-4 h-4 text-amber-400" />
+              : <Moon className="w-4 h-4" />
+            }
+          </button>
         </header>
 
         {/* Content */}
