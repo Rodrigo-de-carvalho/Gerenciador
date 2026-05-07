@@ -86,7 +86,7 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="space-y-5">
       {/* Month selector */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={prevMonth}>
             <ChevronLeft className="w-4 h-4" />
@@ -98,10 +98,9 @@ export default function Dashboard({ onNavigate }) {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        <button className="btn-primary text-sm" onClick={() => setShowModal(true)}>
+        <button className="btn-primary" onClick={() => setShowModal(true)}>
           <Plus className="w-4 h-4" />
-          <span className="hidden xs:inline">Novo Lançamento</span>
-          <span className="xs:hidden">Novo</span>
+          <span className="hidden sm:inline">Novo Lançamento</span>
         </button>
       </div>
 

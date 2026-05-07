@@ -68,7 +68,7 @@ export default function Transactions() {
   return (
     <div className="space-y-4">
       {/* Month nav + add */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={prevMonth}>
             <ChevronLeft className="w-4 h-4" />
@@ -80,9 +80,9 @@ export default function Transactions() {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        <button className="btn-primary text-sm" onClick={() => { setEditTx(null); setShowModal(true); }}>
+        <button className="btn-primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
           <Plus className="w-4 h-4" />
-          Novo Lançamento
+          <span className="hidden sm:inline">Novo Lançamento</span>
         </button>
       </div>
 
