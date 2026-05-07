@@ -21,28 +21,6 @@ const initialState = {
   budgets: [],
 };
 
-function generateSampleData() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth() + 1;
-  const pad = n => String(n).padStart(2, '0');
-
-  const sampleTransactions = [
-    { id: 's1', type: 'income', description: 'Salário Março', amount: 5500, date: `${y}-${pad(m)}-05`, categoryId: '1', notes: '' },
-    { id: 's2', type: 'expense', description: 'Aluguel', amount: 1200, date: `${y}-${pad(m)}-10`, categoryId: '7', notes: '' },
-    { id: 's3', type: 'expense', description: 'Mercado', amount: 380, date: `${y}-${pad(m)}-12`, categoryId: '5', notes: '' },
-    { id: 's4', type: 'expense', description: 'Uber / Gasolina', amount: 150, date: `${y}-${pad(m)}-14`, categoryId: '6', notes: '' },
-    { id: 's5', type: 'income', description: 'Freelance Site', amount: 800, date: `${y}-${pad(m)}-15`, categoryId: '2', notes: '' },
-    { id: 's6', type: 'expense', description: 'Academia', amount: 99, date: `${y}-${pad(m)}-01`, categoryId: '8', notes: '' },
-    { id: 's7', type: 'expense', description: 'Curso Online', amount: 150, date: `${y}-${pad(m)}-03`, categoryId: '9', notes: '' },
-    { id: 's8', type: 'expense', description: 'Cinema + jantar', amount: 120, date: `${y}-${pad(m)}-16`, categoryId: '10', notes: '' },
-    { id: 's9', type: 'expense', description: 'Supermercado 2', amount: 210, date: `${y}-${pad(m)}-20`, categoryId: '5', notes: '' },
-    { id: 's10', type: 'income', description: 'Dividendos', amount: 320, date: `${y}-${pad(m)}-22`, categoryId: '3', notes: '' },
-  ].map(t => ({ ...t, createdAt: new Date().toISOString() }));
-
-  return { ...initialState, transactions: sampleTransactions };
-}
-
 function loadFromStorage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -53,7 +31,7 @@ function loadFromStorage() {
   } catch {
     // ignore
   }
-  return generateSampleData();
+  return initialState;
 }
 
 function reducer(state, action) {
