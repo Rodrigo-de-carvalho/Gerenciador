@@ -8,18 +8,22 @@ const emptyForm = {
   amount: '',
   date: new Date().toISOString().split('T')[0],
   categoryId: '',
+  projectId: '',
   notes: '',
 };
 
-export default function TransactionModal({ transaction, onClose }) {
-  const { categories, addTransaction, updateTransaction } = useFinance();
+export default function TransactionModal({ transaction, onClose, defaultProjectId }) {
+  const { categories, projects, addTransaction, updateTransaction } = useFinance();
   const [form, setForm] = useState(emptyForm);
   const isEdit = !!transaction;
 
   useEffect(() => {
-    if (transaction) setForm({ ...transaction, amount: String(transaction.amount) });
-    else setForm({ ...emptyForm, date: new Date().toISOString().split('T')[0] });
-  }, [transaction]);
+    if (transaction) {
+      setForm({ ...transaction, amount: String(transaction.amount), projectId: transaction.projectId || '' });
+    } else {
+      setForm({ ...emptyForm, date: new Date().toISOString().split('T')[0], projectId: defaultProjectId || '' });
+    }
+  }, [transaction, defaultProjectId]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
@@ -28,6 +32,7 @@ export default function TransactionModal({ transaction, onClose }) {
     const payload = {
       ...form,
       amount: parseFloat(form.amount.replace(',', '.')),
+      projectId: form.projectId || null,
     };
     if (isEdit) updateTransaction(payload);
     else addTransaction(payload);
@@ -43,7 +48,6 @@ export default function TransactionModal({ transaction, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
           <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
             {isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}
@@ -139,6 +143,25 @@ export default function TransactionModal({ transaction, onClose }) {
               ))}
             </select>
           </div>
+
+          {/* Project (optional) */}
+          {projects.length > 0 && (
+            <div>
+              <label className="label">Projeto <span className="text-slate-400 font-normal">(opcional)</span></label>
+              <select
+                className="select-field"
+                value={form.projectId}
+                onChange={e => set('projectId', e.target.value)}
+              >
+                <option value="">Nenhum projeto</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.icon} {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Notes */}
           <div>
