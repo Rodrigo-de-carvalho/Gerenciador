@@ -1,21 +1,65 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
-  TrendingUp, Wallet, Sun, Moon, FolderOpen
+  TrendingUp, Wallet, Sun, Moon, FolderOpen, LogOut, Smartphone
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'dashboard',    label: 'Dashboard',   icon: LayoutDashboard },
   { id: 'transactions', label: 'Lançamentos', icon: ArrowLeftRight },
-  { id: 'reports', label: 'Relatórios', icon: PieChart },
-  { id: 'projects', label: 'Projetos', icon: FolderOpen },
-  { id: 'categories', label: 'Categorias', icon: Tags },
+  { id: 'reports',      label: 'Relatórios',  icon: PieChart },
+  { id: 'projects',     label: 'Projetos',    icon: FolderOpen },
+  { id: 'categories',   label: 'Categorias',  icon: Tags },
 ];
+
+function AndroidBanner() {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem('android_banner_dismissed') === 'true'
+  );
+
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    localStorage.setItem('android_banner_dismissed', 'true');
+    setDismissed(true);
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+      <Smartphone className="w-4 h-4 flex-shrink-0 opacity-80" />
+      <p className="text-xs flex-1 leading-snug">
+        <span className="font-semibold">App Android disponível!</span>
+        {' '}Acesse suas finanças pelo celular com mais praticidade.
+      </p>
+      <a
+        href="#"
+        onClick={e => e.preventDefault()}
+        className="flex-shrink-0 bg-white text-blue-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+        title="Link será disponibilizado em breve"
+      >
+        Baixar app
+      </a>
+      <button
+        onClick={handleDismiss}
+        className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
+        aria-label="Fechar"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function Layout({ currentPage, onNavigate, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const { darkMode, toggleDark } = useTheme();
+  const { user, signOut } = useAuth();
+
+  const userInitial = user?.email?.[0]?.toUpperCase() || '?';
+  const userEmail = user?.email || '';
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
@@ -80,6 +124,8 @@ export default function Layout({ currentPage, onNavigate, children }) {
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <AndroidBanner />
+
         <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 lg:px-6 h-14 flex items-center gap-4 flex-shrink-0">
           <button
             className="lg:hidden btn-icon"
@@ -90,16 +136,51 @@ export default function Layout({ currentPage, onNavigate, children }) {
           <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">
             {navItems.find(n => n.id === currentPage)?.label}
           </h1>
-          <button
-            className="ml-auto btn-icon"
-            onClick={toggleDark}
-            title={darkMode ? 'Modo claro' : 'Modo escuro'}
-          >
-            {darkMode
-              ? <Sun className="w-4 h-4 text-amber-400" />
-              : <Moon className="w-4 h-4" />
-            }
-          </button>
+
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              className="btn-icon"
+              onClick={toggleDark}
+              title={darkMode ? 'Modo claro' : 'Modo escuro'}
+            >
+              {darkMode
+                ? <Sun className="w-4 h-4 text-amber-400" />
+                : <Moon className="w-4 h-4" />
+              }
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(v => !v)}
+                className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center hover:bg-blue-700 transition-colors"
+                title={userEmail}
+              >
+                {userInitial}
+              </button>
+
+              {showUserMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className="absolute right-0 top-10 z-20 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-lg w-56 py-2">
+                    <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{userEmail}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Conta ativa</p>
+                    </div>
+                    <button
+                      onClick={() => { setShowUserMenu(false); signOut(); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sair da conta
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 scrollbar-thin">

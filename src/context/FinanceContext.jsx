@@ -1,165 +1,190 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
-const STORAGE_KEY = 'gerenciador_financeiro_data';
+const DEFAULT_CATEGORIES = [
+  { name: 'Salário',          type: 'income',  color: '#22c55e', icon: '💼' },
+  { name: 'Freelance',        type: 'income',  color: '#10b981', icon: '💻' },
+  { name: 'Investimentos',    type: 'income',  color: '#3b82f6', icon: '📈' },
+  { name: 'Outros (Entrada)', type: 'income',  color: '#8b5cf6', icon: '💰' },
+  { name: 'Alimentação',      type: 'expense', color: '#f97316', icon: '🍽️' },
+  { name: 'Transporte',       type: 'expense', color: '#f59e0b', icon: '🚗' },
+  { name: 'Moradia',          type: 'expense', color: '#ef4444', icon: '🏠' },
+  { name: 'Saúde',            type: 'expense', color: '#ec4899', icon: '❤️' },
+  { name: 'Educação',         type: 'expense', color: '#06b6d4', icon: '📚' },
+  { name: 'Lazer',            type: 'expense', color: '#a855f7', icon: '🎮' },
+  { name: 'Compras',          type: 'expense', color: '#d946ef', icon: '🛍️' },
+  { name: 'Outros (Saída)',   type: 'expense', color: '#6b7280', icon: '📋' },
+];
 
-const initialState = {
-  transactions: [],
-  categories: [
-    { id: '1', name: 'Salário', type: 'income', color: '#22c55e', icon: '💼' },
-    { id: '2', name: 'Freelance', type: 'income', color: '#10b981', icon: '💻' },
-    { id: '3', name: 'Investimentos', type: 'income', color: '#3b82f6', icon: '📈' },
-    { id: '4', name: 'Outros (Entrada)', type: 'income', color: '#8b5cf6', icon: '💰' },
-    { id: '5', name: 'Alimentação', type: 'expense', color: '#f97316', icon: '🍽️' },
-    { id: '6', name: 'Transporte', type: 'expense', color: '#f59e0b', icon: '🚗' },
-    { id: '7', name: 'Moradia', type: 'expense', color: '#ef4444', icon: '🏠' },
-    { id: '8', name: 'Saúde', type: 'expense', color: '#ec4899', icon: '❤️' },
-    { id: '9', name: 'Educação', type: 'expense', color: '#06b6d4', icon: '📚' },
-    { id: '10', name: 'Lazer', type: 'expense', color: '#a855f7', icon: '🎮' },
-    { id: '11', name: 'Compras', type: 'expense', color: '#d946ef', icon: '🛍️' },
-    { id: '12', name: 'Outros (Saída)', type: 'expense', color: '#6b7280', icon: '📋' },
-  ],
-  budgets: [],
-  projects: [],
-};
+const mapTx = (row) => ({
+  id: row.id,
+  type: row.type,
+  description: row.description,
+  amount: Number(row.amount),
+  date: row.date,
+  categoryId: row.category_id,
+  projectId: row.project_id,
+  notes: row.notes || '',
+  createdAt: row.created_at,
+});
 
-function loadFromStorage() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return { ...initialState, ...parsed };
-    }
-  } catch {
-    // ignore
-  }
-  return initialState;
-}
+const mapCat = (row) => ({
+  id: row.id,
+  name: row.name,
+  type: row.type,
+  color: row.color,
+  icon: row.icon,
+});
 
-function reducer(state, action) {
-  switch (action.type) {
-    case 'ADD_TRANSACTION':
-      return { ...state, transactions: [action.payload, ...state.transactions] };
-    case 'UPDATE_TRANSACTION':
-      return {
-        ...state,
-        transactions: state.transactions.map(t =>
-          t.id === action.payload.id ? action.payload : t
-        ),
-      };
-    case 'DELETE_TRANSACTION':
-      return {
-        ...state,
-        transactions: state.transactions.filter(t => t.id !== action.payload),
-      };
-    case 'ADD_CATEGORY':
-      return { ...state, categories: [...state.categories, action.payload] };
-    case 'DELETE_CATEGORY':
-      return {
-        ...state,
-        categories: state.categories.filter(c => c.id !== action.payload),
-      };
-    case 'SET_BUDGET': {
-      const existing = state.budgets.find(b => b.categoryId === action.payload.categoryId);
-      if (existing) {
-        return {
-          ...state,
-          budgets: state.budgets.map(b =>
-            b.categoryId === action.payload.categoryId ? action.payload : b
-          ),
-        };
-      }
-      return { ...state, budgets: [...state.budgets, action.payload] };
-    }
-    case 'DELETE_BUDGET':
-      return {
-        ...state,
-        budgets: state.budgets.filter(b => b.categoryId !== action.payload),
-      };
-    case 'ADD_PROJECT':
-      return { ...state, projects: [...state.projects, action.payload] };
-    case 'UPDATE_PROJECT':
-      return {
-        ...state,
-        projects: state.projects.map(p =>
-          p.id === action.payload.id ? action.payload : p
-        ),
-      };
-    case 'DELETE_PROJECT':
-      return {
-        ...state,
-        projects: state.projects.filter(p => p.id !== action.payload),
-        transactions: state.transactions.map(t =>
-          t.projectId === action.payload ? { ...t, projectId: null } : t
-        ),
-      };
-    case 'IMPORT_DATA':
-      return { ...state, ...action.payload };
-    default:
-      return state;
-  }
-}
+const mapProject = (row) => ({
+  id: row.id,
+  name: row.name,
+  description: row.description || '',
+  icon: row.icon,
+  color: row.color,
+  createdAt: row.created_at,
+});
 
 const FinanceContext = createContext(null);
 
 export function FinanceProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, null, loadFromStorage);
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [budgets, setBudgetsState] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    if (!user) {
+      setTransactions([]);
+      setCategories([]);
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const [txRes, catRes, projRes] = await Promise.all([
+        supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        supabase.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+      ]);
+
+      let cats = catRes.data?.map(mapCat) || [];
+
+      if (cats.length === 0) {
+        const { data: inserted } = await supabase
+          .from('categories')
+          .insert(DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id })))
+          .select();
+        cats = inserted?.map(mapCat) || [];
+      }
+
+      setTransactions(txRes.data?.map(mapTx) || []);
+      setCategories(cats);
+      setProjects(projRes.data?.map(mapProject) || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    loadData();
+  }, [loadData]);
 
-  const addTransaction = (transaction) => {
-    dispatch({
-      type: 'ADD_TRANSACTION',
-      payload: { ...transaction, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
-    });
+  const addTransaction = async (tx) => {
+    const { data } = await supabase.from('transactions').insert({
+      user_id: user.id,
+      type: tx.type,
+      description: tx.description,
+      amount: tx.amount,
+      date: tx.date,
+      category_id: tx.categoryId || null,
+      project_id: tx.projectId || null,
+      notes: tx.notes || null,
+    }).select().single();
+    if (data) setTransactions(prev => [mapTx(data), ...prev]);
   };
 
-  const updateTransaction = (transaction) => {
-    dispatch({ type: 'UPDATE_TRANSACTION', payload: transaction });
+  const updateTransaction = async (tx) => {
+    const { data } = await supabase.from('transactions').update({
+      type: tx.type,
+      description: tx.description,
+      amount: tx.amount,
+      date: tx.date,
+      category_id: tx.categoryId || null,
+      project_id: tx.projectId || null,
+      notes: tx.notes || null,
+    }).eq('id', tx.id).select().single();
+    if (data) setTransactions(prev => prev.map(t => t.id === data.id ? mapTx(data) : t));
   };
 
-  const deleteTransaction = (id) => {
-    dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+  const deleteTransaction = async (id) => {
+    await supabase.from('transactions').delete().eq('id', id);
+    setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  const addCategory = (category) => {
-    dispatch({
-      type: 'ADD_CATEGORY',
-      payload: { ...category, id: crypto.randomUUID() },
-    });
+  const addCategory = async (cat) => {
+    const { data } = await supabase.from('categories').insert({
+      user_id: user.id,
+      name: cat.name,
+      type: cat.type,
+      color: cat.color,
+      icon: cat.icon,
+    }).select().single();
+    if (data) setCategories(prev => [...prev, mapCat(data)]);
   };
 
-  const deleteCategory = (id) => {
-    dispatch({ type: 'DELETE_CATEGORY', payload: id });
+  const deleteCategory = async (id) => {
+    await supabase.from('categories').delete().eq('id', id);
+    setCategories(prev => prev.filter(c => c.id !== id));
   };
 
   const setBudget = (budget) => {
-    dispatch({ type: 'SET_BUDGET', payload: budget });
-  };
-
-  const deleteBudget = (categoryId) => {
-    dispatch({ type: 'DELETE_BUDGET', payload: categoryId });
-  };
-
-  const addProject = (project) => {
-    dispatch({
-      type: 'ADD_PROJECT',
-      payload: { ...project, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    setBudgetsState(prev => {
+      const exists = prev.find(b => b.categoryId === budget.categoryId);
+      if (exists) return prev.map(b => b.categoryId === budget.categoryId ? budget : b);
+      return [...prev, budget];
     });
   };
 
-  const updateProject = (project) => {
-    dispatch({ type: 'UPDATE_PROJECT', payload: project });
+  const deleteBudget = (categoryId) => {
+    setBudgetsState(prev => prev.filter(b => b.categoryId !== categoryId));
   };
 
-  const deleteProject = (id) => {
-    dispatch({ type: 'DELETE_PROJECT', payload: id });
+  const addProject = async (proj) => {
+    const { data } = await supabase.from('projects').insert({
+      user_id: user.id,
+      name: proj.name,
+      description: proj.description || null,
+      icon: proj.icon,
+      color: proj.color,
+    }).select().single();
+    if (data) setProjects(prev => [...prev, mapProject(data)]);
+  };
+
+  const updateProject = async (proj) => {
+    const { data } = await supabase.from('projects').update({
+      name: proj.name,
+      description: proj.description || null,
+      icon: proj.icon,
+      color: proj.color,
+    }).eq('id', proj.id).select().single();
+    if (data) setProjects(prev => prev.map(p => p.id === data.id ? mapProject(data) : p));
+  };
+
+  const deleteProject = async (id) => {
+    await supabase.from('projects').delete().eq('id', id);
+    setProjects(prev => prev.filter(p => p.id !== id));
+    setTransactions(prev => prev.map(t => t.projectId === id ? { ...t, projectId: null } : t));
   };
 
   const getSummary = (month, year) => {
-    const filtered = state.transactions.filter(t => {
-      const d = new Date(t.date);
+    const filtered = transactions.filter(t => {
+      const d = new Date(t.date + 'T00:00:00');
       return d.getMonth() + 1 === month && d.getFullYear() === year;
     });
     const income = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -168,7 +193,7 @@ export function FinanceProvider({ children }) {
   };
 
   const getProjectSummary = (projectId) => {
-    const txs = state.transactions.filter(t => t.projectId === projectId);
+    const txs = transactions.filter(t => t.projectId === projectId);
     const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, transactions: txs };
@@ -176,7 +201,11 @@ export function FinanceProvider({ children }) {
 
   return (
     <FinanceContext.Provider value={{
-      ...state,
+      transactions,
+      categories,
+      projects,
+      budgets,
+      loading,
       addTransaction,
       updateTransaction,
       deleteTransaction,
@@ -189,7 +218,6 @@ export function FinanceProvider({ children }) {
       deleteProject,
       getSummary,
       getProjectSummary,
-      dispatch,
     }}>
       {children}
     </FinanceContext.Provider>
