@@ -19,6 +19,7 @@ const initialState = {
     { id: '12', name: 'Outros (Saída)', type: 'expense', color: '#6b7280', icon: '📋' },
   ],
   budgets: [],
+  projects: [],
 };
 
 function loadFromStorage() {
@@ -57,7 +58,7 @@ function reducer(state, action) {
         ...state,
         categories: state.categories.filter(c => c.id !== action.payload),
       };
-    case 'SET_BUDGET':
+    case 'SET_BUDGET': {
       const existing = state.budgets.find(b => b.categoryId === action.payload.categoryId);
       if (existing) {
         return {
@@ -68,10 +69,28 @@ function reducer(state, action) {
         };
       }
       return { ...state, budgets: [...state.budgets, action.payload] };
+    }
     case 'DELETE_BUDGET':
       return {
         ...state,
         budgets: state.budgets.filter(b => b.categoryId !== action.payload),
+      };
+    case 'ADD_PROJECT':
+      return { ...state, projects: [...state.projects, action.payload] };
+    case 'UPDATE_PROJECT':
+      return {
+        ...state,
+        projects: state.projects.map(p =>
+          p.id === action.payload.id ? action.payload : p
+        ),
+      };
+    case 'DELETE_PROJECT':
+      return {
+        ...state,
+        projects: state.projects.filter(p => p.id !== action.payload),
+        transactions: state.transactions.map(t =>
+          t.projectId === action.payload ? { ...t, projectId: null } : t
+        ),
       };
     case 'IMPORT_DATA':
       return { ...state, ...action.payload };
@@ -123,6 +142,21 @@ export function FinanceProvider({ children }) {
     dispatch({ type: 'DELETE_BUDGET', payload: categoryId });
   };
 
+  const addProject = (project) => {
+    dispatch({
+      type: 'ADD_PROJECT',
+      payload: { ...project, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    });
+  };
+
+  const updateProject = (project) => {
+    dispatch({ type: 'UPDATE_PROJECT', payload: project });
+  };
+
+  const deleteProject = (id) => {
+    dispatch({ type: 'DELETE_PROJECT', payload: id });
+  };
+
   const getSummary = (month, year) => {
     const filtered = state.transactions.filter(t => {
       const d = new Date(t.date);
@@ -131,6 +165,13 @@ export function FinanceProvider({ children }) {
     const income = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, transactions: filtered };
+  };
+
+  const getProjectSummary = (projectId) => {
+    const txs = state.transactions.filter(t => t.projectId === projectId);
+    const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    return { income, expense, balance: income - expense, transactions: txs };
   };
 
   return (
@@ -143,7 +184,11 @@ export function FinanceProvider({ children }) {
       deleteCategory,
       setBudget,
       deleteBudget,
+      addProject,
+      updateProject,
+      deleteProject,
       getSummary,
+      getProjectSummary,
       dispatch,
     }}>
       {children}

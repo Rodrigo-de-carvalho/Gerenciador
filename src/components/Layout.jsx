@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
-  TrendingUp, Wallet, Sun, Moon
+  TrendingUp, Wallet, Sun, Moon, FolderOpen
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -9,6 +9,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'transactions', label: 'Lançamentos', icon: ArrowLeftRight },
   { id: 'reports', label: 'Relatórios', icon: PieChart },
+  { id: 'projects', label: 'Projetos', icon: FolderOpen },
   { id: 'categories', label: 'Categorias', icon: Tags },
 ];
 
@@ -18,14 +19,12 @@ export default function Layout({ currentPage, onNavigate, children }) {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
-      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 shadow-lg
         transform transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-slate-700">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
             <Wallet className="w-5 h-5 text-white" />
@@ -42,7 +41,6 @@ export default function Layout({ currentPage, onNavigate, children }) {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="p-4 space-y-1">
           {navItems.map(({ id, label, icon: Icon }) => (
             <button
@@ -65,7 +63,6 @@ export default function Layout({ currentPage, onNavigate, children }) {
           ))}
         </nav>
 
-        {/* Bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 text-white">
             <TrendingUp className="w-6 h-6 mb-2 opacity-80" />
@@ -75,7 +72,6 @@ export default function Layout({ currentPage, onNavigate, children }) {
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
@@ -83,9 +79,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
         />
       )}
 
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top bar */}
         <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 lg:px-6 h-14 flex items-center gap-4 flex-shrink-0">
           <button
             className="lg:hidden btn-icon"
@@ -108,7 +102,6 @@ export default function Layout({ currentPage, onNavigate, children }) {
           </button>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 scrollbar-thin">
           {children}
         </main>

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
 import Categories from './pages/Categories';
+import Projects from './pages/Projects';
 
 function AppContent() {
   const [page, setPage] = useState('dashboard');
@@ -16,6 +17,7 @@ function AppContent() {
       case 'transactions': return <Transactions />;
       case 'reports': return <Reports />;
       case 'categories': return <Categories />;
+      case 'projects': return <Projects />;
       default: return <Dashboard onNavigate={setPage} />;
     }
   };
