@@ -43,6 +43,7 @@ const mapProject = (row) => ({
   description: row.description || '',
   icon: row.icon,
   color: row.color,
+  includeInOverview: row.include_in_overview ?? true,
   createdAt: row.created_at,
 });
 
@@ -162,6 +163,7 @@ export function FinanceProvider({ children }) {
       description: proj.description || null,
       icon: proj.icon,
       color: proj.color,
+      include_in_overview: proj.includeInOverview ?? true,
     }).select().single();
     if (data) setProjects(prev => [...prev, mapProject(data)]);
   };
@@ -172,6 +174,7 @@ export function FinanceProvider({ children }) {
       description: proj.description || null,
       icon: proj.icon,
       color: proj.color,
+      include_in_overview: proj.includeInOverview ?? true,
     }).eq('id', proj.id).select().single();
     if (data) setProjects(prev => prev.map(p => p.id === data.id ? mapProject(data) : p));
   };
@@ -183,7 +186,12 @@ export function FinanceProvider({ children }) {
   };
 
   const getSummary = (month, year) => {
+    // Exclude transactions from projects marked as "isolated" (includeInOverview === false)
+    const excludedProjectIds = new Set(
+      projects.filter(p => p.includeInOverview === false).map(p => p.id)
+    );
     const filtered = transactions.filter(t => {
+      if (t.projectId && excludedProjectIds.has(t.projectId)) return false;
       const d = new Date(t.date + 'T00:00:00');
       return d.getMonth() + 1 === month && d.getFullYear() === year;
     });

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   Plus, ArrowLeft, Pencil, Trash2, TrendingUp, TrendingDown,
-  Wallet, FolderOpen, X
+  Wallet, FolderOpen, X, LayoutDashboard
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -13,8 +13,8 @@ const PROJECT_COLORS = ['#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec48
 function ProjectFormModal({ project, onClose, onSave }) {
   const [form, setForm] = useState(
     project
-      ? { name: project.name, description: project.description || '', icon: project.icon, color: project.color }
-      : { name: '', description: '', icon: '🏗️', color: '#3b82f6' }
+      ? { name: project.name, description: project.description || '', icon: project.icon, color: project.color, includeInOverview: project.includeInOverview ?? true }
+      : { name: '', description: '', icon: '🏗️', color: '#3b82f6', includeInOverview: true }
   );
 
   const handleSubmit = (e) => {
@@ -94,6 +94,33 @@ function ProjectFormModal({ project, onClose, onSave }) {
             </div>
           </div>
 
+          {/* Include in overview toggle */}
+          <div
+            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+              form.includeInOverview
+                ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/30'
+            }`}
+            onClick={() => setForm(f => ({ ...f, includeInOverview: !f.includeInOverview }))}
+          >
+            <div className="flex items-center gap-3">
+              <LayoutDashboard className={`w-4 h-4 flex-shrink-0 ${form.includeInOverview ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+              <div>
+                <p className={`text-sm font-semibold ${form.includeInOverview ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                  Incluir no financeiro geral
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  {form.includeInOverview
+                    ? 'Lançamentos somam no Dashboard e Relatórios'
+                    : 'Lançamentos ficam isolados neste projeto'}
+                </p>
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 relative ${form.includeInOverview ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+              <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.includeInOverview ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+          </div>
+
           {/* Preview */}
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 flex items-center gap-3">
             <div
@@ -165,9 +192,15 @@ function ProjectDetail({ project, onBack }) {
           {project.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight truncate">
-            {project.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight truncate">
+              {project.name}
+            </h2>
+            {project.includeInOverview
+              ? <span className="flex-shrink-0 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">no geral</span>
+              : <span className="flex-shrink-0 text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-medium">isolado</span>
+            }
+          </div>
           {project.description && (
             <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{project.description}</p>
           )}
@@ -419,9 +452,13 @@ export default function Projects() {
                     {project.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{project.name}</p>
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+                      {project.includeInOverview
+                        ? <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-medium">no geral</span>
+                        : <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-medium">isolado</span>
+                      }
                     </div>
                     {project.description && (
                       <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{project.description}</p>

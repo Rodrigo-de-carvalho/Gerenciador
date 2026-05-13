@@ -10,8 +10,9 @@ CREATE TABLE IF NOT EXISTS public.projects (
   name        text        NOT NULL,
   description text,
   icon        text        NOT NULL DEFAULT '🏗️',
-  color       text        NOT NULL DEFAULT '#3b82f6',
-  created_at  timestamptz DEFAULT now()
+  color                text        NOT NULL DEFAULT '#3b82f6',
+  include_in_overview  boolean     NOT NULL DEFAULT true,
+  created_at           timestamptz DEFAULT now()
 );
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
@@ -62,6 +63,10 @@ CREATE POLICY "users can manage own transactions"
   FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- ── MIGRAÇÃO: incluir no financeiro geral ─────────────────
+-- Execute esta linha se já criou as tabelas anteriormente:
+-- ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS include_in_overview boolean NOT NULL DEFAULT true;
 
 -- ── ÍNDICES ───────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS transactions_user_date ON public.transactions(user_id, date DESC);
