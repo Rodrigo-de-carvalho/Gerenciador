@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import {
   Plus, ArrowLeft, Pencil, Trash2, TrendingUp, TrendingDown,
-  Wallet, FolderOpen, X, LayoutDashboard
+  Wallet, FolderOpen, X, LayoutDashboard, FileSpreadsheet, FileText,
+  MessageSquare, Copy, Check, Share2
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { exportProjectToExcel, downloadProjectPDF, generateProjectWhatsAppText } from '../utils/exportUtils';
 import TransactionModal from '../components/TransactionModal';
 
 const PROJECT_ICONS = ['🏗️','🏠','💻','📱','🚗','🎯','💼','🌱','🎨','🏋️','📚','🎵','✈️','🍕','🎮','🛒','💡','🔧','🎓','⚽','🎪','🏖️','🏢','🔬','🛡️'];
@@ -156,13 +158,15 @@ function ProjectFormModal({ project, onClose, onSave }) {
 }
 
 function ProjectDetail({ project, onBack }) {
-  const { transactions, categories, updateProject, deleteProject } = useFinance();
+  const { transactions, categories, updateProject, deleteProject, deleteTransaction } = useFinance();
   const [showTxModal, setShowTxModal] = useState(false);
   const [editTx, setEditTx] = useState(null);
   const [showEditProject, setShowEditProject] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTxConfirm, setDeleteTxConfirm] = useState(null);
-  const { deleteTransaction } = useFinance();
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState('');
 
   const projectTxs = useMemo(
     () => transactions.filter(t => t.projectId === project.id).sort((a, b) => new Date(b.date) - new Date(a.date)),
@@ -176,6 +180,24 @@ function ProjectDetail({ project, onBack }) {
   const handleDeleteProject = () => {
     deleteProject(project.id);
     onBack();
+  };
+
+  const whatsappText = useMemo(
+    () => generateProjectWhatsAppText(projectTxs, categories, project),
+    [projectTxs, categories, project]
+  );
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(whatsappText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleWhatsAppDirect = () => {
+    const text = encodeURIComponent(whatsappText);
+    const phone = whatsappPhone.replace(/\D/g, '');
+    window.open(phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`, '_blank');
   };
 
   return (
@@ -245,6 +267,80 @@ function ProjectDetail({ project, onBack }) {
           </p>
         </div>
       </div>
+
+      {/* Export buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          className="btn-success text-sm py-2 px-3"
+          onClick={() => exportProjectToExcel(projectTxs, categories, project)}
+          disabled={projectTxs.length === 0}
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span className="hidden sm:inline">Excel</span>
+        </button>
+        <button
+          className="btn-danger text-sm py-2 px-3"
+          onClick={() => downloadProjectPDF(projectTxs, categories, project)}
+          disabled={projectTxs.length === 0}
+        >
+          <FileText className="w-4 h-4" />
+          <span className="hidden sm:inline">PDF</span>
+        </button>
+        <button
+          className="btn-primary text-sm py-2 px-3"
+          onClick={() => setShowExportPanel(p => !p)}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </button>
+      </div>
+
+      {/* WhatsApp panel */}
+      {showExportPanel && (
+        <div className="card border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-4 h-4 text-white" />
+            </div>
+            <h3 className="font-bold text-slate-700 dark:text-slate-200">Compartilhar via WhatsApp</h3>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Prévia da mensagem</label>
+              <textarea
+                readOnly
+                value={whatsappText}
+                className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-3 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 resize-none font-mono"
+                rows={10}
+              />
+              <button
+                className={`btn-secondary mt-2 text-sm w-full justify-center ${copied ? 'text-emerald-600 border-emerald-300' : ''}`}
+                onClick={handleCopy}
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copiado!' : 'Copiar Texto'}
+              </button>
+            </div>
+            <div className="bg-white dark:bg-slate-700 rounded-xl p-4 border border-slate-200 dark:border-slate-600 self-start">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-green-600" />
+                Enviar via WhatsApp
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Opcional: informe o número para abrir direto.</p>
+              <input
+                type="tel"
+                className="input-field mb-2"
+                placeholder="Número (ex: 5511999999999)"
+                value={whatsappPhone}
+                onChange={e => setWhatsappPhone(e.target.value)}
+              />
+              <button className="btn-success w-full justify-center text-sm" onClick={handleWhatsAppDirect}>
+                <Share2 className="w-4 h-4" /> Abrir WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Transactions */}
       <div className="card p-0 overflow-hidden">
