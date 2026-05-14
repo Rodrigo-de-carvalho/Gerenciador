@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
-  TrendingUp, Wallet, Sun, Moon, FolderOpen, LogOut, Smartphone
+  TrendingUp, Wallet, Sun, Moon, FolderOpen, LogOut, Smartphone,
+  CreditCard, Bot, Settings, ShieldAlert, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { id: 'dashboard',    label: 'Dashboard',   icon: LayoutDashboard },
-  { id: 'transactions', label: 'Lançamentos', icon: ArrowLeftRight },
-  { id: 'reports',      label: 'Relatórios',  icon: PieChart },
-  { id: 'projects',     label: 'Projetos',    icon: FolderOpen },
-  { id: 'categories',   label: 'Categorias',  icon: Tags },
+  { id: 'dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
+  { id: 'transactions', label: 'Lançamentos',   icon: ArrowLeftRight },
+  { id: 'reports',      label: 'Relatórios',    icon: PieChart },
+  { id: 'projects',     label: 'Projetos',      icon: FolderOpen },
+  { id: 'cards',        label: 'Cartões',       icon: CreditCard },
+  { id: 'categories',   label: 'Categorias',    icon: Tags },
+  { id: 'assistant',    label: 'Assistente IA', icon: Bot },
 ];
 
 function AndroidBanner() {
@@ -52,9 +55,156 @@ function AndroidBanner() {
   );
 }
 
+function SettingsModal({ onClose }) {
+  const { user, updateProfile } = useAuth();
+  const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
+  const [enabled, setEnabled] = useState(aiEnabled);
+  const [saving, setSaving] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
+
+  const handleToggle = () => {
+    if (!enabled) {
+      setShowConsent(true);
+    } else {
+      setEnabled(false);
+    }
+  };
+
+  const handleAcceptConsent = () => {
+    setEnabled(true);
+    setShowConsent(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await updateProfile({ ai_assistant_enabled: enabled });
+    setSaving(false);
+    onClose();
+  };
+
+  const changed = enabled !== aiEnabled;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">Configurações</h2>
+          </div>
+          <button className="btn-icon" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Conta</p>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+              <div className="w-9 h-9 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
+                {user?.email?.[0]?.toUpperCase() || '?'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{user?.email}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Conta ativa</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Assistente de IA</p>
+            <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${enabled ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-slate-100 dark:bg-slate-700'}`}>
+                  <Bot className={`w-5 h-5 ${enabled ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Ativar Assistente de IA</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                    {enabled ? 'Ativado — chat disponível' : 'Desativado por padrão'}
+                  </p>
+                </div>
+                {enabled
+                  ? <ToggleRight className="w-7 h-7 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  : <ToggleLeft className="w-7 h-7 text-slate-300 dark:text-slate-600 flex-shrink-0" />
+                }
+              </button>
+
+              {enabled && (
+                <div className="px-4 pb-4 pt-0">
+                  <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                      Com o assistente ativado, um <strong>resumo financeiro</strong> (entradas, saídas, categorias e projetos do mês) é enviado a uma IA externa (Groq/Llama) a cada mensagem enviada. Nenhum dado pessoal identificável é transmitido.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-6 pb-6">
+          <button type="button" className="btn-secondary flex-1 justify-center" onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="btn-primary flex-1 justify-center"
+            onClick={handleSave}
+            disabled={saving || !changed}
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+
+      {showConsent && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">Ativar Assistente de IA?</h3>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+              Ao ativar o assistente, um <strong>resumo dos seus dados financeiros</strong> (totais de entradas, saídas, categorias e projetos do mês atual) será enviado ao modelo de linguagem <strong>Llama 3.3</strong> da Groq a cada mensagem.
+            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
+              <strong>Não são transmitidos</strong> dados pessoais como nome, CPF, senhas ou transações individuais detalhadas. Ao continuar, você concorda com esse processamento.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                className="btn-secondary flex-1 justify-center"
+                onClick={() => setShowConsent(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-primary flex-1 justify-center"
+                onClick={handleAcceptConsent}
+              >
+                Entendi e aceito
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Layout({ currentPage, onNavigate, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { darkMode, toggleDark } = useTheme();
   const { user, signOut } = useAuth();
 
@@ -170,6 +320,13 @@ export default function Layout({ currentPage, onNavigate, children }) {
                       <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Conta ativa</p>
                     </div>
                     <button
+                      onClick={() => { setShowUserMenu(false); setShowSettings(true); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Configurações
+                    </button>
+                    <button
                       onClick={() => { setShowUserMenu(false); signOut(); }}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
@@ -187,6 +344,8 @@ export default function Layout({ currentPage, onNavigate, children }) {
           {children}
         </main>
       </div>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
