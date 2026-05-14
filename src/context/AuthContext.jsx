@@ -40,8 +40,29 @@ export function AuthProvider({ children }) {
     return { error };
   };
 
+  const acceptTerms = () =>
+    updateProfile({ terms_accepted_at: new Date().toISOString() });
+
+  const deleteAccount = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return { error: 'Sessão inválida.' };
+    try {
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Erro ao deletar conta.' };
+      await supabase.auth.signOut();
+      return { error: null };
+    } catch (e) {
+      return { error: e.message };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut, updateProfile, acceptTerms, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

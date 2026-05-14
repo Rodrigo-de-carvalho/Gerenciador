@@ -3,9 +3,11 @@ import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
   TrendingUp, Wallet, Sun, Moon, FolderOpen, LogOut, Smartphone,
   CreditCard, Bot, Settings, ShieldAlert, ToggleLeft, ToggleRight,
+  Trash2, Shield,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import PrivacyPolicy from './PrivacyPolicy';
 
 const navItems = [
   { id: 'dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
@@ -56,11 +58,15 @@ function AndroidBanner() {
 }
 
 function SettingsModal({ onClose }) {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, deleteAccount } = useAuth();
   const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
   const [enabled, setEnabled] = useState(aiEnabled);
   const [saving, setSaving] = useState(false);
   const [showConsent, setShowConsent] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const handleToggle = () => {
     if (!enabled) {
@@ -84,6 +90,14 @@ function SettingsModal({ onClose }) {
 
   const changed = enabled !== aiEnabled;
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    const { error } = await deleteAccount();
+    if (error) { setDeleteError(error); setDeleting(false); }
+    // on success, signOut() inside deleteAccount redirects automatically
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
@@ -98,6 +112,7 @@ function SettingsModal({ onClose }) {
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Account info */}
           <div>
             <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Conta</p>
             <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
@@ -111,6 +126,25 @@ function SettingsModal({ onClose }) {
             </div>
           </div>
 
+          {/* Privacy */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Privacidade</p>
+            <button
+              type="button"
+              onClick={() => setShowPrivacy(true)}
+              className="w-full flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Política de Privacidade</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Veja como seus dados são usados (LGPD)</p>
+              </div>
+            </button>
+          </div>
+
+          {/* AI Assistant toggle */}
           <div>
             <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Assistente de IA</p>
             <div className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden">
@@ -148,6 +182,27 @@ function SettingsModal({ onClose }) {
           </div>
         </div>
 
+          {/* Danger zone */}
+          <div>
+            <p className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-3">Zona de Perigo</p>
+            <div className="border border-red-200 dark:border-red-800 rounded-xl overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-400">Deletar minha conta</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Remove permanentemente todos os seus dados</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-3 px-6 pb-6">
           <button type="button" className="btn-secondary flex-1 justify-center" onClick={onClose}>
             Cancelar
@@ -163,6 +218,7 @@ function SettingsModal({ onClose }) {
         </div>
       </div>
 
+      {/* Consent dialog */}
       {showConsent && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6">
@@ -192,6 +248,51 @@ function SettingsModal({ onClose }) {
                 onClick={handleAcceptConsent}
               >
                 Entendi e aceito
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy policy */}
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+
+      {/* Delete account confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">Deletar conta permanentemente?</h3>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">
+              Essa ação é <strong>irreversível</strong>. Todos os seus dados serão removidos permanentemente:
+            </p>
+            <ul className="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside mb-4 space-y-0.5">
+              <li>Todas as transações</li>
+              <li>Categorias personalizadas</li>
+              <li>Projetos e cartões</li>
+              <li>Sua conta de acesso</li>
+            </ul>
+            {deleteError && (
+              <p className="text-xs text-red-600 dark:text-red-400 mb-3 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{deleteError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                className="btn-secondary flex-1 justify-center"
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                disabled={deleting}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-danger flex-1 justify-center"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deletando...' : 'Sim, deletar tudo'}
               </button>
             </div>
           </div>

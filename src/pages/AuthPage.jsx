@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Wallet, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Wallet, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { validateEmail, validatePassword, checkRateLimit, recordFailedAttempt, resetRateLimit } from '../utils/validation';
+import PrivacyPolicy from '../components/PrivacyPolicy';
 
 function GoogleIcon() {
   return (
@@ -18,28 +20,45 @@ export default function AuthPage() {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setLoading(true);
 
+    // Client-side rate limit check
+    const rateLimitError = checkRateLimit();
+    if (rateLimitError) { setError(rateLimitError); return; }
+
+    // Input validation
+    if (!validateEmail(email)) { setError('Informe um e-mail válido.'); return; }
+    const passError = validatePassword(password);
+    if (passError) { setError(passError); return; }
+    if (mode === 'register' && !termsAccepted) {
+      setError('Você precisa aceitar os termos de uso para criar uma conta.');
+      return;
+    }
+
+    setLoading(true);
     try {
       if (mode === 'login') {
         const { error: err } = await signIn(email, password);
         if (err) throw err;
+        resetRateLimit();
       } else {
         const { error: err } = await signUp(email, password);
         if (err) throw err;
         setSuccess('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
       }
     } catch (err) {
+      recordFailedAttempt();
       const msgs = {
         'Invalid login credentials': 'E-mail ou senha incorretos.',
         'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
@@ -59,6 +78,13 @@ export default function AuthPage() {
     setGoogleLoading(false);
   };
 
+  const switchMode = (m) => {
+    setMode(m);
+    setError('');
+    setSuccess('');
+    setTermsAccepted(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -73,7 +99,7 @@ export default function AuthPage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
           <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
             <button
-              onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
+              onClick={() => switchMode('login')}
               className={`py-2 rounded-lg text-sm font-semibold transition-all ${
                 mode === 'login'
                   ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm'
@@ -83,7 +109,7 @@ export default function AuthPage() {
               Entrar
             </button>
             <button
-              onClick={() => { setMode('register'); setError(''); setSuccess(''); }}
+              onClick={() => switchMode('register')}
               className={`py-2 rounded-lg text-sm font-semibold transition-all ${
                 mode === 'register'
                   ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm'
@@ -106,6 +132,7 @@ export default function AuthPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
+                  maxLength={254}
                   autoComplete="email"
                 />
               </div>
@@ -123,6 +150,7 @@ export default function AuthPage() {
                   onChange={e => setPassword(e.target.value)}
                   required
                   minLength={6}
+                  maxLength={128}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 />
                 <button
@@ -135,6 +163,31 @@ export default function AuthPage() {
                 </button>
               </div>
             </div>
+
+            {/* Terms checkbox — required only on registration */}
+            {mode === 'register' && (
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer flex-shrink-0"
+                  checked={termsAccepted}
+                  onChange={e => setTermsAccepted(e.target.checked)}
+                  required
+                />
+                <span className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Li e aceito a{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacy(true)}
+                    className="text-blue-600 dark:text-blue-400 underline hover:no-underline inline-flex items-center gap-0.5"
+                  >
+                    Política de Privacidade
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                  . Entendo que meus dados financeiros serão armazenados no Supabase e não serão compartilhados com terceiros.
+                </span>
+              </label>
+            )}
 
             {error && (
               <div className="flex items-start gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
@@ -181,9 +234,17 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">
-          Seus dados ficam seguros e são acessíveis de qualquer dispositivo.
+          Seus dados ficam seguros e são acessíveis de qualquer dispositivo.{' '}
+          <button
+            onClick={() => setShowPrivacy(true)}
+            className="text-blue-500 underline hover:no-underline"
+          >
+            Política de Privacidade
+          </button>
         </p>
       </div>
+
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
