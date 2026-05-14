@@ -26,6 +26,11 @@ const mapTx = (row) => ({
   categoryId: row.category_id,
   projectId: row.project_id,
   notes: row.notes || '',
+  cardId: row.card_id || null,
+  installmentTotal: row.installment_total ?? 1,
+  installmentCurrent: row.installment_current ?? 1,
+  installmentGroupId: row.installment_group_id || null,
+  paid: row.paid ?? true,
   createdAt: row.created_at,
 });
 
@@ -47,6 +52,16 @@ const mapProject = (row) => ({
   createdAt: row.created_at,
 });
 
+const mapCard = (row) => ({
+  id: row.id,
+  name: row.name,
+  limitAmount: row.limit_amount ? Number(row.limit_amount) : null,
+  closingDay: row.closing_day ?? 1,
+  color: row.color,
+  icon: row.icon,
+  createdAt: row.created_at,
+});
+
 const FinanceContext = createContext(null);
 
 export function FinanceProvider({ children }) {
@@ -54,6 +69,7 @@ export function FinanceProvider({ children }) {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [cards, setCards] = useState([]);
   const [budgets, setBudgetsState] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,16 +78,18 @@ export function FinanceProvider({ children }) {
       setTransactions([]);
       setCategories([]);
       setProjects([]);
+      setCards([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      const [txRes, catRes, projRes] = await Promise.all([
+      const [txRes, catRes, projRes, cardsRes] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('cards').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
       ]);
 
       let cats = catRes.data?.map(mapCat) || [];
@@ -87,6 +105,7 @@ export function FinanceProvider({ children }) {
       setTransactions(txRes.data?.map(mapTx) || []);
       setCategories(cats);
       setProjects(projRes.data?.map(mapProject) || []);
+      setCards(cardsRes.data?.map(mapCard) || []);
     } finally {
       setLoading(false);
     }
@@ -106,8 +125,43 @@ export function FinanceProvider({ children }) {
       category_id: tx.categoryId || null,
       project_id: tx.projectId || null,
       notes: tx.notes || null,
+      card_id: tx.cardId || null,
+      paid: tx.cardId ? false : true,
     }).select().single();
     if (data) setTransactions(prev => [mapTx(data), ...prev]);
+  };
+
+  const addInstallmentTransaction = async (tx, installmentCount) => {
+    const groupId = crypto.randomUUID();
+    const perAmount = tx.amount / installmentCount;
+    const rows = [];
+
+    for (let i = 0; i < installmentCount; i++) {
+      const d = new Date(tx.date + 'T00:00:00');
+      d.setMonth(d.getMonth() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      rows.push({
+        user_id: user.id,
+        type: tx.type,
+        description: `${tx.description} (${i + 1}/${installmentCount})`,
+        amount: perAmount,
+        date: dateStr,
+        category_id: tx.categoryId || null,
+        project_id: tx.projectId || null,
+        notes: tx.notes || null,
+        card_id: tx.cardId || null,
+        installment_group_id: groupId,
+        installment_total: installmentCount,
+        installment_current: i + 1,
+        paid: false,
+      });
+    }
+
+    const { data } = await supabase.from('transactions').insert(rows).select();
+    if (data) {
+      const mapped = data.map(mapTx);
+      setTransactions(prev => [...mapped, ...prev]);
+    }
   };
 
   const updateTransaction = async (tx) => {
@@ -119,6 +173,8 @@ export function FinanceProvider({ children }) {
       category_id: tx.categoryId || null,
       project_id: tx.projectId || null,
       notes: tx.notes || null,
+      card_id: tx.cardId || null,
+      paid: tx.paid ?? true,
     }).eq('id', tx.id).select().single();
     if (data) setTransactions(prev => prev.map(t => t.id === data.id ? mapTx(data) : t));
   };
@@ -185,8 +241,57 @@ export function FinanceProvider({ children }) {
     setTransactions(prev => prev.map(t => t.projectId === id ? { ...t, projectId: null } : t));
   };
 
+  const addCard = async (card) => {
+    const { data } = await supabase.from('cards').insert({
+      user_id: user.id,
+      name: card.name,
+      limit_amount: card.limitAmount || null,
+      closing_day: card.closingDay ?? 1,
+      color: card.color,
+      icon: card.icon,
+    }).select().single();
+    if (data) setCards(prev => [...prev, mapCard(data)]);
+  };
+
+  const updateCard = async (card) => {
+    const { data } = await supabase.from('cards').update({
+      name: card.name,
+      limit_amount: card.limitAmount || null,
+      closing_day: card.closingDay ?? 1,
+      color: card.color,
+      icon: card.icon,
+    }).eq('id', card.id).select().single();
+    if (data) setCards(prev => prev.map(c => c.id === data.id ? mapCard(data) : c));
+  };
+
+  const deleteCard = async (id) => {
+    await supabase.from('cards').delete().eq('id', id);
+    setCards(prev => prev.filter(c => c.id !== id));
+    setTransactions(prev => prev.map(t => t.cardId === id ? { ...t, cardId: null } : t));
+  };
+
+  const getCardBill = (cardId, month, year) => {
+    const txs = transactions.filter(t => {
+      if (t.cardId !== cardId) return false;
+      const d = new Date(t.date + 'T00:00:00');
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+    const total = txs.reduce((s, t) => s + t.amount, 0);
+    const paid = txs.length > 0 && txs.every(t => t.paid);
+    return { transactions: txs, total, paid };
+  };
+
+  const payCardBill = async (cardId, month, year) => {
+    const bill = getCardBill(cardId, month, year);
+    const unpaid = bill.transactions.filter(t => !t.paid);
+    if (unpaid.length === 0) return;
+
+    const ids = unpaid.map(t => t.id);
+    await supabase.from('transactions').update({ paid: true }).in('id', ids);
+    setTransactions(prev => prev.map(t => ids.includes(t.id) ? { ...t, paid: true } : t));
+  };
+
   const getSummary = (month, year) => {
-    // Exclude transactions from projects marked as "isolated" (includeInOverview === false)
     const excludedProjectIds = new Set(
       projects.filter(p => p.includeInOverview === false).map(p => p.id)
     );
@@ -212,9 +317,11 @@ export function FinanceProvider({ children }) {
       transactions,
       categories,
       projects,
+      cards,
       budgets,
       loading,
       addTransaction,
+      addInstallmentTransaction,
       updateTransaction,
       deleteTransaction,
       addCategory,
@@ -224,6 +331,11 @@ export function FinanceProvider({ children }) {
       addProject,
       updateProject,
       deleteProject,
+      addCard,
+      updateCard,
+      deleteCard,
+      getCardBill,
+      payCardBill,
       getSummary,
       getProjectSummary,
     }}>
