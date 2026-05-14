@@ -12,7 +12,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Servidor mal configurado — variáveis SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são necessárias.' });
   }
 
-  // Verify the user token
   const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { Authorization: `Bearer ${token}`, apikey: serviceKey },
   });
@@ -23,20 +22,14 @@ export default async function handler(req, res) {
   const userId = userData.id;
   if (!userId) return res.status(401).json({ error: 'Usuário não encontrado.' });
 
-  // Delete all user data (RLS allows service role to bypass)
   const tables = ['transactions', 'categories', 'projects', 'cards'];
   for (const table of tables) {
     await fetch(`${supabaseUrl}/rest/v1/${table}?user_id=eq.${userId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-        Prefer: 'return=minimal',
-      },
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, Prefer: 'return=minimal' },
     });
   }
 
-  // Delete the auth user via Admin API
   const deleteRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },

@@ -40,19 +40,15 @@ export default function PrivacyPolicy({ onClose }) {
 
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">3. Compartilhamento de dados</h3>
-            <p>
-              <strong>Seus dados não são vendidos, alugados ou compartilhados com terceiros.</strong>
-            </p>
+            <p><strong>Seus dados não são vendidos, alugados ou compartilhados com terceiros.</strong></p>
             <p className="mt-2">
-              <strong>Exceção — Assistente de IA (opcional):</strong> se você optar por ativar o assistente financeiro, um resumo agregado dos seus dados do mês (totais de entradas, saídas e categorias) é enviado à <a href="https://groq.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Groq</a> para processamento pelo modelo Llama 3.3. Nenhum dado pessoal identificável é transmitido. Essa função é desativada por padrão e pode ser desligada a qualquer momento.
+              <strong>Exceção — Assistente de IA (opcional):</strong> se você optar por ativar o assistente financeiro, um resumo agregado dos seus dados do mês (totais de entradas, saídas e categorias) é enviado à Groq para processamento pelo modelo Llama 3.3. Nenhum dado pessoal identificável é transmitido. Essa função é desativada por padrão e pode ser desligada a qualquer momento.
             </p>
           </section>
 
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">4. Armazenamento e segurança</h3>
-            <p>
-              Todos os dados são armazenados no <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Supabase</a>, plataforma com criptografia em trânsito (TLS) e em repouso. O acesso é restrito por autenticação e cada usuário acessa apenas seus próprios dados (Row Level Security).
-            </p>
+            <p>Todos os dados são armazenados no Supabase, plataforma com criptografia em trânsito (TLS) e em repouso. O acesso é restrito por autenticação e cada usuário acessa apenas seus próprios dados (Row Level Security).</p>
           </section>
 
           <section>
@@ -73,9 +69,7 @@ export default function PrivacyPolicy({ onClose }) {
 
         {onClose && (
           <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex-shrink-0">
-            <button className="btn-primary w-full justify-center" onClick={onClose}>
-              Entendi
-            </button>
+            <button className="btn-primary w-full justify-center" onClick={onClose}>Entendi</button>
           </div>
         )}
       </div>

@@ -33,11 +33,9 @@ export default function AuthPage() {
     setError('');
     setSuccess('');
 
-    // Client-side rate limit check
     const rateLimitError = checkRateLimit();
     if (rateLimitError) { setError(rateLimitError); return; }
 
-    // Input validation
     if (!validateEmail(email)) { setError('Informe um e-mail válido.'); return; }
     const passError = validatePassword(password);
     if (passError) { setError(passError); return; }
@@ -98,26 +96,8 @@ export default function AuthPage() {
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
           <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
-            <button
-              onClick={() => switchMode('login')}
-              className={`py-2 rounded-lg text-sm font-semibold transition-all ${
-                mode === 'login'
-                  ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => switchMode('register')}
-              className={`py-2 rounded-lg text-sm font-semibold transition-all ${
-                mode === 'register'
-                  ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              Criar conta
-            </button>
+            <button onClick={() => switchMode('login')} className={`py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}>Entrar</button>
+            <button onClick={() => switchMode('register')} className={`py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'register' ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}>Criar conta</button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,16 +105,7 @@ export default function AuthPage() {
               <label className="label">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="email"
-                  className="input-field pl-9"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  maxLength={254}
-                  autoComplete="email"
-                />
+                <input type="email" className="input-field pl-9" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} autoComplete="email" />
               </div>
             </div>
 
@@ -142,74 +113,31 @@ export default function AuthPage() {
               <label className="label">Senha</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  className="input-field pl-9 pr-10"
-                  placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  maxLength={128}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  onClick={() => setShowPass(v => !v)}
-                  tabIndex={-1}
-                >
+                <input type={showPass ? 'text' : 'password'} className="input-field pl-9 pr-10" placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} maxLength={128} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setShowPass(v => !v)} tabIndex={-1}>
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Terms checkbox — required only on registration */}
             {mode === 'register' && (
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer flex-shrink-0"
-                  checked={termsAccepted}
-                  onChange={e => setTermsAccepted(e.target.checked)}
-                  required
-                />
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer flex-shrink-0" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} required />
                 <span className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Li e aceito a{' '}
-                  <button
-                    type="button"
-                    onClick={() => setShowPrivacy(true)}
-                    className="text-blue-600 dark:text-blue-400 underline hover:no-underline inline-flex items-center gap-0.5"
-                  >
-                    Política de Privacidade
-                    <ExternalLink className="w-3 h-3" />
+                  <button type="button" onClick={() => setShowPrivacy(true)} className="text-blue-600 dark:text-blue-400 underline hover:no-underline inline-flex items-center gap-0.5">
+                    Política de Privacidade <ExternalLink className="w-3 h-3" />
                   </button>
                   . Entendo que meus dados financeiros serão armazenados no Supabase e não serão compartilhados com terceiros.
                 </span>
               </label>
             )}
 
-            {error && (
-              <div className="flex items-start gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="text-emerald-600 dark:text-emerald-400 text-sm bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
-                {success}
-              </div>
-            )}
+            {error && <div className="flex items-start gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />{error}</div>}
+            {success && <div className="text-emerald-600 dark:text-emerald-400 text-sm bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">{success}</div>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full justify-center py-3 text-sm font-semibold disabled:opacity-60"
-            >
-              {loading
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : mode === 'login' ? 'Entrar' : 'Criar conta'
-              }
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 text-sm font-semibold disabled:opacity-60">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>
 
@@ -219,28 +147,15 @@ export default function AuthPage() {
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-600" />
           </div>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-60"
-          >
-            {googleLoading
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <GoogleIcon />
-            }
+          <button type="button" onClick={handleGoogle} disabled={googleLoading} className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-60">
+            {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
             Continuar com Google
           </button>
         </div>
 
         <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">
           Seus dados ficam seguros e são acessíveis de qualquer dispositivo.{' '}
-          <button
-            onClick={() => setShowPrivacy(true)}
-            className="text-blue-500 underline hover:no-underline"
-          >
-            Política de Privacidade
-          </button>
+          <button onClick={() => setShowPrivacy(true)} className="text-blue-500 underline hover:no-underline">Política de Privacidade</button>
         </p>
       </div>
 

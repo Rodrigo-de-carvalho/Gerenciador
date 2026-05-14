@@ -14,8 +14,6 @@ import Cards from './pages/Cards';
 import Assistant from './pages/Assistant';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
-// Shown to any user who hasn't accepted the terms yet (e.g. Google SSO first login,
-// or users who registered before the terms were added).
 function TermsConsentModal() {
   const { acceptTerms, signOut } = useAuth();
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -44,49 +42,31 @@ function TermsConsentModal() {
           <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300 mb-6">
             <p>Para usar o Gerenciador Financeiro, você precisa concordar com nossa política de privacidade.</p>
             <ul className="space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span>Seu e-mail e dados financeiros são armazenados com segurança no Supabase.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span>Seus dados <strong>não são vendidos</strong> nem compartilhados com terceiros.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span>O assistente de IA é opcional e desativado por padrão.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span>Você pode deletar sua conta e todos os dados a qualquer momento.</span>
-              </li>
+              {[
+                'Seu e-mail e dados financeiros são armazenados com segurança no Supabase.',
+                'Seus dados não são vendidos nem compartilhados com terceiros.',
+                'O assistente de IA é opcional e desativado por padrão.',
+                'Você pode deletar sua conta e todos os dados a qualquer momento.',
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="text-emerald-500 font-bold mt-0.5 flex-shrink-0">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
-            <button
-              onClick={() => setShowPrivacy(true)}
-              className="text-blue-600 dark:text-blue-400 text-xs underline hover:no-underline"
-            >
+            <button onClick={() => setShowPrivacy(true)} className="text-blue-600 dark:text-blue-400 text-xs underline hover:no-underline">
               Ler a Política de Privacidade completa →
             </button>
           </div>
 
           <div className="flex gap-3">
-            <button
-              className="btn-secondary flex-1 justify-center"
-              onClick={signOut}
-            >
-              Sair
-            </button>
-            <button
-              className="btn-primary flex-1 justify-center"
-              onClick={handleAccept}
-              disabled={loading}
-            >
+            <button className="btn-secondary flex-1 justify-center" onClick={signOut}>Sair</button>
+            <button className="btn-primary flex-1 justify-center" onClick={handleAccept} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aceito e continuar'}
             </button>
           </div>
         </div>
       </div>
-
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </>
   );
@@ -106,7 +86,6 @@ function AppContent() {
 
   if (!user) return <AuthPage />;
 
-  // Block access until terms are accepted — covers Google SSO first login
   if (!user.user_metadata?.terms_accepted_at) {
     return <TermsConsentModal />;
   }
