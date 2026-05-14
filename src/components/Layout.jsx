@@ -3,10 +3,11 @@ import {
   LayoutDashboard, ArrowLeftRight, PieChart, Tags, Menu, X,
   TrendingUp, Wallet, Sun, Moon, FolderOpen, LogOut, Smartphone,
   CreditCard, Bot, Settings, ShieldAlert, ToggleLeft, ToggleRight,
-  Trash2, Shield,
+  Trash2, Shield, Download,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import PrivacyPolicy from './PrivacyPolicy';
 
 const navItems = [
@@ -45,10 +46,45 @@ function SettingsModal({ onClose }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const handleToggle = () => { if (!enabled) setShowConsent(true); else setEnabled(false); };
   const handleAcceptConsent = () => { setEnabled(true); setShowConsent(false); };
   const handleSave = async () => { setSaving(true); await updateProfile({ ai_assistant_enabled: enabled }); setSaving(false); onClose(); };
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const userId = user.id;
+      const [txRes, catRes, projRes, cardRes] = await Promise.all([
+        supabase.from('transactions').select('*').eq('user_id', userId),
+        supabase.from('categories').select('*').eq('user_id', userId),
+        supabase.from('projects').select('*').eq('user_id', userId),
+        supabase.from('cards').select('*').eq('user_id', userId),
+      ]);
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        user: { email: user.email, id: userId },
+        transactions: txRes.data || [],
+        categories: catRes.data || [],
+        projects: projRes.data || [],
+        cards: cardRes.data || [],
+        settings: {
+          ai_assistant_enabled: user.user_metadata?.ai_assistant_enabled ?? false,
+          terms_accepted_at: user.user_metadata?.terms_accepted_at ?? null,
+        },
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meus-dados-financeiros-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     setDeleteError('');
@@ -79,13 +115,22 @@ function SettingsModal({ onClose }) {
 
           <div>
             <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Privacidade</p>
-            <button type="button" onClick={() => setShowPrivacy(true)} className="w-full flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0"><Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Política de Privacidade</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Como seus dados são usados (LGPD)</p>
-              </div>
-            </button>
+            <div className="space-y-2">
+              <button type="button" onClick={() => setShowPrivacy(true)} className="w-full flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0"><Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Política de Privacidade</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Como seus dados são usados (LGPD)</p>
+                </div>
+              </button>
+              <button type="button" onClick={handleExport} disabled={exporting} className="w-full flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left disabled:opacity-60">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0"><Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Exportar meus dados</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{exporting ? 'Gerando arquivo...' : 'Baixar JSON com todos os seus dados'}</p>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div>

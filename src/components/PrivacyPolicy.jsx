@@ -63,7 +63,7 @@ export default function PrivacyPolicy({ onClose }) {
 
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">6. Contato</h3>
-            <p>Dúvidas sobre privacidade podem ser enviadas pelo repositório do projeto no GitHub.</p>
+            <p>Para dúvidas sobre privacidade, solicitação ou exportação de dados, entre em contato pelo e-mail: <a href="mailto:rorodrigo012007@gmail.com" className="text-blue-600 dark:text-blue-400 underline hover:no-underline">rorodrigo012007@gmail.com</a></p>
           </section>
         </div>
 
