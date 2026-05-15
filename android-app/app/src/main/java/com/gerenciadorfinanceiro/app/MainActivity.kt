@@ -16,6 +16,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val APP_URL = "https://gerenciador-psi.vercel.app"
 
+    // User-Agent móvel para a PWA renderizar em modo mobile (menu hamburguer, etc.)
+    private val MOBILE_UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) " +
+            "AppleWebKit/537.36 (KHTML, like Gecko) " +
+            "Chrome/121.0.0.0 Mobile Safari/537.36"
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,9 @@ class MainActivity : AppCompatActivity() {
             domStorageEnabled = true
             databaseEnabled = true
 
+            // User-Agent móvel → ativa CSS mobile do site (menu hamburguer)
+            userAgentString = MOBILE_UA
+
             // Layout e zoom
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -67,14 +75,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val url = request.url.toString()
-                // Links externos abrem no browser padrão
-                return if (url.startsWith(APP_URL) || url.startsWith("https://gerenciador-psi.vercel.app")) {
-                    false
-                } else {
-                    startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-                    true
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
+                val url    = request.url.toString()
+                val host   = request.url.host ?: ""
+                val scheme = request.url.scheme ?: ""
+
+                return when {
+                    // Mantém no WebView: o próprio app
+                    host.contains("gerenciador-psi.vercel.app") -> false
+                    // Mantém no WebView: Supabase auth e APIs
+                    host.contains("supabase.co") -> false
+                    // Abre links HTTP/HTTPS externos no navegador do sistema
+                    scheme == "https" || scheme == "http" -> {
+                        try {
+                            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                        } catch (_: Exception) { }
+                        true
+                    }
+                    // Bloqueia todos os custom schemes (mercadopago://, etc.)
+                    // sem tentar abrir outros apps
+                    else -> true
                 }
             }
 
@@ -88,18 +111,24 @@ class MainActivity : AppCompatActivity() {
                 CookieManager.getInstance().flush()
             }
 
-            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+            override fun onReceivedError(
+                view: WebView,
+                request: WebResourceRequest,
+                error: WebResourceError
+            ) {
                 if (request.isForMainFrame) {
-                    // Mostra página de erro simples sem sair do app
                     view.loadData(
                         """
                         <html><body style="font-family:sans-serif;display:flex;flex-direction:column;
-                        align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#fff;text-align:center;padding:20px;">
+                        align-items:center;justify-content:center;height:100vh;margin:0;
+                        background:#111;color:#fff;text-align:center;padding:20px;">
                         <div style="font-size:48px;margin-bottom:16px;">📶</div>
                         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Sem conexão</div>
-                        <div style="font-size:14px;color:#aaa;margin-bottom:24px;">Verifique sua internet e tente novamente.</div>
-                        <button onclick="location.reload()" style="padding:12px 24px;border-radius:8px;border:none;
-                        background:#c7f284;color:#111;font-size:15px;font-weight:600;cursor:pointer;">Tentar novamente</button>
+                        <div style="font-size:14px;color:#aaa;margin-bottom:24px;">
+                          Verifique sua internet e tente novamente.</div>
+                        <button onclick="location.reload()" style="padding:12px 24px;border-radius:8px;
+                        border:none;background:#c7f284;color:#111;font-size:15px;font-weight:600;
+                        cursor:pointer;">Tentar novamente</button>
                         </body></html>
                         """.trimIndent(),
                         "text/html",
@@ -113,12 +142,9 @@ class MainActivity : AppCompatActivity() {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, newProgress: Int) {
                 binding.progressBar.progress = newProgress
-                if (newProgress == 100) {
-                    binding.progressBar.visibility = View.GONE
-                }
+                if (newProgress == 100) binding.progressBar.visibility = View.GONE
             }
 
-            // Permite alertas JavaScript
             override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm()
                 return false
@@ -127,11 +153,6 @@ class MainActivity : AppCompatActivity() {
             override fun onJsConfirm(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm()
                 return false
-            }
-
-            // Título da página
-            override fun onReceivedTitle(view: WebView, title: String) {
-                // Título fixo no app
             }
         }
     }
@@ -156,7 +177,6 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    // Salva e restaura estado do WebView ao rotacionar a tela
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         binding.webView.saveState(outState)
@@ -167,7 +187,6 @@ class MainActivity : AppCompatActivity() {
         binding.webView.restoreState(savedInstanceState)
     }
 
-    // Pausa/retoma WebView com o ciclo de vida da Activity
     override fun onPause() {
         super.onPause()
         binding.webView.onPause()

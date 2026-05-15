@@ -360,9 +360,8 @@ export default function Layout({ currentPage, onNavigate, children }) {
 
         {/* Download APK */}
         <a
-          href="https://github.com/Rodrigo-de-carvalho/Gerenciador/releases/tag/v1.0.0"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/downloads/gerenciador-financeiro.apk"
+          download="gerenciador-financeiro.apk"
           title="Baixar app Android"
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
