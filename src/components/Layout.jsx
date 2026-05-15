@@ -360,15 +360,16 @@ export default function Layout({ currentPage, onNavigate, children }) {
 
         {/* Download APK */}
         <a
-          href="#"
-          onClick={e => e.preventDefault()}
-          title="Baixar app Android (em breve)"
+          href="https://github.com/Rodrigo-de-carvalho/Gerenciador/releases/tag/v1.0.0"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Baixar app Android"
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '9px 14px', margin: '4px 0 2px', borderRadius: 10,
             color: 'var(--text-3)', fontSize: 12.5, textDecoration: 'none',
             transition: 'background 120ms, color 120ms',
-            cursor: 'default',
+            cursor: 'pointer',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--chip)'; e.currentTarget.style.color = 'var(--accent)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-3)'; }}
