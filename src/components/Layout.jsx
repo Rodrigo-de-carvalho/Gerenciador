@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, FolderOpen, CreditCard, Target,
   Bot, Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
   Plus, Menu, X, ToggleLeft, ToggleRight, Bot as BotIcon,
-  ShieldAlert, Trash2, Shield, Download, TrendingUp,
+  ShieldAlert, Trash2, Shield, Download, TrendingUp, Smartphone,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -357,6 +357,27 @@ export default function Layout({ currentPage, onNavigate, children }) {
             {label}
           </button>
         ))}
+
+        {/* Download APK */}
+        <a
+          href="#"
+          onClick={e => e.preventDefault()}
+          title="Baixar app Android (em breve)"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 14px', margin: '4px 0 2px', borderRadius: 10,
+            color: 'var(--text-3)', fontSize: 12.5, textDecoration: 'none',
+            transition: 'background 120ms, color 120ms',
+            cursor: 'default',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--chip)'; e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-3)'; }}
+        >
+          <span className="nav-icon" style={{ color: 'inherit' }}>
+            <Smartphone size={15} />
+          </span>
+          <span>Baixar app Android</span>
+        </a>
 
         {/* User card */}
         <div className="user-card" onClick={() => setShowSettings(true)} title="Configurações">
