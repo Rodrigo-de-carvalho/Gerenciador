@@ -78,7 +78,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard({ onNavigate }) {
-  const { transactions, categories, projects, getSummary } = useFinance();
+  const { transactions, categories, projects, budgets, getSummary } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -140,6 +140,17 @@ export default function Dashboard({ onNavigate }) {
       return { ...p, spent, received, count: ptxs.length };
     });
   }, [projects, transactions]);
+
+  const budgetProgress = useMemo(() => {
+    return budgets.map(b => {
+      const cat   = categories.find(c => c.id === b.categoryId);
+      const spent = monthTxs
+        .filter(t => t.type === 'expense' && t.categoryId === b.categoryId)
+        .reduce((s, t) => s + t.amount, 0);
+      const pct = b.amount > 0 ? Math.round(spent / b.amount * 100) : 0;
+      return { ...b, cat, spent, pct };
+    }).filter(b => b.cat);
+  }, [budgets, monthTxs, categories]);
 
   return (
     <div>
@@ -287,6 +298,43 @@ export default function Dashboard({ onNavigate }) {
           )}
         </div>
       </div>
+
+      {/* Budget progress */}
+      {budgetProgress.length > 0 && (
+        <div className="card" style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+            <div className="t-eyebrow">Orçamentos do mês</div>
+            <button
+              onClick={() => onNavigate('categories')}
+              style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              Gerenciar <ArrowRight size={11} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {budgetProgress.map(b => {
+              const color = b.pct >= 100 ? 'var(--negative)' : b.pct >= 80 ? '#f59e0b' : 'var(--positive)';
+              return (
+                <div key={b.categoryId}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <div className="cat-dot" style={{ background: b.cat.color }} />
+                    <span style={{ flex: 1, fontSize: 12.5 }}>{b.cat.icon} {b.cat.name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                      {privacy ? 'R$ ••••' : `${formatCurrency(b.spent)} / ${formatCurrency(b.amount)}`}
+                    </span>
+                    <span style={{ fontSize: 11, color, fontWeight: 600, minWidth: 34, textAlign: 'right' }}>
+                      {b.pct}%
+                    </span>
+                  </div>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${Math.min(b.pct, 100)}%`, background: color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent transactions */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

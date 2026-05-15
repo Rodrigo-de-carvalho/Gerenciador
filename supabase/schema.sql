@@ -105,9 +105,49 @@ CREATE POLICY "users can manage own investments"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- ── ORÇAMENTOS ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.budgets (
+  id          uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id     uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  category_id uuid          NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE,
+  amount      numeric(15,2) NOT NULL CHECK (amount > 0),
+  created_at  timestamptz   DEFAULT now(),
+  UNIQUE (user_id, category_id)
+);
+
+ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own budgets"
+  ON public.budgets FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- ── RECORRENTES ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.recurring (
+  id           uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id      uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type         text          NOT NULL CHECK (type IN ('income', 'expense')),
+  description  text          NOT NULL,
+  amount       numeric(15,2) NOT NULL CHECK (amount > 0),
+  category_id  uuid          REFERENCES public.categories(id) ON DELETE SET NULL,
+  day_of_month int           NOT NULL DEFAULT 1 CHECK (day_of_month BETWEEN 1 AND 28),
+  active       boolean       NOT NULL DEFAULT true,
+  next_date    date          NOT NULL,
+  created_at   timestamptz   DEFAULT now()
+);
+
+ALTER TABLE public.recurring ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own recurring"
+  ON public.recurring FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- ── ÍNDICES ───────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS transactions_user_date ON public.transactions(user_id, date DESC);
 CREATE INDEX IF NOT EXISTS categories_user_id ON public.categories(user_id);
 CREATE INDEX IF NOT EXISTS projects_user_id ON public.projects(user_id);
 CREATE INDEX IF NOT EXISTS goals_user_id ON public.goals(user_id);
 CREATE INDEX IF NOT EXISTS investments_user_id ON public.investments(user_id);
+CREATE INDEX IF NOT EXISTS budgets_user_id ON public.budgets(user_id);
+CREATE INDEX IF NOT EXISTS recurring_user_id ON public.recurring(user_id);

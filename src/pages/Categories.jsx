@@ -1,21 +1,26 @@
-import { useState } from 'react';
-import { Plus, Trash2, TrendingUp, TrendingDown, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { formatCurrency } from '../utils/formatters';
 
 const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
 const DEFAULT_COLORS = ['#22c55e','#10b981','#3b82f6','#8b5cf6','#f97316','#f59e0b','#ef4444','#ec4899','#06b6d4','#a855f7','#d946ef','#6b7280'];
 
 export default function Categories() {
-  const { categories, transactions, addCategory, deleteCategory } = useFinance();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
+  const { categories, transactions, addCategory, deleteCategory, budgets, setBudget, deleteBudget } = useFinance();
+  const [showForm, setShowForm]           = useState(false);
+  const [form, setForm]                   = useState({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [hoveredCat, setHoveredCat] = useState(null);
+  const [hoveredCat, setHoveredCat]       = useState(null);
+  const [budgetEdit, setBudgetEdit]       = useState(null); // catId being edited
+  const [budgetInput, setBudgetInput]     = useState('');
+  const budgetInputRef                    = useRef();
 
-  const incomeCategories = categories.filter(c => c.type === 'income');
+  const incomeCategories  = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
   const getCategoryUsage = (id) => transactions.filter(t => t.categoryId === id).length;
+  const getBudget        = (catId) => budgets.find(b => b.categoryId === catId);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,6 +32,25 @@ export default function Categories() {
   const handleDelete = (id) => {
     if (getCategoryUsage(id) > 0) setDeleteConfirm(id);
     else deleteCategory(id);
+  };
+
+  const startBudgetEdit = (catId) => {
+    const existing = getBudget(catId);
+    setBudgetInput(existing ? String(existing.amount) : '');
+    setBudgetEdit(catId);
+    setTimeout(() => budgetInputRef.current?.focus(), 40);
+  };
+
+  const saveBudgetEdit = async () => {
+    if (!budgetEdit) return;
+    const amount = parseFloat(budgetInput.replace(',', '.'));
+    if (!isNaN(amount) && amount > 0) {
+      await setBudget({ categoryId: budgetEdit, amount });
+    } else if (getBudget(budgetEdit)) {
+      await deleteBudget(budgetEdit);
+    }
+    setBudgetEdit(null);
+    setBudgetInput('');
   };
 
   const CatList = ({ cats, label, icon: Icon, positive }) => (
@@ -44,17 +68,29 @@ export default function Categories() {
         <span className="chip" style={{ marginLeft: 'auto', cursor: 'default', fontSize: 11 }}>{cats.length}</span>
       </div>
 
+      {!positive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '6px 10px', background: 'var(--chip)', borderRadius: 8 }}>
+          <Target size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+            Clique em <strong style={{ color: 'var(--text-2)' }}>Limite</strong> para definir um orçamento mensal por categoria.
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {cats.map(cat => {
-          const usage = getCategoryUsage(cat.id);
-          const isHovered = hoveredCat === cat.id;
+          const usage    = getCategoryUsage(cat.id);
+          const isHov    = hoveredCat === cat.id;
+          const budget   = !positive ? getBudget(cat.id) : null;
+          const isEditing = budgetEdit === cat.id;
+
           return (
             <div
               key={cat.id}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12,
+                display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 10,
-                background: isHovered ? 'var(--chip)' : 'transparent',
+                background: isHov ? 'var(--chip)' : 'transparent',
                 transition: 'background 120ms',
               }}
               onMouseEnter={() => setHoveredCat(cat.id)}
@@ -67,10 +103,53 @@ export default function Categories() {
                 <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)' }}>{cat.name}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>{usage} lançamento{usage !== 1 ? 's' : ''}</div>
               </div>
+
+              {/* Budget chip (expense categories only) */}
+              {!positive && (
+                isEditing ? (
+                  <input
+                    ref={budgetInputRef}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Limite..."
+                    value={budgetInput}
+                    onChange={e => setBudgetInput(e.target.value)}
+                    onBlur={saveBudgetEdit}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); saveBudgetEdit(); }
+                      if (e.key === 'Escape') { setBudgetEdit(null); setBudgetInput(''); }
+                    }}
+                    style={{
+                      width: 90, padding: '3px 8px', fontSize: 12,
+                      background: 'var(--surface)', border: '1px solid var(--accent)',
+                      borderRadius: 6, color: 'var(--text)', fontFamily: 'inherit',
+                      outline: 'none',
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <button
+                    onClick={() => startBudgetEdit(cat.id)}
+                    style={{
+                      fontSize: 11.5, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
+                      background: budget ? 'rgba(199,242,132,0.1)' : 'var(--chip)',
+                      border: `1px solid ${budget ? 'rgba(199,242,132,0.25)' : 'var(--line)'}`,
+                      color: budget ? 'var(--accent)' : 'var(--text-3)',
+                      fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      transition: 'opacity 120ms', opacity: isHov || budget ? 1 : 0,
+                    }}
+                    title={budget ? 'Editar orçamento' : 'Definir orçamento'}
+                  >
+                    {budget ? formatCurrency(budget.amount) : '+ Limite'}
+                  </button>
+                )
+              )}
+
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
               <button
                 className="icon-btn"
-                style={{ width: 28, height: 28, opacity: isHovered ? 1 : 0, transition: 'opacity 120ms' }}
+                style={{ width: 28, height: 28, opacity: isHov ? 1 : 0, transition: 'opacity 120ms' }}
                 onClick={() => handleDelete(cat.id)}
                 title="Excluir"
               >
@@ -97,8 +176,8 @@ export default function Categories() {
       </div>
 
       <div className="grid-cifra g-2">
-        <CatList cats={incomeCategories} label="Entradas" icon={TrendingUp} positive={true} />
-        <CatList cats={expenseCategories} label="Saídas" icon={TrendingDown} positive={false} />
+        <CatList cats={incomeCategories}  label="Entradas" icon={TrendingUp}   positive={true} />
+        <CatList cats={expenseCategories} label="Saídas"   icon={TrendingDown} positive={false} />
       </div>
 
       {showForm && (
@@ -113,8 +192,7 @@ export default function Categories() {
                 <div className="seg" style={{ width: '100%' }}>
                   {['expense', 'income'].map(t => (
                     <button
-                      key={t}
-                      type="button"
+                      key={t} type="button"
                       style={{ flex: 1, justifyContent: 'center' }}
                       className={form.type === t ? 'active' : ''}
                       onClick={() => setForm(f => ({ ...f, type: t }))}
@@ -127,8 +205,7 @@ export default function Categories() {
                 <div className="field">
                   <label className="field-label">Nome *</label>
                   <input
-                    type="text"
-                    className="field-input"
+                    type="text" className="field-input"
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     required
@@ -141,8 +218,7 @@ export default function Categories() {
                   <div className="icon-grid" style={{ maxHeight: 112, overflowY: 'auto' }}>
                     {ICONS.map(icon => (
                       <button
-                        key={icon}
-                        type="button"
+                        key={icon} type="button"
                         className={`icon-pick${form.icon === icon ? ' sel' : ''}`}
                         onClick={() => setForm(f => ({ ...f, icon }))}
                       >
@@ -157,8 +233,7 @@ export default function Categories() {
                   <div className="color-grid">
                     {DEFAULT_COLORS.map(color => (
                       <button
-                        key={color}
-                        type="button"
+                        key={color} type="button"
                         className={`color-pick${form.color === color ? ' sel' : ''}`}
                         style={{ background: color }}
                         onClick={() => setForm(f => ({ ...f, color }))}
