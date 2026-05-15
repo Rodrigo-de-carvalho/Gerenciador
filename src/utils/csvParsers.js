@@ -66,6 +66,7 @@ export function detectBank(headers) {
   if (any('lancamento') && any('historico')) return 'inter';
   if (has('historico') && any('credito', 'cred') && any('debito', 'deb')) return 'itau';
   if (has('historico') && has('valor')) return 'inter'; // Inter fallback
+  if (any('tipo') && any('descri', 'descricao') && has('valor') && !any('historico', 'titulo')) return 'mercadopago';
   return 'unknown';
 }
 
@@ -74,6 +75,7 @@ export const BANK_LABELS = {
   nubank_conta:  'Nubank — Conta',
   inter:         'Banco Inter',
   itau:          'Itaú',
+  mercadopago:   'Mercado Pago',
   unknown:       'Banco desconhecido',
 };
 
@@ -141,6 +143,34 @@ export function parseRows(bank, data) {
           categoryHint: '',
           amount,
           type: isIncome ? 'income' : 'expense',
+        };
+      }).filter(r => r && r.date && r.amount > 0);
+    }
+
+    case 'mercadopago': {
+      return data.map(r => {
+        const dateKey = findKey(r, 'data');
+        const descKey = findKey(r, 'descri', 'desc');
+        const typeKey = findKey(r, 'tipo');
+        const valKey  = findKey(r, 'valor');
+        const amount  = parseAmount(valKey ? r[valKey] : null);
+        if (amount === null) return null;
+
+        // Prefer sign from amount; fall back to tipo column text
+        let type;
+        if (amount !== 0) {
+          type = amount > 0 ? 'income' : 'expense';
+        } else {
+          const tipo = norm(String(typeKey ? r[typeKey] : ''));
+          type = (tipo.includes('entrada') || tipo.includes('receb') || tipo.includes('credito')) ? 'income' : 'expense';
+        }
+
+        return {
+          date:         parseDateBR(dateKey ? r[dateKey] : null),
+          description:  String(descKey ? r[descKey] : '-').trim(),
+          categoryHint: '',
+          amount:       Math.abs(amount),
+          type,
         };
       }).filter(r => r && r.date && r.amount > 0);
     }

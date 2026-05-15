@@ -145,9 +145,10 @@ export default function ImportCSV({ onClose }) {
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em' }}>BANCOS SUPORTADOS</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {[
-                    { name: 'Nubank',  hint: 'Fatura (crédito) ou extrato da conta' },
-                    { name: 'Inter',   hint: 'Extrato da conta corrente' },
-                    { name: 'Itaú',    hint: 'Extrato da conta corrente' },
+                    { name: 'Nubank',       hint: 'Fatura (crédito) ou extrato da conta' },
+                    { name: 'Inter',        hint: 'Extrato da conta corrente' },
+                    { name: 'Itaú',         hint: 'Extrato da conta corrente' },
+                    { name: 'Mercado Pago', hint: 'Atividades / extrato da conta' },
                   ].map(b => (
                     <div key={b.name} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 12px', background: 'var(--chip)', borderRadius: 8 }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
