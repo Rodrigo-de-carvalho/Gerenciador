@@ -4,7 +4,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!--
+        Letra "C" estilizada — arco de 280° em verde accent.
+        Centro (54,54), raio 26, pontas arredondadas.
+        Começa em (-40°) = (74, 37), termina em (+40°) = (74, 71).
+    -->
+    <path
+        android:strokeColor="#C7F284"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M74,37 A26,26 0 1,0 74,71" />
+
+    <!-- Ponto decorativo da marca "Cifra." -->
     <path
         android:fillColor="#C7F284"
-        android:pathData="M31,31h46v46h-46z" />
+        android:pathData="M82,54 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
 </vector>

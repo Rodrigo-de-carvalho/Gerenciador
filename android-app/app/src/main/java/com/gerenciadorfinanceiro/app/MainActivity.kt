@@ -16,10 +16,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val APP_URL = "https://gerenciador-psi.vercel.app"
 
-    // User-Agent móvel para a PWA renderizar em modo mobile (menu hamburguer, etc.)
     private val MOBILE_UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Chrome/121.0.0.0 Mobile Safari/537.36"
+
+    // CSS injetado para remover elementos que parecem barra do navegador
+    private val INJECTED_CSS = """
+        (function() {
+            var s = document.createElement('style');
+            s.id = '__android_app_style__';
+            s.textContent = [
+                '.crumbs { display: none !important; }',
+                '.topbar { padding-left: 8px !important; }'
+            ].join('');
+            if (!document.getElementById('__android_app_style__')) {
+                document.head.appendChild(s);
+            }
+        })();
+    """.trimIndent()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +45,22 @@ class MainActivity : AppCompatActivity() {
         setupSwipeRefresh()
 
         if (savedInstanceState == null) {
-            binding.webView.loadUrl(APP_URL)
+            // Verifica se chegou via deep link (ex: link de auth do e-mail)
+            val intentUrl = intent?.data?.toString()
+            binding.webView.loadUrl(
+                if (!intentUrl.isNullOrEmpty() && intentUrl.startsWith(APP_URL)) intentUrl
+                else APP_URL
+            )
+        }
+    }
+
+    // Lida com links de autenticação que chegam enquanto o app já está aberto
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.data?.toString()?.let { url ->
+            if (url.startsWith(APP_URL)) {
+                binding.webView.loadUrl(url)
+            }
         }
     }
 
@@ -40,35 +69,21 @@ class MainActivity : AppCompatActivity() {
         val webView = binding.webView
 
         webView.settings.apply {
-            // JavaScript — obrigatório para React apps
             javaScriptEnabled = true
             javaScriptCanOpenWindowsAutomatically = true
-
-            // Armazenamento local — necessário para o login persistir
             domStorageEnabled = true
             databaseEnabled = true
-
-            // User-Agent móvel → ativa CSS mobile do site (menu hamburguer)
             userAgentString = MOBILE_UA
-
-            // Layout e zoom
             useWideViewPort = true
             loadWithOverviewMode = true
             setSupportZoom(false)
             builtInZoomControls = false
             displayZoomControls = false
-
-            // Cache
             cacheMode = WebSettings.LOAD_DEFAULT
-
-            // Mídia
             mediaPlaybackRequiresUserGesture = false
-
-            // Tamanho de fonte padrão
             defaultFontSize = 16
         }
 
-        // Cookies — necessário para sessão/login
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(webView, true)
@@ -84,20 +99,13 @@ class MainActivity : AppCompatActivity() {
                 val scheme = request.url.scheme ?: ""
 
                 return when {
-                    // Mantém no WebView: o próprio app
                     host.contains("gerenciador-psi.vercel.app") -> false
-                    // Mantém no WebView: Supabase auth e APIs
-                    host.contains("supabase.co") -> false
-                    // Abre links HTTP/HTTPS externos no navegador do sistema
+                    host.contains("supabase.co")                -> false
                     scheme == "https" || scheme == "http" -> {
-                        try {
-                            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-                        } catch (_: Exception) { }
+                        try { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) } catch (_: Exception) {}
                         true
                     }
-                    // Bloqueia todos os custom schemes (mercadopago://, etc.)
-                    // sem tentar abrir outros apps
-                    else -> true
+                    else -> true // bloqueia custom schemes (mercadopago://, etc.)
                 }
             }
 
@@ -109,6 +117,8 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 binding.progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
+                // Remove o breadcrumb que parece barra de endereço do navegador
+                view.evaluateJavascript(INJECTED_CSS, null)
             }
 
             override fun onReceivedError(
@@ -118,21 +128,16 @@ class MainActivity : AppCompatActivity() {
             ) {
                 if (request.isForMainFrame) {
                     view.loadData(
-                        """
-                        <html><body style="font-family:sans-serif;display:flex;flex-direction:column;
+                        """<html><body style="font-family:sans-serif;display:flex;flex-direction:column;
                         align-items:center;justify-content:center;height:100vh;margin:0;
                         background:#111;color:#fff;text-align:center;padding:20px;">
                         <div style="font-size:48px;margin-bottom:16px;">📶</div>
                         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Sem conexão</div>
-                        <div style="font-size:14px;color:#aaa;margin-bottom:24px;">
-                          Verifique sua internet e tente novamente.</div>
+                        <div style="font-size:14px;color:#aaa;margin-bottom:24px;">Verifique sua internet e tente novamente.</div>
                         <button onclick="location.reload()" style="padding:12px 24px;border-radius:8px;
                         border:none;background:#c7f284;color:#111;font-size:15px;font-weight:600;
-                        cursor:pointer;">Tentar novamente</button>
-                        </body></html>
-                        """.trimIndent(),
-                        "text/html",
-                        "UTF-8"
+                        cursor:pointer;">Tentar novamente</button></body></html>""",
+                        "text/html", "UTF-8"
                     )
                     binding.progressBar.visibility = View.GONE
                 }
@@ -146,13 +151,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
-                result.confirm()
-                return false
+                result.confirm(); return false
             }
 
             override fun onJsConfirm(view: WebView, url: String, message: String, result: JsResult): Boolean {
-                result.confirm()
-                return false
+                result.confirm(); return false
             }
         }
     }
@@ -168,7 +171,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Botão de voltar navega pelo histórico do WebView
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && binding.webView.canGoBack()) {
             binding.webView.goBack()
