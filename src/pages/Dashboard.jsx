@@ -1,32 +1,85 @@
 import { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Plus, ArrowRight } from 'lucide-react';
 import {
-  TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight,
-  ChevronLeft, ChevronRight, Plus
-} from 'lucide-react';
-import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, PieChart, Pie, Cell, Legend
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
 } from 'recharts';
 import { useFinance } from '../context/FinanceContext';
-import { useTheme } from '../context/ThemeContext';
-import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
+import { usePrivacy } from '../context/PrivacyContext';
+import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+function splitBRL(n) {
+  const sign = n < 0 ? '-' : '';
+  const [int, dec] = Math.abs(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 }).split(',');
+  return { sign, int, dec };
+}
+
+function HeroNumber({ value, privacy }) {
+  const { sign, int, dec } = splitBRL(value);
+  return (
+    <div className="hero-num">
+      <span className="currency">R$</span>
+      {privacy ? '••••' : `${sign}${int}`}
+      {!privacy && <span className="cents">,{dec}</span>}
+    </div>
+  );
+}
+
+function Ring({ pct, size = 36, thickness = 3, color = 'var(--accent)' }) {
+  const r = (size - thickness) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = Math.min(pct / 100, 1) * circ;
+  return (
+    <svg width={size} height={size} style={{ flexShrink: 0 }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--chip-strong)" strokeWidth={thickness} />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={color} strokeWidth={thickness}
+        strokeDasharray={`${dash} ${circ}`}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </svg>
+  );
+}
+
+function StatCard({ label, value, sub, privacy, positive }) {
+  return (
+    <div className="card" style={{ padding: '16px 18px' }}>
+      <div className="t-label" style={{ marginBottom: 8 }}>{label}</div>
+      <div className="t-num" style={{
+        fontSize: 20, fontWeight: 600,
+        color: positive === true ? 'var(--positive)' : positive === false ? 'var(--negative)' : 'var(--text)',
+      }}>
+        {privacy ? 'R$ ••••' : formatCurrency(value)}
+      </div>
+      {sub && <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg p-3 text-xs">
-      <p className="font-semibold text-slate-700 dark:text-slate-200 mb-1">{label}</p>
+    <div style={{
+      background: 'var(--surface-2)', border: '1px solid var(--line)',
+      borderRadius: 8, padding: '8px 12px', fontSize: 12,
+    }}>
+      <div style={{ color: 'var(--text-3)', marginBottom: 4 }}>{label}</div>
       {payload.map((p, i) => (
-        <p key={i} style={{ color: p.color }}>{p.name}: {formatCurrency(p.value)}</p>
+        <div key={i} style={{ color: p.color, fontFamily: 'Geist Mono, monospace' }}>
+          {p.name}: {formatCurrency(p.value)}
+        </div>
       ))}
     </div>
   );
 };
 
 export default function Dashboard({ onNavigate }) {
-  const { transactions, categories, getSummary } = useFinance();
-  const { darkMode } = useTheme();
+  const { transactions, categories, projects, getSummary } = useFinance();
+  const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
   const [year, setYear] = useState(now.year);
@@ -46,6 +99,8 @@ export default function Dashboard({ onNavigate }) {
     else setMonth(m => m + 1);
   };
 
+  const savingsRate = income > 0 ? Math.round((income - expense) / income * 100) : 0;
+
   const chartData = useMemo(() => {
     const data = [];
     for (let i = 5; i >= 0; i--) {
@@ -53,222 +108,232 @@ export default function Dashboard({ onNavigate }) {
       let y = year;
       while (m <= 0) { m += 12; y -= 1; }
       const sum = getSummary(m, y);
-      data.push({
-        name: MONTHS[m - 1].slice(0, 3),
-        Entradas: sum.income,
-        Saídas: sum.expense,
-      });
+      data.push({ name: MONTH_NAMES[m - 1], Receita: sum.income, Despesa: sum.expense });
     }
     return data;
   }, [transactions, month, year]);
 
-  const pieData = useMemo(() => {
+  const catBreakdown = useMemo(() => {
     const map = {};
     monthTxs.filter(t => t.type === 'expense').forEach(t => {
       const cat = categories.find(c => c.id === t.categoryId);
       const name = cat?.name || 'Outros';
       const color = cat?.color || '#6b7280';
-      if (!map[name]) map[name] = { name, value: 0, color };
+      if (!map[name]) map[name] = { name, color, value: 0 };
       map[name].value += t.amount;
     });
-    return Object.values(map).sort((a, b) => b.value - a.value).slice(0, 6);
+    const arr = Object.values(map).sort((a, b) => b.value - a.value).slice(0, 6);
+    const total = arr.reduce((s, c) => s + c.value, 0);
+    return arr.map(c => ({ ...c, pct: total > 0 ? Math.round(c.value / total * 100) : 0 }));
   }, [monthTxs, categories]);
 
   const recentTxs = useMemo(
-    () => [...monthTxs].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5),
+    () => [...monthTxs].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),
     [monthTxs]
   );
 
-  const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : 0;
-  const gridColor = darkMode ? '#334155' : '#f1f5f9';
-  const tickColor = '#94a3b8';
+  const projectStats = useMemo(() => {
+    return projects.slice(0, 3).map(p => {
+      const ptxs = transactions.filter(t => t.projectId === p.id);
+      const spent = ptxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      const received = ptxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      return { ...p, spent, received, count: ptxs.length };
+    });
+  }, [projects, transactions]);
 
   return (
-    <div className="space-y-5">
-      {/* Month selector */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={prevMonth}>
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="font-semibold text-slate-700 dark:text-slate-200 capitalize min-w-[130px] text-center text-sm">
+    <div>
+      {/* Hero */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <div className="t-eyebrow" style={{ marginBottom: 12 }}>
+            Receitas · {MONTHS[month - 1]} {year}
+          </div>
+          <HeroNumber value={income} privacy={privacy} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--text-3)', fontSize: 12.5 }}>
+            <span className={savingsRate >= 0 ? 'pos' : 'neg'} style={{ fontFamily: 'Geist Mono, monospace' }}>
+              {savingsRate >= 0 ? '▲' : '▼'} {Math.abs(savingsRate)}% poupado
+            </span>
+            <span>·</span>
+            <span>Saldo: <span className={balance >= 0 ? 'pos' : 'neg'} style={{ fontFamily: 'Geist Mono, monospace' }}>
+              {privacy ? 'R$ ••••' : formatCurrency(balance)}
+            </span></span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
+          <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500, minWidth: 110, textAlign: 'center' }}>
             {MONTHS[month - 1]} {year}
           </span>
-          <button className="btn-icon border border-slate-200 dark:border-slate-600" onClick={nextMonth}>
-            <ChevronRight className="w-4 h-4" />
+          <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
+          <button className="btn primary" onClick={() => setShowModal(true)} style={{ marginLeft: 8 }}>
+            <Plus size={14} />
+            <span>Lançamento</span>
           </button>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Novo Lançamento</span>
-        </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="card p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Entradas</p>
-              <p className="text-lg font-bold text-emerald-600">{formatCurrency(income)}</p>
-            </div>
-            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-2">
-            <ArrowUpRight className="w-3 h-3 text-emerald-500" />
-            <span className="text-xs text-emerald-600 font-medium">{monthTxs.filter(t => t.type === 'income').length} lançamentos</span>
-          </div>
-        </div>
-
-        <div className="card p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Saídas</p>
-              <p className="text-lg font-bold text-red-600">{formatCurrency(expense)}</p>
-            </div>
-            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
-              <TrendingDown className="w-4 h-4 text-red-600" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 mt-2">
-            <ArrowDownRight className="w-3 h-3 text-red-500" />
-            <span className="text-xs text-red-600 font-medium">{monthTxs.filter(t => t.type === 'expense').length} lançamentos</span>
-          </div>
-        </div>
-
-        <div className="card p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Saldo</p>
-              <p className={`text-lg font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {formatCurrency(balance)}
-              </p>
-            </div>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${balance >= 0 ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}>
-              <Wallet className={`w-4 h-4 ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className={`text-xs font-medium ${balance >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-              {balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
-            </span>
-          </div>
-        </div>
-
-        <div className="card p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Poupança</p>
-              <p className={`text-lg font-bold ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
-                {savingsRate}%
-              </p>
-            </div>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${savingsRate >= 20 ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-amber-100 dark:bg-amber-900/40'}`}>
-              <span className="text-sm">{savingsRate >= 20 ? '😊' : savingsRate >= 0 ? '😐' : '😟'}</span>
-            </div>
-          </div>
-          <div className="mt-2 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full ${savingsRate >= 20 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-              style={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
-            />
-          </div>
-        </div>
+      {/* Stats */}
+      <div className="grid-cifra g-4" style={{ marginBottom: 18 }}>
+        <StatCard label="Receitas" value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} entradas`} />
+        <StatCard label="Despesas" value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} saídas`} />
+        <StatCard label="Saldo do mês" value={balance} privacy={privacy} positive={balance >= 0 ? true : false} sub={balance >= 0 ? 'Positivo' : 'Negativo'} />
+        <StatCard label="Taxa de poupança" value={0} privacy={privacy} sub={`${savingsRate}% da receita`} />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="card lg:col-span-2">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm mb-4">Evolução nos Últimos 6 Meses</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      {/* Main grid */}
+      <div className="grid-cifra g-dash" style={{ marginBottom: 18 }}>
+        {/* Flow chart */}
+        <div className="card" style={{ padding: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 16 }}>
+            <div>
+              <div className="t-eyebrow">Fluxo de caixa</div>
+              <h3 className="t-display" style={{ fontSize: 20, marginTop: 4 }}>
+                <em style={{ fontStyle: 'italic' }}>Receitas</em> vs. <em style={{ fontStyle: 'italic' }}>despesas</em>
+              </h3>
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, fontSize: 11.5, color: 'var(--text-3)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 16, height: 2, background: 'var(--positive)', display: 'inline-block', borderRadius: 1 }} />
+                Receita
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 16, height: 2, background: 'var(--negative)', display: 'inline-block', borderRadius: 1 }} />
+                Despesa
+              </span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="var(--positive)" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--negative)" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="var(--negative)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0)+'k' : v}`} width={55} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} width={50}
+                tickFormatter={v => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="Entradas" stroke="#22c55e" strokeWidth={2} fill="url(#colorIncome)" />
-              <Area type="monotone" dataKey="Saídas" stroke="#ef4444" strokeWidth={2} fill="url(#colorExpense)" />
+              <Area type="monotone" dataKey="Receita" stroke="var(--positive)" strokeWidth={2} fill="url(#gInc)" />
+              <Area type="monotone" dataKey="Despesa" stroke="var(--negative)" strokeWidth={2} fill="url(#gExp)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="card">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm mb-4">Saídas por Categoria</h3>
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="45%" outerRadius={65} innerRadius={38} dataKey="value" paddingAngle={3}>
-                  {pieData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => formatCurrency(v)} />
-                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 10 }}>{v}</span>} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
-              Sem saídas neste mês
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Category breakdown */}
+          <div className="card">
+            <div className="t-eyebrow" style={{ marginBottom: 14 }}>Para onde foi o dinheiro</div>
+            {catBreakdown.length === 0 ? (
+              <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
+                Sem despesas neste mês
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {catBreakdown.map(c => (
+                  <div key={c.name}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div className="cat-dot" style={{ background: c.color }} />
+                      <span style={{ flex: 1, fontSize: 12.5 }}>{c.name}</span>
+                      <span className="t-num" style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                        {privacy ? '••••' : formatCurrency(c.value)}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-3)', minWidth: 28, textAlign: 'right' }}>{c.pct}%</span>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${c.pct}%`, background: c.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Projects mini */}
+          {projectStats.length > 0 && (
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+                <div className="t-eyebrow">Projetos</div>
+                <button
+                  onClick={() => onNavigate('projects')}
+                  style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Ver todos <ArrowRight size={11} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {projectStats.map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                    onClick={() => onNavigate('projects')}>
+                    <div style={{ fontSize: 20, flexShrink: 0, width: 28, textAlign: 'center' }}>{p.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                        {privacy ? 'R$ ••••' : formatCurrency(p.spent)} gastos
+                      </div>
+                    </div>
+                    <ArrowRight size={13} style={{ color: 'var(--text-4)', flexShrink: 0 }} />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {/* Recent transactions */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Lançamentos Recentes</h3>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 12px' }}>
+          <div className="t-eyebrow">Movimentações recentes</div>
           <button
-            className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700"
             onClick={() => onNavigate('transactions')}
+            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            Ver todos →
+            Ver todas <ArrowRight size={11} />
           </button>
         </div>
         {recentTxs.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-            <p className="text-3xl mb-2">📭</p>
-            <p className="text-sm">Nenhum lançamento neste mês</p>
-            <button className="btn-primary mt-3 mx-auto text-xs py-1.5 px-3" onClick={() => setShowModal(true)}>
-              <Plus className="w-3 h-3" />
-              Adicionar primeiro
+          <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>💭</div>
+            <div style={{ fontSize: 13 }}>Nenhum lançamento neste mês</div>
+            <button className="btn primary" style={{ marginTop: 16 }} onClick={() => setShowModal(true)}>
+              <Plus size={14} /> Adicionar
             </button>
           </div>
         ) : (
-          <div className="space-y-1">
-            {recentTxs.map(t => {
-              const cat = categories.find(c => c.id === t.categoryId);
-              return (
-                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                    style={{ backgroundColor: (cat?.color || '#6b7280') + '20' }}
-                  >
-                    {cat?.icon || '📋'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{t.description}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">{cat?.name} · {formatDate(t.date)}</p>
-                  </div>
-                  <span className={`text-sm font-bold flex-shrink-0 ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <table className="tx-table">
+            <tbody>
+              {recentTxs.map(t => {
+                const cat = categories.find(c => c.id === t.categoryId);
+                return (
+                  <tr key={t.id}>
+                    <td style={{ width: 40, paddingRight: 0 }}>
+                      <div className="tx-row-icon">
+                        <span style={{ fontSize: 14 }}>{cat?.icon || '📋'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500, fontSize: 13.5 }}>{t.description}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
+                        {cat?.name} · {new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'Geist Mono, monospace', fontWeight: 600, fontSize: 13.5 }}
+                      className={t.type === 'income' ? 'pos' : 'neg'}>
+                      {privacy ? 'R$ ••••' : `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
