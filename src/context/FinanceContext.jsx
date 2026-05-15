@@ -164,6 +164,23 @@ export function FinanceProvider({ children }) {
     }
   };
 
+  const bulkAddTransactions = async (txArray) => {
+    if (!txArray.length) return 0;
+    const rows = txArray.map(tx => ({
+      user_id:     user.id,
+      type:        tx.type,
+      description: tx.description,
+      amount:      tx.amount,
+      date:        tx.date,
+      category_id: tx.categoryId || null,
+      notes:       null,
+      paid:        true,
+    }));
+    const { data } = await supabase.from('transactions').insert(rows).select();
+    if (data) setTransactions(prev => [...data.map(mapTx), ...prev]);
+    return data?.length || 0;
+  };
+
   const updateTransaction = async (tx) => {
     const { data } = await supabase.from('transactions').update({
       type: tx.type,
@@ -327,6 +344,7 @@ export function FinanceProvider({ children }) {
       loading,
       addTransaction,
       addInstallmentTransaction,
+      bulkAddTransactions,
       updateTransaction,
       deleteTransaction,
       addCategory,

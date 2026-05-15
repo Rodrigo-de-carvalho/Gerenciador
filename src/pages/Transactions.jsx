@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import ImportCSV from '../components/ImportCSV';
 
 function groupByDate(txs) {
   const groups = {};
@@ -34,6 +35,7 @@ export default function Transactions() {
   const [catFilter, setCatFilter] = useState('');
   const [editTx, setEditTx] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const prevMonth = () => {
@@ -88,14 +90,14 @@ export default function Transactions() {
           ))}
         </div>
 
-        <button
-          className="btn primary"
-          style={{ marginLeft: 'auto' }}
-          onClick={() => { setEditTx(null); setShowModal(true); }}
-        >
-          <Plus size={14} />
-          <span>Lançamento</span>
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={() => setShowImport(true)}>
+            <Upload size={14} /> Importar CSV
+          </button>
+          <button className="btn primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
+            <Plus size={14} /> Lançamento
+          </button>
+        </div>
       </div>
 
       {/* Summary strip */}
@@ -270,6 +272,8 @@ export default function Transactions() {
           onClose={() => { setShowModal(false); setEditTx(null); }}
         />
       )}
+
+      {showImport && <ImportCSV onClose={() => setShowImport(false)} />}
 
       <style>{`
         .tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }
