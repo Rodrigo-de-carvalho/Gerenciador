@@ -234,7 +234,7 @@ export function generatePDFReport(transactions, categories, month, year) {
       3: { cellWidth: 22, halign: 'center' },
       4: { cellWidth: 32, halign: 'right' },
     },
-    didAddPage: _bgPage,
+    willDrawPage: _bgPage,
     didParseCell(data) {
       if (data.section === 'body' && data.column.index === 3) {
         data.cell.styles.textColor = data.cell.raw === 'Entrada' ? C.pos : C.neg;
@@ -282,7 +282,7 @@ export function generatePDFReport(transactions, categories, month, year) {
         2: { cellWidth: 34, halign: 'right' },
         3: { cellWidth: 34, halign: 'right' },
       },
-      didAddPage: _bgPage,
+      willDrawPage: _bgPage,
     });
   }
 
@@ -468,7 +468,7 @@ export function downloadProjectPDF(transactions, categories, project) {
       3: { cellWidth: 22, halign: 'center' },
       4: { cellWidth: 32, halign: 'right' },
     },
-    didAddPage: () => { doc.setFillColor(...C.bg); doc.rect(0, 0, 210, 297, 'F'); },
+    willDrawPage: () => { doc.setFillColor(...C.bg); doc.rect(0, 0, 210, 297, 'F'); },
     didParseCell(data) {
       if (data.section === 'body' && data.column.index === 3) {
         data.cell.styles.textColor = data.cell.raw === 'Entrada' ? C.pos : C.neg;
