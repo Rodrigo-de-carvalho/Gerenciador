@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, FolderOpen, CreditCard, Target,
   Bot, Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
   Plus, Menu, X, ToggleLeft, ToggleRight, Bot as BotIcon,
-  ShieldAlert, Trash2, Shield, Download,
+  ShieldAlert, Trash2, Shield, Download, TrendingUp,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,12 +12,13 @@ import { supabase } from '../lib/supabase';
 import PrivacyPolicy from './PrivacyPolicy';
 
 const NAV_MAIN = [
-  { id: 'dashboard',    label: 'Painel',       Icon: LayoutDashboard },
-  { id: 'transactions', label: 'Transações',   Icon: ArrowLeftRight },
-  { id: 'projects',     label: 'Projetos',     Icon: FolderOpen },
-  { id: 'cards',        label: 'Cartões',      Icon: CreditCard },
-  { id: 'goals',        label: 'Metas',        Icon: Target },
-  { id: 'assistant',    label: 'Cifra IA',     Icon: Bot },
+  { id: 'dashboard',    label: 'Painel',        Icon: LayoutDashboard },
+  { id: 'transactions', label: 'Transações',    Icon: ArrowLeftRight },
+  { id: 'projects',     label: 'Projetos',      Icon: FolderOpen },
+  { id: 'cards',        label: 'Cartões',       Icon: CreditCard },
+  { id: 'goals',        label: 'Metas',         Icon: Target },
+  { id: 'investments',  label: 'Investimentos', Icon: TrendingUp },
+  { id: 'assistant',    label: 'Cifra IA',      Icon: Bot },
 ];
 
 const NAV_TOOLS = [
@@ -26,14 +27,15 @@ const NAV_TOOLS = [
 ];
 
 const PAGE_TITLES = {
-  dashboard:    { title: 'Painel',       sub: 'Visão geral' },
-  transactions: { title: 'Transações',   sub: 'Histórico completo' },
-  projects:     { title: 'Projetos',     sub: 'Seus projetos' },
-  cards:        { title: 'Cartões',      sub: 'Crédito e parcelas' },
-  goals:        { title: 'Metas',        sub: 'Objetivos financeiros' },
-  assistant:    { title: 'Cifra IA',     sub: 'Assistente pessoal' },
-  categories:   { title: 'Categorias',  sub: 'Organizar lançamentos' },
-  reports:      { title: 'Relatórios',  sub: 'Análises detalhadas' },
+  dashboard:    { title: 'Painel',        sub: 'Visão geral' },
+  transactions: { title: 'Transações',    sub: 'Histórico completo' },
+  projects:     { title: 'Projetos',      sub: 'Seus projetos' },
+  cards:        { title: 'Cartões',       sub: 'Crédito e parcelas' },
+  goals:        { title: 'Metas',         sub: 'Objetivos financeiros' },
+  investments:  { title: 'Investimentos', sub: 'Carteira de ativos' },
+  assistant:    { title: 'Cifra IA',      sub: 'Assistente pessoal' },
+  categories:   { title: 'Categorias',   sub: 'Organizar lançamentos' },
+  reports:      { title: 'Relatórios',   sub: 'Análises detalhadas' },
 };
 
 function SettingsModal({ onClose }) {

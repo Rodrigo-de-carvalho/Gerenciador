@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, Shield } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { FinanceProvider } from './context/FinanceContext';
+import { GoalProvider } from './context/GoalContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PrivacyProvider } from './context/PrivacyContext';
 import Layout from './components/Layout';
@@ -14,6 +15,7 @@ import Projects from './pages/Projects';
 import Cards from './pages/Cards';
 import Goals from './pages/Goals';
 import Assistant from './pages/Assistant';
+import Investments from './pages/Investments';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
 function TermsConsentModal() {
@@ -102,17 +104,20 @@ function AppContent() {
       case 'cards':        return <Cards />;
       case 'goals':        return <Goals />;
       case 'assistant':    return <Assistant />;
+      case 'investments':  return <Investments />;
       default:             return <Dashboard onNavigate={setPage} />;
     }
   };
 
   return (
     <FinanceProvider>
-      <PrivacyProvider>
-        <Layout currentPage={page} onNavigate={setPage}>
-          {renderPage()}
-        </Layout>
-      </PrivacyProvider>
+      <GoalProvider>
+        <PrivacyProvider>
+          <Layout currentPage={page} onNavigate={setPage}>
+            {renderPage()}
+          </Layout>
+        </PrivacyProvider>
+      </GoalProvider>
     </FinanceProvider>
   );
 }

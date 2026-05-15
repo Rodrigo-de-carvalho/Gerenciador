@@ -10,20 +10,33 @@ const emptyForm = {
   categoryId: '',
   projectId: '',
   notes: '',
+  cardId: '',
+  installments: 1,
 };
 
-export default function TransactionModal({ transaction, onClose, defaultProjectId }) {
-  const { categories, projects, addTransaction, updateTransaction } = useFinance();
+export default function TransactionModal({ transaction, onClose, defaultProjectId, defaultCardId }) {
+  const { categories, projects, cards, addTransaction, updateTransaction, addInstallmentTransaction } = useFinance();
   const [form, setForm] = useState(emptyForm);
   const isEdit = !!transaction;
 
   useEffect(() => {
     if (transaction) {
-      setForm({ ...transaction, amount: String(transaction.amount), projectId: transaction.projectId || '' });
+      setForm({
+        ...transaction,
+        amount: String(transaction.amount),
+        projectId: transaction.projectId || '',
+        cardId: transaction.cardId || '',
+        installments: transaction.installmentTotal || 1,
+      });
     } else {
-      setForm({ ...emptyForm, date: new Date().toISOString().split('T')[0], projectId: defaultProjectId || '' });
+      setForm({
+        ...emptyForm,
+        date: new Date().toISOString().split('T')[0],
+        projectId: defaultProjectId || '',
+        cardId: defaultCardId || '',
+      });
     }
-  }, [transaction, defaultProjectId]);
+  }, [transaction, defaultProjectId, defaultCardId]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
@@ -31,11 +44,17 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     e.preventDefault();
     const payload = {
       ...form,
-      amount: parseFloat(form.amount.replace(',', '.')),
+      amount: parseFloat(String(form.amount).replace(',', '.')),
       projectId: form.projectId || null,
+      cardId: form.cardId || null,
     };
-    if (isEdit) updateTransaction(payload);
-    else addTransaction(payload);
+    if (isEdit) {
+      updateTransaction(payload);
+    } else if (!isEdit && form.cardId && Number(form.installments) > 1) {
+      addInstallmentTransaction(payload, Number(form.installments));
+    } else {
+      addTransaction(payload);
+    }
     onClose();
   };
 
@@ -46,145 +65,100 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
   }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
-          <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
-            {isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}
-          </h2>
-          <button className="btn-icon" onClick={onClose}>
-            <X className="w-4 h-4" />
+    <div className="modal-overlay">
+      <div className="modal-box">
+        <div className="modal-head">
+          <h2>{isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}</h2>
+          <button className="icon-btn" onClick={onClose}>
+            <X size={15} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Type toggle */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
-            <button
-              type="button"
-              onClick={() => set('type', 'income')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                form.type === 'income'
-                  ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Entrada
-            </button>
-            <button
-              type="button"
-              onClick={() => set('type', 'expense')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                form.type === 'expense'
-                  ? 'bg-white dark:bg-slate-600 text-red-600 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <TrendingDown className="w-4 h-4" />
-              Saída
-            </button>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="label">Descrição *</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Ex: Salário março"
-              value={form.description}
-              onChange={e => set('description', e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Amount + Date */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Valor (R$) *</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                className="input-field"
-                placeholder="0,00"
-                value={form.amount}
-                onChange={e => set('amount', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Data *</label>
-              <input
-                type="date"
-                className="input-field"
-                value={form.date}
-                onChange={e => set('date', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="label">Categoria *</label>
-            <select
-              className="select-field"
-              value={form.categoryId}
-              onChange={e => set('categoryId', e.target.value)}
-              required
-            >
-              <option value="">Selecione uma categoria</option>
-              {filteredCats.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.icon} {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Project (optional) */}
-          {projects.length > 0 && (
-            <div>
-              <label className="label">Projeto <span className="text-slate-400 font-normal">(opcional)</span></label>
-              <select
-                className="select-field"
-                value={form.projectId}
-                onChange={e => set('projectId', e.target.value)}
+        <form onSubmit={handleSubmit}>
+          <div className="modal-form">
+            {/* Type toggle */}
+            <div className="seg" style={{ width: '100%' }}>
+              <button
+                type="button"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                className={form.type === 'income' ? 'active' : ''}
+                onClick={() => set('type', 'income')}
               >
-                <option value="">Nenhum projeto</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.icon} {p.name}
-                  </option>
-                ))}
+                <TrendingUp size={14} style={{ color: form.type === 'income' ? 'var(--positive)' : 'inherit' }} />
+                Entrada
+              </button>
+              <button
+                type="button"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                className={form.type === 'expense' ? 'active' : ''}
+                onClick={() => set('type', 'expense')}
+              >
+                <TrendingDown size={14} style={{ color: form.type === 'expense' ? 'var(--negative)' : 'inherit' }} />
+                Saída
+              </button>
+            </div>
+
+            <div className="field">
+              <label className="field-label">Descrição *</label>
+              <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label className="field-label">Valor (R$) *</label>
+                <input type="number" step="0.01" min="0.01" className="field-input" placeholder="0,00" value={form.amount} onChange={e => set('amount', e.target.value)} required />
+              </div>
+              <div className="field">
+                <label className="field-label">Data *</label>
+                <input type="date" className="field-input" value={form.date} onChange={e => set('date', e.target.value)} required />
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="field-label">Categoria *</label>
+              <select className="field-input" value={form.categoryId} onChange={e => set('categoryId', e.target.value)} required>
+                <option value="">Selecione uma categoria</option>
+                {filteredCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
             </div>
-          )}
 
-          {/* Notes */}
-          <div>
-            <label className="label">Observações</label>
-            <textarea
-              className="input-field resize-none"
-              rows={2}
-              placeholder="Notas opcionais..."
-              value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-            />
+            {projects.length > 0 && (
+              <div className="field">
+                <label className="field-label">Projeto <span style={{ color: 'var(--text-4)', textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                <select className="field-input" value={form.projectId} onChange={e => set('projectId', e.target.value)}>
+                  <option value="">Nenhum projeto</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.icon} {p.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {form.type === 'expense' && cards.length > 0 && (
+              <div className="field">
+                <label className="field-label">Cartão <span style={{ color: 'var(--text-4)', textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                <select className="field-input" value={form.cardId} onChange={e => set('cardId', e.target.value)}>
+                  <option value="">Sem cartão (pagamento direto)</option>
+                  {cards.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {form.type === 'expense' && form.cardId && !isEdit && (
+              <div className="field">
+                <label className="field-label">Parcelas</label>
+                <input type="number" min="1" max="24" className="field-input" value={form.installments} onChange={e => set('installments', e.target.value)} />
+              </div>
+            )}
+
+            <div className="field">
+              <label className="field-label">Observações</label>
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} placeholder="Notas opcionais..." value={form.notes} onChange={e => set('notes', e.target.value)} />
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button type="button" className="btn-secondary flex-1 justify-center" onClick={onClose}>
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className={`flex-1 justify-center ${form.type === 'income' ? 'btn-success' : 'btn-danger'}`}
-            >
-              <Plus className="w-4 h-4" />
+          <div className="modal-actions">
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center', background: form.type === 'income' ? 'var(--positive)' : undefined }}>
+              <Plus size={14} />
               {isEdit ? 'Salvar' : 'Adicionar'}
             </button>
           </div>

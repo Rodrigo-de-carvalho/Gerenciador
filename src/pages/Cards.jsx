@@ -17,50 +17,46 @@ function CardFormModal({ card, onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({
-      ...form,
-      limitAmount: form.limitAmount ? Number(form.limitAmount) : null,
-      closingDay: Number(form.closingDay),
-      color: '#6b7280',
-    });
+    onSave({ ...form, limitAmount: form.limitAmount ? Number(form.limitAmount) : null, closingDay: Number(form.closingDay), color: '#6b7280' });
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
-          <h2 className="font-bold text-slate-800 dark:text-slate-100">{card ? 'Editar Cartão' : 'Novo Cartão'}</h2>
-          <button className="btn-icon" onClick={onClose}><X className="w-4 h-4" /></button>
+    <div className="modal-overlay">
+      <div className="modal-box">
+        <div className="modal-head">
+          <h2>{card ? 'Editar Cartão' : 'Novo Cartão'}</h2>
+          <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="label">Nome do cartão *</label>
-            <input type="text" className="input-field" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" />
-          </div>
-          <div>
-            <label className="label">Limite (opcional)</label>
-            <input type="number" className="input-field" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder="Ex: 5000" min="0" step="0.01" />
-          </div>
-          <div>
-            <label className="label">Dia de fechamento</label>
-            <input type="number" className="input-field" value={form.closingDay} onChange={e => setForm(f => ({ ...f, closingDay: e.target.value }))} min="1" max="31" required />
-          </div>
-          <div>
-            <label className="label">Ícone</label>
-            <div className="flex gap-2 flex-wrap">
-              {CARD_ICONS.map(icon => (
-                <button key={icon} type="button" onClick={() => setForm(f => ({ ...f, icon }))}
-                  className={`w-10 h-10 rounded-lg text-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${form.icon === icon ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500' : ''}`}>
-                  {icon}
-                </button>
-              ))}
+        <form onSubmit={handleSubmit}>
+          <div className="modal-form">
+            <div className="field">
+              <label className="field-label">Nome do cartão *</label>
+              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label className="field-label">Limite (opcional)</label>
+                <input type="number" className="field-input" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder="Ex: 5000" min="0" step="0.01" />
+              </div>
+              <div className="field">
+                <label className="field-label">Dia de fechamento</label>
+                <input type="number" className="field-input" value={form.closingDay} onChange={e => setForm(f => ({ ...f, closingDay: e.target.value }))} min="1" max="31" required />
+              </div>
+            </div>
+            <div className="field">
+              <label className="field-label">Ícone</label>
+              <div className="icon-grid">
+                {CARD_ICONS.map(icon => (
+                  <button key={icon} type="button" className={`icon-pick${form.icon === icon ? ' sel' : ''}`} onClick={() => setForm(f => ({ ...f, icon }))}>{icon}</button>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex gap-3 pt-1">
-            <button type="button" className="btn-secondary flex-1 justify-center" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary flex-1 justify-center">
-              <Plus className="w-4 h-4" /> {card ? 'Salvar' : 'Criar'}
+          <div className="modal-actions">
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
+              <Plus size={14} /> {card ? 'Salvar' : 'Criar'}
             </button>
           </div>
         </form>
@@ -80,6 +76,7 @@ export default function Cards() {
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showTxModal, setShowTxModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('bills');
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -104,12 +101,30 @@ export default function Cards() {
     return getCardBill(selectedCardId, month, year);
   }, [selectedCardId, transactions, month, year]);
 
+  const futureInstallments = useMemo(() => {
+    const today = new Date();
+    const upcoming = transactions.filter(t => {
+      if (!t.cardId || t.installmentTotal <= 1) return false;
+      const d = new Date(t.date + 'T00:00:00');
+      return d > today;
+    });
+    const byMonth = {};
+    upcoming.forEach(t => {
+      const d = new Date(t.date + 'T00:00:00');
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!byMonth[key]) byMonth[key] = { month: d.getMonth() + 1, year: d.getFullYear(), items: [], total: 0 };
+      byMonth[key].items.push(t);
+      byMonth[key].total += t.amount;
+    });
+    return Object.values(byMonth).sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+  }, [transactions]);
+
   const getCardStyle = (card, index) => CARD_STYLES[index % CARD_STYLES.length];
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
           <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', minWidth: 110, textAlign: 'center' }}>
@@ -121,6 +136,16 @@ export default function Cards() {
           <Plus size={14} /> Novo Cartão
         </button>
       </div>
+
+      {/* Tabs */}
+      {cards.length > 0 && (
+        <div className="tabs" style={{ marginBottom: 20 }}>
+          <button className={`tab${activeTab === 'bills' ? ' active' : ''}`} onClick={() => setActiveTab('bills')}>Faturas</button>
+          <button className={`tab${activeTab === 'installments' ? ' active' : ''}`} onClick={() => setActiveTab('installments')}>
+            Parcelas Futuras {futureInstallments.length > 0 && <span style={{ marginLeft: 4, fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '1px 6px' }}>{futureInstallments.reduce((s, m) => s + m.items.length, 0)}</span>}
+          </button>
+        </div>
+      )}
 
       {cards.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -134,6 +159,54 @@ export default function Cards() {
           <button className="btn primary" onClick={() => setShowForm(true)}>
             <Plus size={14} /> Adicionar cartão
           </button>
+        </div>
+      ) : activeTab === 'installments' ? (
+        /* Parcelas Futuras tab */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {futureInstallments.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)', fontSize: 13 }}>
+              Nenhuma parcela futura encontrada.
+            </div>
+          ) : (
+            futureInstallments.map(group => (
+              <div key={`${group.year}-${group.month}`}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-3)', fontWeight: 500 }}>
+                    {MONTHS[group.month - 1]} {group.year}
+                  </div>
+                  <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
+                    {privacy ? 'R$ ••••' : formatCurrency(group.total)}
+                  </span>
+                </div>
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <table className="tx-table">
+                    <tbody>
+                      {group.items.map(t => {
+                        const card = cards.find(c => c.id === t.cardId);
+                        const cat = categories.find(c => c.id === t.categoryId);
+                        return (
+                          <tr key={t.id}>
+                            <td style={{ width: 36, paddingRight: 0 }}>
+                              <div className="tx-row-icon"><span style={{ fontSize: 12 }}>{cat?.icon || '💳'}</span></div>
+                            </td>
+                            <td>
+                              <div style={{ fontSize: 13, fontWeight: 500 }}>{privacy ? '••••••' : t.description}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{card?.icon} {card?.name} · {formatDate(t.date)}</div>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
+                                {privacy ? '••••' : formatCurrency(t.amount)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       ) : (
         <div className="grid-cifra g-2" style={{ marginBottom: 24 }}>
@@ -262,14 +335,17 @@ export default function Cards() {
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2">Excluir cartão?</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">O cartão será removido. Os lançamentos vinculados serão mantidos.</p>
-            <div className="flex gap-3">
-              <button className="btn-secondary flex-1 justify-center" onClick={() => setShowDeleteConfirm(null)}>Cancelar</button>
-              <button className="btn-danger flex-1 justify-center" onClick={() => { deleteCard(showDeleteConfirm); setShowDeleteConfirm(null); if (selectedCardId === showDeleteConfirm) setSelectedCardId(null); }}>
-                <Trash2 className="w-4 h-4" /> Excluir
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 360 }}>
+            <div className="modal-head"><h2>Excluir cartão?</h2></div>
+            <div className="modal-form" style={{ gap: 14 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-3)' }}>O cartão será removido. Os lançamentos vinculados serão mantidos.</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(null)}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
+                onClick={() => { deleteCard(showDeleteConfirm); setShowDeleteConfirm(null); if (selectedCardId === showDeleteConfirm) setSelectedCardId(null); }}>
+                <Trash2 size={14} /> Excluir
               </button>
             </div>
           </div>

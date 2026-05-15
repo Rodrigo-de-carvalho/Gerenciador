@@ -221,7 +221,12 @@ export function FinanceProvider({ children }) {
       color: proj.color,
       include_in_overview: proj.includeInOverview ?? true,
     }).select().single();
-    if (data) setProjects(prev => [...prev, mapProject(data)]);
+    if (data) {
+      const mapped = mapProject(data);
+      setProjects(prev => [...prev, mapped]);
+      return mapped;
+    }
+    return null;
   };
 
   const updateProject = async (proj) => {
