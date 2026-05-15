@@ -3,6 +3,7 @@ import { Loader2, Shield } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PrivacyProvider } from './context/PrivacyContext';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +12,7 @@ import Reports from './pages/Reports';
 import Categories from './pages/Categories';
 import Projects from './pages/Projects';
 import Cards from './pages/Cards';
+import Goals from './pages/Goals';
 import Assistant from './pages/Assistant';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
@@ -40,7 +42,7 @@ function TermsConsentModal() {
           </div>
 
           <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300 mb-6">
-            <p>Para usar o Gerenciador Financeiro, você precisa concordar com nossa política de privacidade.</p>
+            <p>Para usar o Cifra, você precisa concordar com nossa política de privacidade.</p>
             <ul className="space-y-2">
               {[
                 'Seu e-mail e dados financeiros são armazenados com segurança no Supabase.',
@@ -98,6 +100,7 @@ function AppContent() {
       case 'categories':   return <Categories />;
       case 'projects':     return <Projects />;
       case 'cards':        return <Cards />;
+      case 'goals':        return <Goals />;
       case 'assistant':    return <Assistant />;
       default:             return <Dashboard onNavigate={setPage} />;
     }
@@ -105,9 +108,11 @@ function AppContent() {
 
   return (
     <FinanceProvider>
-      <Layout currentPage={page} onNavigate={setPage}>
-        {renderPage()}
-      </Layout>
+      <PrivacyProvider>
+        <Layout currentPage={page} onNavigate={setPage}>
+          {renderPage()}
+        </Layout>
+      </PrivacyProvider>
     </FinanceProvider>
   );
 }
