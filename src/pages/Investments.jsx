@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, X, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { usePrivacy } from '../context/PrivacyContext';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../utils/formatters';
-
-const KEY = 'cifra_investments';
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
-const persist = (d) => localStorage.setItem(KEY, JSON.stringify(d));
 
 const TYPES = [
   { id: 'acoes',      label: 'Ações',       color: '#C7F284' },
@@ -111,23 +109,55 @@ function InvestmentModal({ inv, onClose, onSave }) {
 
 export default function Investments() {
   const { privacy } = usePrivacy();
-  const [investments, setInvestments] = useState(load);
+  const { user } = useAuth();
+  const [investments, setInvestments] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editInv, setEditInv] = useState(null);
   const [filterType, setFilterType] = useState('all');
 
-  const updateAndPersist = (next) => { setInvestments(next); persist(next); };
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('investments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setInvestments(data.map(r => ({
+          id: r.id,
+          name: r.name,
+          type: r.type,
+          invested: Number(r.invested),
+          currentValue: Number(r.current_value),
+          notes: r.notes || '',
+          date: r.date,
+        })));
+      });
+  }, [user]);
 
-  const handleSave = (inv) => {
-    const next = investments.find(i => i.id === inv.id)
-      ? investments.map(i => i.id === inv.id ? inv : i)
-      : [...investments, inv];
-    updateAndPersist(next);
+  const handleSave = async (inv) => {
+    const isEdit = investments.some(i => i.id === inv.id);
+    if (isEdit) {
+      const { data } = await supabase
+        .from('investments')
+        .update({ name: inv.name, type: inv.type, invested: inv.invested, current_value: inv.currentValue, notes: inv.notes })
+        .eq('id', inv.id)
+        .eq('user_id', user.id)
+        .select().single();
+      if (data) setInvestments(prev => prev.map(i => i.id === inv.id ? { ...inv, currentValue: Number(data.current_value), invested: Number(data.invested) } : i));
+    } else {
+      const { data } = await supabase
+        .from('investments')
+        .insert({ user_id: user.id, name: inv.name, type: inv.type, invested: inv.invested, current_value: inv.currentValue, notes: inv.notes, date: inv.date })
+        .select().single();
+      if (data) setInvestments(prev => [{ id: data.id, name: data.name, type: data.type, invested: Number(data.invested), currentValue: Number(data.current_value), notes: data.notes || '', date: data.date }, ...prev]);
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm('Excluir este investimento?')) return;
-    updateAndPersist(investments.filter(i => i.id !== id));
+    await supabase.from('investments').delete().eq('id', id).eq('user_id', user.id);
+    setInvestments(prev => prev.filter(i => i.id !== id));
   };
 
   const totals = useMemo(() => ({

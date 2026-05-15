@@ -63,11 +63,13 @@ function SettingsModal({ onClose }) {
     setExporting(true);
     try {
       const userId = user.id;
-      const [txRes, catRes, projRes, cardRes] = await Promise.all([
+      const [txRes, catRes, projRes, cardRes, goalRes, invRes] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', userId),
         supabase.from('categories').select('*').eq('user_id', userId),
         supabase.from('projects').select('*').eq('user_id', userId),
         supabase.from('cards').select('*').eq('user_id', userId),
+        supabase.from('goals').select('*').eq('user_id', userId),
+        supabase.from('investments').select('*').eq('user_id', userId),
       ]);
       const exportData = {
         exportDate: new Date().toISOString(),
@@ -76,6 +78,8 @@ function SettingsModal({ onClose }) {
         categories: catRes.data || [],
         projects: projRes.data || [],
         cards: cardRes.data || [],
+        goals: goalRes.data || [],
+        investments: invRes.data || [],
         settings: {
           ai_assistant_enabled: user.user_metadata?.ai_assistant_enabled ?? false,
           terms_accepted_at: user.user_metadata?.terms_accepted_at ?? null,

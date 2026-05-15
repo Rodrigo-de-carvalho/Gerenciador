@@ -67,7 +67,47 @@ CREATE POLICY "users can manage own transactions"
 -- ── MIGRAÇÃO: se já criou as tabelas antes, rode esta linha:
 -- ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS include_in_overview boolean NOT NULL DEFAULT true;
 
+-- ── METAS ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.goals (
+  id            uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id       uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid          REFERENCES public.projects(id) ON DELETE CASCADE,
+  target_amount numeric(15,2),
+  deadline      date,
+  created_at    timestamptz   DEFAULT now(),
+  UNIQUE (user_id, project_id)
+);
+
+ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own goals"
+  ON public.goals FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- ── INVESTIMENTOS ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.investments (
+  id            uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id       uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name          text          NOT NULL,
+  type          text          NOT NULL,
+  invested      numeric(15,2) NOT NULL DEFAULT 0,
+  current_value numeric(15,2) NOT NULL DEFAULT 0,
+  notes         text,
+  date          date          DEFAULT CURRENT_DATE,
+  created_at    timestamptz   DEFAULT now()
+);
+
+ALTER TABLE public.investments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own investments"
+  ON public.investments FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- ── ÍNDICES ───────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS transactions_user_date ON public.transactions(user_id, date DESC);
 CREATE INDEX IF NOT EXISTS categories_user_id ON public.categories(user_id);
 CREATE INDEX IF NOT EXISTS projects_user_id ON public.projects(user_id);
+CREATE INDEX IF NOT EXISTS goals_user_id ON public.goals(user_id);
+CREATE INDEX IF NOT EXISTS investments_user_id ON public.investments(user_id);
