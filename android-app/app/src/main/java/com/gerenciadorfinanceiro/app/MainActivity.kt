@@ -8,7 +8,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.core.net.toUri
 import com.gerenciadorfinanceiro.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -53,9 +53,6 @@ class MainActivity : AppCompatActivity() {
             // Cache
             cacheMode = WebSettings.LOAD_DEFAULT
 
-            // Formulários e senhas
-            saveFormData = true
-
             // Mídia
             mediaPlaybackRequiresUserGesture = false
 
@@ -76,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                 return if (url.startsWith(APP_URL) || url.startsWith("https://gerenciador-psi.vercel.app")) {
                     false
                 } else {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                     true
                 }
             }
