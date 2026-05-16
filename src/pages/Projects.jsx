@@ -151,9 +151,9 @@ function ProjectDetail({ project, onBack }) {
           { label: 'Saídas', value: expense, cls: 'neg' },
           { label: 'Saldo', value: balance, cls: balance >= 0 ? 'pos' : 'neg' },
         ].map(({ label, value, cls }) => (
-          <div key={label} className="card" style={{ padding: '14px 18px' }}>
+          <div key={label} className="card" style={{ padding: '14px 18px', minWidth: 0, overflow: 'hidden' }}>
             <div className="t-label" style={{ marginBottom: 6 }}>{label}</div>
-            <div className={`t-num ${cls}`} style={{ fontSize: 18, fontWeight: 600 }}>
+            <div className={`t-num ${cls}`} style={{ fontSize: 18, fontWeight: 600, overflowWrap: 'break-word' }}>
               {privacy ? 'R$ ••••' : formatCurrency(value)}
             </div>
           </div>

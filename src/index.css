@@ -500,6 +500,7 @@
   gap: 12px;
   cursor: pointer;
   transition: border-color 120ms;
+  overflow: hidden;
 }
 .proj-card:hover { border-color: var(--line-2); }
 
@@ -527,6 +528,7 @@
 
 /* ============ utility grid ============ */
 .grid-cifra { display: grid; gap: 16px; }
+.grid-cifra > * { min-width: 0; }
 .g-2 { grid-template-columns: 1fr 1fr; }
 .g-3 { grid-template-columns: 1fr 1fr 1fr; }
 .g-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
