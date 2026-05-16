@@ -8,12 +8,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // onAuthStateChange fires INITIAL_SESSION with the current auth state as soon
+    // as you subscribe, then SIGNED_IN after OAuth code exchange completes —
+    // this handles all cases without the getSession() race condition where a null
+    // result could overwrite a user already set by SIGNED_IN
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
