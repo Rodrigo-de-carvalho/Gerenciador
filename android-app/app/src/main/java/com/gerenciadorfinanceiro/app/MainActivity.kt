@@ -29,10 +29,7 @@ class MainActivity : AppCompatActivity() {
         (function() {
             var s = document.createElement('style');
             s.id = '__android_app_style__';
-            s.textContent = [
-                '.crumbs { display: none !important; }',
-                '.topbar { padding-left: 8px !important; }'
-            ].join('');
+            s.textContent = '.crumbs { display: none !important; }';
             if (!document.getElementById('__android_app_style__')) {
                 document.head.appendChild(s);
             }
@@ -188,8 +185,6 @@ class MainActivity : AppCompatActivity() {
                 binding.progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
                 view.evaluateJavascript(INJECTED_CSS, null)
-                // Injeta listener de scroll para o pull-to-refresh funcionar corretamente
-                // Usa capture:true para capturar scroll de qualquer elemento (incluindo .scroll div)
                 view.evaluateJavascript("""
                     (function(){
                         var last=-1;
@@ -199,6 +194,31 @@ class MainActivity : AppCompatActivity() {
                         },{capture:true,passive:true});
                     })();
                 """.trimIndent(), null)
+
+                // Após callback OAuth (PKCE): aguarda sessão aparecer no localStorage e
+                // redireciona para a URL limpa — resolve corrida entre exchange e getSession()
+                if (url.contains("?code=") && url.startsWith(APP_URL)) {
+                    view.evaluateJavascript("""
+                        (function(){
+                            var t=setInterval(function(){
+                                try{
+                                    for(var i=0;i<localStorage.length;i++){
+                                        var k=localStorage.key(i);
+                                        if(k&&k.indexOf('-auth-token')>-1){
+                                            var v=localStorage.getItem(k);
+                                            if(v&&v!=='null'&&v.indexOf('access_token')>-1){
+                                                clearInterval(t);
+                                                window.location.replace('$APP_URL');
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }catch(e){}
+                            },300);
+                            setTimeout(function(){clearInterval(t);},8000);
+                        })();
+                    """.trimIndent(), null)
+                }
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
