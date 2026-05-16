@@ -26,11 +26,17 @@ export function AuthProvider({ children }) {
   const signUp = (email, password) =>
     supabase.auth.signUp({ email, password });
 
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({
+  const signInWithGoogle = () => {
+    // No WebView Android (CifraApp interface injetada pelo MainActivity), usa
+    // o custom scheme cifra://callback para que o Chrome Custom Tab sempre
+    // retorne para o app via onNewIntent sem depender do App Link (assetlinks.json).
+    // No browser normal usa a origem HTTPS padrão.
+    const isCifraApp = typeof window.CifraApp !== 'undefined';
+    return supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: isCifraApp ? 'cifra://callback' : window.location.origin },
     });
+  };
 
   const signOut = () => supabase.auth.signOut();
 
