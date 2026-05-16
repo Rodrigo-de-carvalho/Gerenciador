@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.gerenciadorfinanceiro.app.debug",
+    "sha256_cert_fingerprints": [
+      "D1:A7:CB:54:12:8C:5E:51:21:54:C2:11:68:9F:2B:42:EF:B1:74:E9:FB:86:76:20:62:2D:27:82:D8:34:09:CB"
+    ]
+  }
+}]

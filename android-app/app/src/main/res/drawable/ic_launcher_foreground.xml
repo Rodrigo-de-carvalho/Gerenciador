@@ -10,7 +10,7 @@
         Começa em (-40°) = (74, 37), termina em (+40°) = (74, 71).
     -->
     <path
-        android:strokeColor="#C7F284"
+        android:strokeColor="#0E0D0B"
         android:strokeWidth="11"
         android:strokeLineCap="round"
         android:fillColor="#00000000"
@@ -18,6 +18,6 @@
 
     <!-- Ponto decorativo da marca "Cifra." -->
     <path
-        android:fillColor="#C7F284"
+        android:fillColor="#0E0D0B"
         android:pathData="M82,54 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
 </vector>

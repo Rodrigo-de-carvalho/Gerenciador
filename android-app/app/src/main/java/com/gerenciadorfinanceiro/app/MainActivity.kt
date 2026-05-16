@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import com.gerenciadorfinanceiro.app.databinding.ActivityMainBinding
 
@@ -101,9 +102,23 @@ class MainActivity : AppCompatActivity() {
                 return when {
                     host.contains("gerenciador-psi.vercel.app") -> false
                     host.contains("supabase.co")                -> false
-                    // Google OAuth — mantém no WebView para o fluxo de login não abrir Chrome
-                    host == "accounts.google.com"               -> false
-                    host.endsWith(".googleapis.com")            -> false
+                    // Google OAuth: abre no Chrome Custom Tab para ter acesso às contas do dispositivo
+                    host == "accounts.google.com" || host.endsWith(".googleapis.com") -> {
+                        try {
+                            CustomTabsIntent.Builder()
+                                .setColorSchemeParams(
+                                    CustomTabsIntent.COLOR_SCHEME_DARK,
+                                    androidx.browser.customtabs.CustomTabColorSchemeParams.Builder()
+                                        .setToolbarColor(0xFF0E0D0B.toInt())
+                                        .build()
+                                )
+                                .build()
+                                .launchUrl(this@MainActivity, request.url)
+                        } catch (_: Exception) {
+                            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                        }
+                        true
+                    }
                     scheme == "https" || scheme == "http" -> {
                         try { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) } catch (_: Exception) {}
                         true
@@ -167,6 +182,8 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.apply {
             setColorSchemeColors(0xFFC7F284.toInt())
             setProgressBackgroundColorSchemeColor(0xFF1A1A1A.toInt())
+            // Só ativa pull-to-refresh quando o conteúdo está no topo da página
+            setOnChildScrollUpCallback { _, _ -> binding.webView.canScrollVertically(-1) }
             setOnRefreshListener {
                 binding.webView.reload()
                 isRefreshing = false
