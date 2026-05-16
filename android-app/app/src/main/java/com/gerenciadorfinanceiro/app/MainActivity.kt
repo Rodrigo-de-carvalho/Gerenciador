@@ -88,9 +88,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showUpdateDialog(downloadUrl: String) {
         AlertDialog.Builder(this)
-            .setTitle("Nova versão disponível 🎉")
+            .setTitle("Nova versão disponível")
             .setMessage("Uma atualização do Cifra está disponível. Deseja baixar agora?")
-            .setPositiveButton("Atualizar") { _, _ -> binding.webView.loadUrl(downloadUrl) }
+            .setPositiveButton("Atualizar") { _, _ ->
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)))
+                } catch (_: Exception) {}
+            }
             .setNegativeButton("Agora não", null)
             .setCancelable(true)
             .show()
