@@ -39,6 +39,14 @@
                     android:host="gerenciador-psi.vercel.app" />
             </intent-filter>
 
+            <!-- OAuth callback: Chrome Custom Tab redirects here after Google login -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cifra" android:host="callback" />
+            </intent-filter>
+
         </activity>
 
     </application>

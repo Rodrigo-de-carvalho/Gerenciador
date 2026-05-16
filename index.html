@@ -11,6 +11,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Redirect OAuth callback from Chrome Custom Tab back to WebView via custom scheme -->
+    <script>
+    (function(){
+      var s = window.location.search;
+      if (s.indexOf('code=') !== -1 && typeof window.CifraApp === 'undefined') {
+        window.location.replace('cifra://callback' + s);
+      }
+    })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

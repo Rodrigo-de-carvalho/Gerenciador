@@ -92,7 +92,7 @@ export default function Transactions() {
           ))}
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn" onClick={() => setShowRecurring(true)}>
             <RefreshCw size={14} /> Recorrentes
           </button>

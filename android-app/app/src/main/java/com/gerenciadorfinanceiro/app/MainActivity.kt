@@ -101,10 +101,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        // Quando o App Link traz o token de volta, cancela o reload do onResume
         customTabOpened = false
-        intent?.data?.toString()?.let { url ->
-            if (url.startsWith(APP_URL)) binding.webView.loadUrl(url)
+        val url = intent?.data?.toString() ?: return
+        when {
+            // Chrome Custom Tab returned PKCE code via custom scheme → load in WebView
+            url.startsWith("cifra://callback") -> {
+                val query = intent.data?.query ?: ""
+                binding.webView.loadUrl("$APP_URL${if (query.isNotEmpty()) "?$query" else ""}")
+            }
+            url.startsWith(APP_URL) -> binding.webView.loadUrl(url)
         }
     }
 

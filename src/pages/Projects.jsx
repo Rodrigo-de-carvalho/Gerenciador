@@ -348,7 +348,7 @@ export default function Projects() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="t-eyebrow" style={{ marginBottom: 4 }}>Seus projetos</div>
           <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0, fontFamily: 'Instrument Serif, serif', fontStyle: 'italic' }}>
