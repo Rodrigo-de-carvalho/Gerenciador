@@ -234,6 +234,7 @@ function ProjectDetail({ project, onBack }) {
             <div style={{ fontSize: 13 }}>Nenhum lançamento neste projeto</div>
           </div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table className="tx-table">
             <tbody>
               {projectTxs.map(t => {
@@ -263,6 +264,7 @@ function ProjectDetail({ project, onBack }) {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -392,9 +394,9 @@ export default function Projects() {
                   }}>
                     {project.icon}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '100%' }}>
                         {project.name}
                       </span>
                       <span style={{
@@ -430,9 +432,9 @@ export default function Projects() {
                     { label: 'Saídas', value: stats.expense, cls: 'neg' },
                     { label: 'Saldo', value: stats.balance, cls: stats.balance >= 0 ? 'pos' : 'neg' },
                   ].map(({ label, value, cls }) => (
-                    <div key={label}>
+                    <div key={label} style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginBottom: 2 }}>{label}</div>
-                      <div className={`t-num ${cls}`} style={{ fontSize: 13, fontWeight: 600 }}>
+                      <div className={`t-num ${cls}`} style={{ fontSize: 13, fontWeight: 600, overflowWrap: 'break-word' }}>
                         {privacy ? '••••' : formatCurrency(value)}
                       </div>
                     </div>
