@@ -95,7 +95,7 @@ function AppContent() {
         <div style={{
           width: 52, height: 52,
           background: 'var(--accent)',
-          borderRadius: 14,
+          borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: "'Instrument Serif', serif",
           fontStyle: 'italic',

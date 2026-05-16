@@ -99,7 +99,7 @@ export default function AuthPage() {
           <div style={{
             width: 48, height: 48,
             background: 'var(--accent)',
-            borderRadius: 12,
+            borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             fontFamily: "'Instrument Serif', serif",

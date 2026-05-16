@@ -101,6 +101,9 @@ class MainActivity : AppCompatActivity() {
                 return when {
                     host.contains("gerenciador-psi.vercel.app") -> false
                     host.contains("supabase.co")                -> false
+                    // Google OAuth — mantém no WebView para o fluxo de login não abrir Chrome
+                    host == "accounts.google.com"               -> false
+                    host.endsWith(".googleapis.com")            -> false
                     scheme == "https" || scheme == "http" -> {
                         try { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) } catch (_: Exception) {}
                         true
