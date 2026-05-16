@@ -642,6 +642,10 @@
   .tab { font-size: 12px; padding: 10px 10px; white-space: nowrap; }
 }
 
+@media (pointer: coarse) {
+  .tx-actions { opacity: 1 !important; }
+}
+
 /* ============ Cifra Modals ============ */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 50;
