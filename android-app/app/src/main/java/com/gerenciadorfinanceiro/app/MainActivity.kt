@@ -9,6 +9,7 @@ import android.view.View
 import android.webkit.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import com.gerenciadorfinanceiro.app.BuildConfig
@@ -23,7 +24,6 @@ class MainActivity : AppCompatActivity() {
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Chrome/121.0.0.0 Mobile Safari/537.36"
 
-    // CSS injetado para remover elementos que parecem barra do navegador
     private val INJECTED_CSS = """
         (function() {
             var s = document.createElement('style');
@@ -38,6 +38,12 @@ class MainActivity : AppCompatActivity() {
         })();
     """.trimIndent()
 
+    // Rastreia scroll via JS para o pull-to-refresh
+    @Volatile private var webScrollY = 0
+
+    // Sinaliza que um Chrome Custom Tab foi aberto (OAuth Google)
+    private var customTabOpened = false
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +54,6 @@ class MainActivity : AppCompatActivity() {
         setupSwipeRefresh()
 
         if (savedInstanceState == null) {
-            // Verifica se chegou via deep link (ex: link de auth do e-mail)
             val intentUrl = intent?.data?.toString()
             binding.webView.loadUrl(
                 if (!intentUrl.isNullOrEmpty() && intentUrl.startsWith(APP_URL)) intentUrl
@@ -58,6 +63,8 @@ class MainActivity : AppCompatActivity() {
 
         checkForUpdates()
     }
+
+    // ---------- Update check ----------
 
     private fun checkForUpdates() {
         Thread {
@@ -74,7 +81,7 @@ class MainActivity : AppCompatActivity() {
                 if (latest > BuildConfig.VERSION_CODE) {
                     runOnUiThread { showUpdateDialog(dlUrl) }
                 }
-            } catch (_: Exception) { /* sem internet ou servidor indisponível — ignora */ }
+            } catch (_: Exception) {}
         }.start()
     }
 
@@ -82,23 +89,22 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Nova versão disponível 🎉")
             .setMessage("Uma atualização do Cifra está disponível. Deseja baixar agora?")
-            .setPositiveButton("Atualizar") { _, _ ->
-                binding.webView.loadUrl(downloadUrl)
-            }
+            .setPositiveButton("Atualizar") { _, _ -> binding.webView.loadUrl(downloadUrl) }
             .setNegativeButton("Agora não", null)
             .setCancelable(true)
             .show()
     }
 
-    // Lida com links de autenticação que chegam enquanto o app já está aberto
+    // ---------- Deep link ----------
+
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         intent?.data?.toString()?.let { url ->
-            if (url.startsWith(APP_URL)) {
-                binding.webView.loadUrl(url)
-            }
+            if (url.startsWith(APP_URL)) binding.webView.loadUrl(url)
         }
     }
+
+    // ---------- WebView ----------
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
@@ -125,11 +131,14 @@ class MainActivity : AppCompatActivity() {
             setAcceptThirdPartyCookies(webView, true)
         }
 
+        // Interface JS → Kotlin para rastrear scroll e corrigir pull-to-refresh
+        webView.addJavascriptInterface(object {
+            @JavascriptInterface
+            fun onScroll(y: Int) { webScrollY = y }
+        }, "CifraApp")
+
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(
-                view: WebView,
-                request: WebResourceRequest
-            ): Boolean {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url    = request.url.toString()
                 val host   = request.url.host ?: ""
                 val scheme = request.url.scheme ?: ""
@@ -137,13 +146,14 @@ class MainActivity : AppCompatActivity() {
                 return when {
                     host.contains("gerenciador-psi.vercel.app") -> false
                     host.contains("supabase.co")                -> false
-                    // Google OAuth: abre no Chrome Custom Tab para ter acesso às contas do dispositivo
+                    // Google OAuth: Chrome Custom Tab para acessar contas do dispositivo
                     host == "accounts.google.com" || host.endsWith(".googleapis.com") -> {
+                        customTabOpened = true
                         try {
                             CustomTabsIntent.Builder()
                                 .setColorSchemeParams(
                                     CustomTabsIntent.COLOR_SCHEME_DARK,
-                                    androidx.browser.customtabs.CustomTabColorSchemeParams.Builder()
+                                    CustomTabColorSchemeParams.Builder()
                                         .setToolbarColor(0xFF0E0D0B.toInt())
                                         .build()
                                 )
@@ -158,7 +168,7 @@ class MainActivity : AppCompatActivity() {
                         try { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) } catch (_: Exception) {}
                         true
                     }
-                    else -> true // bloqueia custom schemes (mercadopago://, etc.)
+                    else -> true
                 }
             }
 
@@ -170,15 +180,22 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 binding.progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
-                // Remove o breadcrumb que parece barra de endereço do navegador
                 view.evaluateJavascript(INJECTED_CSS, null)
+                // Injeta listener de scroll para o pull-to-refresh funcionar corretamente
+                view.evaluateJavascript("""
+                    (function(){
+                        var last=-1;
+                        function rep(){
+                            var y=Math.round(window.scrollY||document.documentElement.scrollTop||0);
+                            if(y!==last){last=y;try{CifraApp.onScroll(y);}catch(e){}}
+                        }
+                        window.addEventListener('scroll',rep,{passive:true});
+                        rep();
+                    })();
+                """.trimIndent(), null)
             }
 
-            override fun onReceivedError(
-                view: WebView,
-                request: WebResourceRequest,
-                error: WebResourceError
-            ) {
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
                     view.loadData(
                         """<html><body style="font-family:sans-serif;display:flex;flex-direction:column;
@@ -202,27 +219,39 @@ class MainActivity : AppCompatActivity() {
                 binding.progressBar.progress = newProgress
                 if (newProgress == 100) binding.progressBar.visibility = View.GONE
             }
-
             override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm(); return false
             }
-
             override fun onJsConfirm(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm(); return false
             }
         }
     }
 
+    // ---------- Swipe refresh ----------
+
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.apply {
             setColorSchemeColors(0xFFC7F284.toInt())
             setProgressBackgroundColorSchemeColor(0xFF1A1A1A.toInt())
-            // Só ativa pull-to-refresh quando o conteúdo está no topo da página
-            setOnChildScrollUpCallback { _, _ -> binding.webView.canScrollVertically(-1) }
+            // Usa a posição de scroll rastreada via JS — mais confiável que canScrollVertically
+            setOnChildScrollUpCallback { _, _ -> webScrollY > 0 }
             setOnRefreshListener {
                 binding.webView.reload()
                 isRefreshing = false
             }
+        }
+    }
+
+    // ---------- Lifecycle ----------
+
+    override fun onResume() {
+        super.onResume()
+        binding.webView.onResume()
+        // Quando volta do Chrome Custom Tab (login Google), recarrega para pegar a sessão
+        if (customTabOpened) {
+            customTabOpened = false
+            binding.webView.reload()
         }
     }
 
@@ -248,11 +277,6 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         binding.webView.onPause()
         CookieManager.getInstance().flush()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        binding.webView.onResume()
     }
 
     override fun onDestroy() {
