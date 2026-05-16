@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.*
 import androidx.appcompat.app.AlertDialog
@@ -236,13 +237,20 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.apply {
             setColorSchemeColors(0xFFC7F284.toInt())
             setProgressBackgroundColorSchemeColor(0xFF1A1A1A.toInt())
-            // Usa a posição de scroll rastreada via JS — mais confiável que canScrollVertically
-            setOnChildScrollUpCallback { _, _ -> webScrollY > 0 }
             setOnRefreshListener {
                 binding.webView.reload()
                 isRefreshing = false
             }
         }
+    }
+
+    // ---------- Touch dispatch — disables SwipeRefresh when not at top ----------
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.action == MotionEvent.ACTION_DOWN) {
+            binding.swipeRefresh.isEnabled = webScrollY <= 0
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     // ---------- Lifecycle ----------
