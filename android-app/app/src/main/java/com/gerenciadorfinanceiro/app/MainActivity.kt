@@ -189,15 +189,14 @@ class MainActivity : AppCompatActivity() {
                 CookieManager.getInstance().flush()
                 view.evaluateJavascript(INJECTED_CSS, null)
                 // Injeta listener de scroll para o pull-to-refresh funcionar corretamente
+                // Usa capture:true para capturar scroll de qualquer elemento (incluindo .scroll div)
                 view.evaluateJavascript("""
                     (function(){
                         var last=-1;
-                        function rep(){
-                            var y=Math.round(window.scrollY||document.documentElement.scrollTop||0);
-                            if(y!==last){last=y;try{CifraApp.onScroll(y);}catch(e){}}
-                        }
-                        window.addEventListener('scroll',rep,{passive:true});
-                        rep();
+                        document.addEventListener('scroll',function(e){
+                            var y=Math.round((e.target&&e.target.scrollTop)||0);
+                            if(y!==last){last=y;try{CifraApp.onScroll(y);}catch(ex){}}
+                        },{capture:true,passive:true});
                     })();
                 """.trimIndent(), null)
             }
