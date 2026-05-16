@@ -99,6 +99,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+        // Quando o App Link traz o token de volta, cancela o reload do onResume
+        customTabOpened = false
         intent?.data?.toString()?.let { url ->
             if (url.startsWith(APP_URL)) binding.webView.loadUrl(url)
         }
@@ -248,11 +250,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         binding.webView.onResume()
-        // Quando volta do Chrome Custom Tab (login Google), recarrega para pegar a sessão
-        if (customTabOpened) {
-            customTabOpened = false
-            binding.webView.reload()
-        }
+        // Limpa a flag sem recarregar — o onNewIntent já cuida do token quando o App Link dispara
+        customTabOpened = false
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
