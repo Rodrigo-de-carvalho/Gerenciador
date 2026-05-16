@@ -17,7 +17,19 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Fallback para WebView Android: quando o Chrome Custom Tab fecha sem deep link
+    // (ex.: usuário voltou sem completar o OAuth), tenta recuperar sessão do localStorage
+    const handleOAuthResume = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) setUser(session.user);
+      });
+    };
+    window.addEventListener('cifra-oauth-resume', handleOAuthResume);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('cifra-oauth-resume', handleOAuthResume);
+    };
   }, []);
 
   const signIn = (email, password) =>

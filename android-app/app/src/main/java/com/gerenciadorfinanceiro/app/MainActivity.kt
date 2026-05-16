@@ -152,25 +152,38 @@ class MainActivity : AppCompatActivity() {
                 val host   = request.url.host ?: ""
                 val scheme = request.url.scheme ?: ""
 
+                fun openCustomTab(uri: android.net.Uri) {
+                    try {
+                        CustomTabsIntent.Builder()
+                            .setColorSchemeParams(
+                                CustomTabsIntent.COLOR_SCHEME_DARK,
+                                CustomTabColorSchemeParams.Builder()
+                                    .setToolbarColor(0xFF0E0D0B.toInt())
+                                    .build()
+                            )
+                            .build()
+                            .launchUrl(this@MainActivity, uri)
+                    } catch (_: Exception) {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    }
+                }
+
                 return when {
                     host.contains("gerenciador-psi.vercel.app") -> false
-                    host.contains("supabase.co")                -> false
-                    // Google OAuth: Chrome Custom Tab para acessar contas do dispositivo
+                    // Supabase OAuth: abre Chrome Custom Tab para que o WebView fique na página
+                    // React durante todo o fluxo — garante que o code_verifier PKCE permaneça
+                    // no localStorage da origem correta quando o código retornar via onNewIntent
+                    host.contains("supabase.co") && request.url.path?.startsWith("/auth/v1/authorize") == true -> {
+                        customTabOpened = true
+                        openCustomTab(request.url)
+                        true
+                    }
+                    host.contains("supabase.co") -> false
+                    // Fallback: Google OAuth carregado diretamente no WebView (não deveria ocorrer
+                    // com o interceptor acima, mas mantido como segurança)
                     host == "accounts.google.com" || host.endsWith(".googleapis.com") -> {
                         customTabOpened = true
-                        try {
-                            CustomTabsIntent.Builder()
-                                .setColorSchemeParams(
-                                    CustomTabsIntent.COLOR_SCHEME_DARK,
-                                    CustomTabColorSchemeParams.Builder()
-                                        .setToolbarColor(0xFF0E0D0B.toInt())
-                                        .build()
-                                )
-                                .build()
-                                .launchUrl(this@MainActivity, request.url)
-                        } catch (_: Exception) {
-                            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-                        }
+                        openCustomTab(request.url)
                         true
                     }
                     scheme == "https" || scheme == "http" -> {
@@ -286,7 +299,14 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         binding.webView.onResume()
-        // Limpa a flag sem recarregar — o onNewIntent já cuida do token quando o App Link dispara
+        // Se o onNewIntent NÃO foi chamado (não houve deep link), mas um Chrome Custom Tab
+        // estava aberto, dispara evento JS para que o React tente detectar a sessão
+        if (customTabOpened) {
+            binding.webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('cifra-oauth-resume'));",
+                null
+            )
+        }
         customTabOpened = false
     }
 
