@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.webkit.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
+import com.gerenciadorfinanceiro.app.BuildConfig
 import com.gerenciadorfinanceiro.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -53,6 +55,39 @@ class MainActivity : AppCompatActivity() {
                 else APP_URL
             )
         }
+
+        checkForUpdates()
+    }
+
+    private fun checkForUpdates() {
+        Thread {
+            try {
+                val conn = java.net.URL("$APP_URL/version.json").openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 6000
+                conn.readTimeout = 6000
+                conn.setRequestProperty("Cache-Control", "no-cache")
+                val text = conn.inputStream.bufferedReader().readText()
+                conn.disconnect()
+                val obj = org.json.JSONObject(text)
+                val latest = obj.getInt("version")
+                val dlUrl = obj.optString("url", "$APP_URL/downloads/gerenciador-financeiro.apk")
+                if (latest > BuildConfig.VERSION_CODE) {
+                    runOnUiThread { showUpdateDialog(dlUrl) }
+                }
+            } catch (_: Exception) { /* sem internet ou servidor indisponível — ignora */ }
+        }.start()
+    }
+
+    private fun showUpdateDialog(downloadUrl: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Nova versão disponível 🎉")
+            .setMessage("Uma atualização do Cifra está disponível. Deseja baixar agora?")
+            .setPositiveButton("Atualizar") { _, _ ->
+                binding.webView.loadUrl(downloadUrl)
+            }
+            .setNegativeButton("Agora não", null)
+            .setCancelable(true)
+            .show()
     }
 
     // Lida com links de autenticação que chegam enquanto o app já está aberto
