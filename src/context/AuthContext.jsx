@@ -21,7 +21,8 @@ export function AuthProvider({ children }) {
     // (ex.: usuário voltou sem completar o OAuth), tenta recuperar sessão do localStorage
     const handleOAuthResume = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) setUser(session.user);
+        setUser(session?.user ?? null);
+        setLoading(false);
       });
     };
     window.addEventListener('cifra-oauth-resume', handleOAuthResume);

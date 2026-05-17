@@ -201,7 +201,7 @@ class MainActivity : AppCompatActivity() {
                 """.trimIndent(), null)
 
                 // Após callback OAuth (PKCE): aguarda sessão aparecer no localStorage e
-                // redireciona para a URL limpa — resolve corrida entre exchange e getSession()
+                // notifica o React via evento — evita race condition entre location.replace e SIGNED_IN
                 if (url.contains("?code=") && url.startsWith(APP_URL)) {
                     view.evaluateJavascript("""
                         (function(){
@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity() {
                                             var v=localStorage.getItem(k);
                                             if(v&&v!=='null'&&v.indexOf('access_token')>-1){
                                                 clearInterval(t);
-                                                window.location.replace('$APP_URL');
+                                                window.dispatchEvent(new CustomEvent('cifra-oauth-resume'));
                                                 return;
                                             }
                                         }
