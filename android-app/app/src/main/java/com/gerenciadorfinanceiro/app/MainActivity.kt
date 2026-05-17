@@ -269,7 +269,7 @@ class MainActivity : AppCompatActivity() {
             oauthFlowStarted -> {
                 // OAuth completou (com ou sem App Link): recarrega após troca PKCE terminar
                 oauthFlowStarted = false
-                binding.webView.postDelayed({ binding.webView.reload() }, 2500)
+                binding.webView.postDelayed({ binding.webView.reload() }, 1000)
             }
             customTabOpened -> {
                 // Custom Tab fechou sem App Link — tenta recuperar sessão via JS
