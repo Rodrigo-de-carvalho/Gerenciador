@@ -41,6 +41,8 @@ class MainActivity : AppCompatActivity() {
 
     // Sinaliza que um Chrome Custom Tab foi aberto (OAuth Google)
     private var customTabOpened = false
+    // Sinaliza que o fluxo OAuth foi iniciado — NÃO limpo pelo onNewIntent
+    private var oauthFlowStarted = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -158,6 +160,7 @@ class MainActivity : AppCompatActivity() {
                     // Google OAuth: Chrome Custom Tab para acessar contas do dispositivo
                     host == "accounts.google.com" || host.endsWith(".googleapis.com") -> {
                         customTabOpened = true
+                        oauthFlowStarted = true
                         try {
                             CustomTabsIntent.Builder()
                                 .setColorSchemeParams(
@@ -200,30 +203,6 @@ class MainActivity : AppCompatActivity() {
                     })();
                 """.trimIndent(), null)
 
-                // Após callback OAuth (PKCE): aguarda sessão aparecer no localStorage e
-                // notifica o React via evento — evita race condition entre location.replace e SIGNED_IN
-                if (url.contains("?code=") && url.startsWith(APP_URL)) {
-                    view.evaluateJavascript("""
-                        (function(){
-                            var t=setInterval(function(){
-                                try{
-                                    for(var i=0;i<localStorage.length;i++){
-                                        var k=localStorage.key(i);
-                                        if(k&&k.indexOf('-auth-token')>-1){
-                                            var v=localStorage.getItem(k);
-                                            if(v&&v!=='null'&&v.indexOf('access_token')>-1){
-                                                clearInterval(t);
-                                                window.dispatchEvent(new CustomEvent('cifra-oauth-resume'));
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }catch(e){}
-                            },300);
-                            setTimeout(function(){clearInterval(t);},8000);
-                        })();
-                    """.trimIndent(), null)
-                }
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -286,13 +265,18 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         binding.webView.onResume()
-        // Se o onNewIntent NÃO foi chamado (não houve deep link), mas um Chrome Custom Tab
-        // estava aberto, dispara evento JS para que o React tente detectar a sessão
-        if (customTabOpened) {
-            binding.webView.evaluateJavascript(
-                "window.dispatchEvent(new CustomEvent('cifra-oauth-resume'));",
-                null
-            )
+        when {
+            oauthFlowStarted -> {
+                // OAuth completou (com ou sem App Link): recarrega após troca PKCE terminar
+                oauthFlowStarted = false
+                binding.webView.postDelayed({ binding.webView.reload() }, 2500)
+            }
+            customTabOpened -> {
+                // Custom Tab fechou sem App Link — tenta recuperar sessão via JS
+                binding.webView.evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('cifra-oauth-resume'));", null
+                )
+            }
         }
         customTabOpened = false
     }
