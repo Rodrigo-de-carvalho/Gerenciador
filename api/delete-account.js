@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const userId = userData.id;
   if (!userId) return res.status(401).json({ error: 'Usuário não encontrado.' });
 
-  const tables = ['transactions', 'categories', 'projects', 'cards'];
+  const tables = ['transactions', 'categories', 'projects', 'cards', 'budgets', 'goals', 'investments', 'recurring'];
   for (const table of tables) {
     await fetch(`${supabaseUrl}/rest/v1/${table}?user_id=eq.${userId}`, {
       method: 'DELETE',
