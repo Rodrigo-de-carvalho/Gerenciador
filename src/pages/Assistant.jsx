@@ -4,27 +4,53 @@ import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 
-function buildSystemPrompt({ income, expense, balance, topCategories, projects, cards, month, year, getCardBill }) {
+function buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month, year, getCardBill }) {
   const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : '0.0';
   const monthName = MONTHS[month - 1];
-  const categoryLines = topCategories.slice(0, 5).map(c => `  - ${c.name}: ${formatCurrency(c.total)}`).join('\n');
-  const projectLines = projects.filter(p => p.includeInOverview !== false).map(p => `  - ${p.icon} ${p.name}`).join('\n') || '  Nenhum projeto ativo';
+  const spendingLines = topCategories.slice(0, 5).map(c => `  - ${c.name}: ${formatCurrency(c.total)}`).join('\n');
+  const projectLines = projects.filter(p => p.includeInOverview !== false).map(p => `  - ${p.icon} ${p.name}`).join('\n') || '  Nenhum';
   const cardLines = cards.length > 0
     ? cards.map(c => { const bill = getCardBill(c.id, month, year); return `  - ${c.icon} ${c.name}: fatura ${formatCurrency(bill.total)}`; }).join('\n')
-    : '  Nenhum cartão cadastrado';
-  return `Você é um assistente financeiro pessoal inteligente e amigável, especialista em finanças pessoais brasileiras.\n\nContexto financeiro atual do usuário:\n- Mês: ${monthName} ${year}\n- Entradas: ${formatCurrency(income)}\n- Saídas: ${formatCurrency(expense)}\n- Saldo: ${formatCurrency(balance)}\n- Taxa de poupança: ${savingsRate}%\n- Maiores gastos por categoria:\n${categoryLines || '  Nenhum gasto registrado'}\n- Projetos ativos:\n${projectLines}\n- Cartões:\n${cardLines}\n\nResponda sempre em português brasileiro. Seja direto, prático e personalizado com base nos dados financeiros acima.`;
+    : '  Nenhum cartão';
+  const allCatLines = categories.map(c => `  - ${c.icon} ${c.name} (${c.type === 'income' ? 'receita' : 'despesa'})`).join('\n');
+  const today = new Date().toISOString().split('T')[0];
+
+  return `Você é o Cifra IA, assistente financeiro pessoal inteligente e amigável, especialista em finanças pessoais brasileiras.
+
+Contexto financeiro atual do usuário:
+- Mês: ${monthName} ${year}
+- Entradas: ${formatCurrency(income)}
+- Saídas: ${formatCurrency(expense)}
+- Saldo: ${formatCurrency(balance)}
+- Taxa de poupança: ${savingsRate}%
+- Maiores gastos por categoria:
+${spendingLines || '  Nenhum gasto registrado'}
+- Projetos ativos:
+${projectLines}
+- Cartões:
+${cardLines}
+
+Categorias disponíveis (use ao registrar transações):
+${allCatLines}
+
+Data de hoje: ${today}
+
+Responda sempre em português brasileiro. Seja direto e prático. Quando o usuário mencionar qualquer gasto, compra, pagamento ou receita — mesmo que seja "gastei X", "paguei X", "recebi X" — use a ferramenta add_transaction para registrá-lo automaticamente sem pedir confirmação. Depois confirme o que foi feito de forma sucinta.`;
 }
 
 export default function Assistant() {
   const { user } = useAuth();
-  const { transactions, categories, projects, cards, getSummary, getCardBill } = useFinance();
+  const { transactions, categories, projects, cards, getSummary, getCardBill, addTransaction } = useFinance();
   const now = getCurrentMonthYear();
   const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
 
-  const [messages, setMessages] = useState([{
+  const INITIAL_MSG = {
     role: 'assistant',
-    content: 'Olá! Sou o Cifra IA, seu assistente financeiro pessoal. Tenho acesso aos seus dados financeiros do mês atual e posso te ajudar com análises, dicas de economia, planejamento e muito mais. Como posso te ajudar hoje?',
-  }]);
+    content: 'Olá! Sou o Cifra IA. Além de analisar suas finanças, posso registrar transações diretamente — é só dizer, por exemplo: "gastei R$50 no mercado hoje". Como posso te ajudar?',
+  };
+
+  const [messages, setMessages] = useState([INITIAL_MSG]);
+  const [apiHistory, setApiHistory] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -42,8 +68,10 @@ export default function Assistant() {
       const name = cat ? `${cat.icon} ${cat.name}` : 'Sem categoria';
       catTotals[name] = (catTotals[name] || 0) + t.amount;
     });
-    const topCategories = Object.entries(catTotals).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
-    return buildSystemPrompt({ income, expense, balance, topCategories, projects, cards, month: now.month, year: now.year, getCardBill });
+    const topCategories = Object.entries(catTotals)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total);
+    return buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month: now.month, year: now.year, getCardBill });
   }, [transactions, categories, projects, cards, now.month, now.year]);
 
   if (!aiEnabled) {
@@ -64,26 +92,99 @@ export default function Assistant() {
     );
   }
 
+  const executeTool = async (toolCall) => {
+    const args = JSON.parse(toolCall.function.arguments);
+
+    if (toolCall.function.name === 'add_transaction') {
+      try {
+        const cat = categories.find(c =>
+          c.name.toLowerCase() === (args.category_name || '').toLowerCase() && c.type === args.type
+        ) || categories.find(c => c.type === args.type);
+
+        await addTransaction({
+          description: args.description,
+          amount: Math.abs(Number(args.amount)),
+          type: args.type,
+          date: args.date,
+          categoryId: cat?.id || null,
+          notes: args.notes || null,
+        });
+
+        return {
+          success: true,
+          description: args.description,
+          amount: args.amount,
+          type: args.type,
+          category: cat?.name || null,
+          date: args.date,
+        };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    }
+
+    return { success: false, error: 'Ferramenta desconhecida' };
+  };
+
+  const callApi = async (history) => {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, systemPrompt }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Erro ${res.status}`);
+    return data;
+  };
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading) return;
+
     const userMsg = { role: 'user', content: text };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+
+    let currentHistory = [...apiHistory, userMsg];
+
     try {
-      const conversationHistory = newMessages.slice(1).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationHistory, systemPrompt }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || `Erro ${res.status}`);
-      setMessages(prev => [...prev, { role: 'assistant', content: data.content || 'Não foi possível obter resposta.' }]);
+      const result = await callApi(currentHistory);
+
+      if (result.tool_calls?.length) {
+        // Execute each tool call and collect results
+        const toolResultMsgs = [];
+        for (const tc of result.tool_calls) {
+          const outcome = await executeTool(tc);
+          toolResultMsgs.push({
+            role: 'tool',
+            tool_call_id: tc.id,
+            content: JSON.stringify(outcome),
+          });
+        }
+
+        // Append assistant tool-call message + results to history, then get final reply
+        currentHistory = [
+          ...currentHistory,
+          result.assistant_message,
+          ...toolResultMsgs,
+        ];
+
+        const final = await callApi(currentHistory);
+        const assistantMsg = { role: 'assistant', content: final.content || 'Feito!' };
+        setMessages(prev => [...prev, assistantMsg]);
+        setApiHistory([...currentHistory, { role: 'assistant', content: assistantMsg.content }]);
+      } else {
+        const assistantMsg = { role: 'assistant', content: result.content };
+        setMessages(prev => [...prev, assistantMsg]);
+        setApiHistory([...currentHistory, assistantMsg]);
+      }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Desculpe, ocorreu um erro ao conectar com o assistente. ${err.message ? `(${err.message})` : ''}` }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Desculpe, ocorreu um erro. ${err.message ? `(${err.message})` : ''}`,
+      }]);
+      setApiHistory(currentHistory);
     } finally {
       setLoading(false);
     }
@@ -95,13 +196,14 @@ export default function Assistant() {
 
   const clearConversation = () => {
     setMessages([{ role: 'assistant', content: 'Conversa reiniciada. Como posso te ajudar?' }]);
+    setApiHistory([]);
   };
 
   const suggestions = [
     'Como está minha saúde financeira?',
+    'Gastei R$80 no supermercado hoje',
+    'Recebi R$3.000 de salário',
     'Onde posso economizar mais?',
-    'Analise meus gastos por categoria',
-    'Dicas para aumentar minha poupança',
   ];
 
   return (
@@ -142,8 +244,8 @@ export default function Assistant() {
               {msg.role === 'user' ? (user?.email?.[0]?.toUpperCase() || 'U') : '❆'}
             </div>
             <div className={`bubble ${msg.role}`}>
-              {msg.content.split('\n').map((line, i) => (
-                <span key={i}>{line}{i < msg.content.split('\n').length - 1 && <br />}</span>
+              {msg.content.split('\n').map((line, i, arr) => (
+                <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
               ))}
             </div>
           </div>
@@ -187,7 +289,7 @@ export default function Assistant() {
             }}
             onFocus={e => e.target.style.borderColor = 'var(--accent)'}
             onBlur={e => e.target.style.borderColor = 'var(--line)'}
-            placeholder="Pergunte algo sobre suas finanças..."
+            placeholder="Pergunte algo ou diga o que gastou..."
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -200,7 +302,7 @@ export default function Assistant() {
             onClick={sendMessage}
             disabled={!input.trim() || loading}
           >
-            {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+            {loading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />}
           </button>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
@@ -208,10 +310,7 @@ export default function Assistant() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 1s linear infinite; }
-      `}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
