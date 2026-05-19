@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useI18n } from '../i18n';
 
 const emptyForm = {
   type: 'expense',
@@ -15,6 +16,7 @@ const emptyForm = {
 };
 
 export default function TransactionModal({ transaction, onClose, defaultProjectId, defaultCardId }) {
+  const { t } = useI18n();
   const { categories, projects, cards, addTransaction, updateTransaction, addInstallmentTransaction } = useFinance();
   const [form, setForm] = useState(emptyForm);
   const isEdit = !!transaction;
@@ -68,7 +70,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="modal-head">
-          <h2>{isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}</h2>
+          <h2>{isEdit ? t('transactionModal.edit') : t('transactionModal.new')}</h2>
           <button className="icon-btn" onClick={onClose}>
             <X size={15} />
           </button>
@@ -85,7 +87,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
                 onClick={() => set('type', 'income')}
               >
                 <TrendingUp size={14} style={{ color: form.type === 'income' ? 'var(--positive)' : 'inherit' }} />
-                Entrada
+                {t('transactionModal.income')}
               </button>
               <button
                 type="button"
@@ -94,39 +96,39 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
                 onClick={() => set('type', 'expense')}
               >
                 <TrendingDown size={14} style={{ color: form.type === 'expense' ? 'var(--negative)' : 'inherit' }} />
-                Saída
+                {t('transactionModal.expense')}
               </button>
             </div>
 
             <div className="field">
-              <label className="field-label">Descrição *</label>
+              <label className="field-label">{t('transactionModal.description')}</label>
               <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
-                <label className="field-label">Valor (R$) *</label>
+                <label className="field-label">{t('transactionModal.amount')}</label>
                 <input type="number" step="0.01" min="0.01" className="field-input" placeholder="0,00" value={form.amount} onChange={e => set('amount', e.target.value)} required />
               </div>
               <div className="field">
-                <label className="field-label">Data *</label>
+                <label className="field-label">{t('transactionModal.date')}</label>
                 <input type="date" className="field-input" value={form.date} onChange={e => set('date', e.target.value)} required />
               </div>
             </div>
 
             <div className="field">
-              <label className="field-label">Categoria *</label>
+              <label className="field-label">{t('transactionModal.category')}</label>
               <select className="field-input" value={form.categoryId} onChange={e => set('categoryId', e.target.value)} required>
-                <option value="">Selecione uma categoria</option>
+                <option value="">{t('transactionModal.categoryPlaceholder')}</option>
                 {filteredCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
             </div>
 
             {projects.length > 0 && (
               <div className="field">
-                <label className="field-label">Projeto <span style={{ color: 'var(--text-4)', textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                <label className="field-label">{t('transactionModal.project')}</label>
                 <select className="field-input" value={form.projectId} onChange={e => set('projectId', e.target.value)}>
-                  <option value="">Nenhum projeto</option>
+                  <option value="">{t('transactionModal.noProject')}</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.icon} {p.name}</option>)}
                 </select>
               </div>
@@ -134,9 +136,9 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
             {form.type === 'expense' && cards.length > 0 && (
               <div className="field">
-                <label className="field-label">Cartão <span style={{ color: 'var(--text-4)', textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                <label className="field-label">{t('transactionModal.card')}</label>
                 <select className="field-input" value={form.cardId} onChange={e => set('cardId', e.target.value)}>
-                  <option value="">Sem cartão (pagamento direto)</option>
+                  <option value="">{t('transactionModal.noCard')}</option>
                   {cards.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
@@ -144,22 +146,22 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
             {form.type === 'expense' && form.cardId && !isEdit && (
               <div className="field">
-                <label className="field-label">Parcelas</label>
+                <label className="field-label">{t('transactionModal.installments')}</label>
                 <input type="number" min="1" max="24" className="field-input" value={form.installments} onChange={e => set('installments', e.target.value)} />
               </div>
             )}
 
             <div className="field">
-              <label className="field-label">Observações</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} placeholder="Notas opcionais..." value={form.notes} onChange={e => set('notes', e.target.value)} />
+              <label className="field-label">{t('transactionModal.notes')}</label>
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} placeholder={t('transactionModal.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} />
             </div>
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center', background: form.type === 'income' ? 'var(--positive)' : undefined }}>
               <Plus size={14} />
-              {isEdit ? 'Salvar' : 'Adicionar'}
+              {isEdit ? t('common.save') : t('common.add')}
             </button>
           </div>
         </form>

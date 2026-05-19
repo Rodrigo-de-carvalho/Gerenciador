@@ -5,6 +5,7 @@ import { FinanceProvider } from './context/FinanceContext';
 import { GoalProvider } from './context/GoalContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PrivacyProvider } from './context/PrivacyContext';
+import { I18nProvider, useI18n } from './i18n';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
@@ -20,6 +21,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 
 function TermsConsentModal() {
   const { acceptTerms, signOut } = useAuth();
+  const { t } = useI18n();
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -36,21 +38,21 @@ function TermsConsentModal() {
           <div className="modal-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Shield size={15} style={{ color: 'var(--text-3)' }} />
-              <h2>Termos de Uso e Privacidade</h2>
+              <h2>{t('terms.title')}</h2>
             </div>
           </div>
 
           <div className="modal-form" style={{ gap: 16 }}>
             <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-              Para usar o Cifra, você precisa concordar com nossa política de privacidade.
+              {t('terms.intro')}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                'Seu e-mail e dados financeiros são armazenados com segurança no Supabase.',
-                'Seus dados não são vendidos nem compartilhados com terceiros.',
-                'O assistente de IA é opcional e desativado por padrão.',
-                'Você pode deletar sua conta e todos os dados a qualquer momento.',
+                t('terms.bullet1'),
+                t('terms.bullet2'),
+                t('terms.bullet3'),
+                t('terms.bullet4'),
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <span style={{ color: 'var(--positive)', fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
@@ -63,19 +65,19 @@ function TermsConsentModal() {
               onClick={() => setShowPrivacy(true)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 12.5, fontFamily: 'inherit', textDecoration: 'underline', padding: 0, textAlign: 'left' }}
             >
-              Ler a Política de Privacidade completa →
+              {t('terms.readPolicy')}
             </button>
           </div>
 
           <div className="modal-actions">
-            <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={signOut}>Sair</button>
+            <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={signOut}>{t('terms.leave')}</button>
             <button
               className="btn primary"
               style={{ flex: 1, justifyContent: 'center', opacity: loading ? 0.6 : 1 }}
               onClick={handleAccept}
               disabled={loading}
             >
-              {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : 'Aceito e continuar'}
+              {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : t('terms.accept')}
             </button>
           </div>
         </div>
@@ -145,10 +147,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }

@@ -5,11 +5,13 @@ import { useGoals } from '../context/GoalContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import { useI18n } from '../i18n';
 
 const ICONS = ['🎯','🏠','✈️','📚','🚗','💻','🌱','🏋️','💰','🛹','🏖️','🎓','💍','🏗️','🎵','⚽','🎮','🏢','🔬','🛡️'];
 const COLORS = ['#C7F284','#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16'];
 
 function GoalModal({ goal, onClose, onSave }) {
+  const { t } = useI18n();
   const isEdit = !!goal;
   const [form, setForm] = useState(goal ? {
     name: goal.name,
@@ -44,34 +46,34 @@ function GoalModal({ goal, onClose, onSave }) {
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="modal-head">
-          <h2>{isEdit ? 'Editar Meta' : 'Nova Meta'}</h2>
+          <h2>{isEdit ? t('goals.editGoal') : t('goals.newGoal')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-form">
             <div className="field">
-              <label className="field-label">Nome da meta *</label>
-              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: Reserva de emergência" required />
+              <label className="field-label">{t('goals.goalName')}</label>
+              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('goals.goalNamePlaceholder')} required />
             </div>
 
             <div className="field">
-              <label className="field-label">Descrição</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Descreva seu objetivo..." />
+              <label className="field-label">{t('goals.description')}</label>
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder={t('goals.descPlaceholder')} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
-                <label className="field-label">Valor alvo (R$)</label>
+                <label className="field-label">{t('goals.targetAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.targetAmount} onChange={e => set('targetAmount', e.target.value)} placeholder="0,00" />
               </div>
               <div className="field">
-                <label className="field-label">Prazo</label>
+                <label className="field-label">{t('goals.deadline')}</label>
                 <input type="date" className="field-input" value={form.deadline} onChange={e => set('deadline', e.target.value)} />
               </div>
             </div>
 
             <div className="field">
-              <label className="field-label">Ícone</label>
+              <label className="field-label">{t('goals.goalIcon')}</label>
               <div className="icon-grid">
                 {ICONS.map(ic => (
                   <button key={ic} type="button" className={`icon-pick${form.icon === ic ? ' sel' : ''}`} onClick={() => set('icon', ic)}>{ic}</button>
@@ -80,7 +82,7 @@ function GoalModal({ goal, onClose, onSave }) {
             </div>
 
             <div className="field">
-              <label className="field-label">Cor</label>
+              <label className="field-label">{t('goals.goalColor')}</label>
               <div className="color-grid">
                 {COLORS.map(c => (
                   <button key={c} type="button" className={`color-pick${form.color === c ? ' sel' : ''}`} style={{ background: c }} onClick={() => set('color', c)} />
@@ -90,8 +92,8 @@ function GoalModal({ goal, onClose, onSave }) {
 
             <div className="toggle-row" onClick={() => set('includeInOverview', !form.includeInOverview)}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>Incluir no financeiro geral</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>Gastos desta meta somam nas despesas mensais</div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{t('goals.includeInOverview')}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>{t('goals.includeInOverviewDesc')}</div>
               </div>
               <div className={`toggle-track${form.includeInOverview ? ' on' : ''}`}>
                 <div className="toggle-thumb" />
@@ -100,9 +102,9 @@ function GoalModal({ goal, onClose, onSave }) {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
-              <Plus size={14} /> {isEdit ? 'Salvar' : 'Criar meta'}
+              <Plus size={14} /> {isEdit ? t('common.save') : t('goals.createGoal')}
             </button>
           </div>
         </form>
@@ -129,6 +131,7 @@ function Ring({ pct, size = 54, thickness = 5, color = 'var(--accent)' }) {
 }
 
 function GoalCard({ goal, onEdit, onDelete }) {
+  const { t } = useI18n();
   const { transactions } = useFinance();
   const { getGoalMeta } = useGoals();
   const { privacy } = usePrivacy();
@@ -162,7 +165,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
               background: goal.includeInOverview ? 'rgba(143,183,255,0.12)' : 'var(--chip)',
               color: goal.includeInOverview ? 'var(--info)' : 'var(--text-3)',
             }}>
-              {goal.includeInOverview ? 'no geral' : 'isolado'}
+              {goal.includeInOverview ? t('goals.inGeneral') : t('goals.isolated')}
             </span>
           </div>
 
@@ -175,11 +178,11 @@ function GoalCard({ goal, onEdit, onDelete }) {
           </div>
 
           <div style={{ display: 'flex', gap: 16, fontSize: 11.5, color: 'var(--text-3)', flexWrap: 'wrap' }}>
-            <span>Aportado: <span className="pos t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(income)}</span></span>
-            {expense > 0 && <span>Gasto: <span className="neg t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(expense)}</span></span>}
-            {target && <span>Meta: <span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(target)}</span></span>}
-            {remaining !== null && remaining > 0 && <span>Falta: <span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(remaining)}</span></span>}
-            {daysLeft !== null && <span style={{ color: daysLeft < 30 ? 'var(--negative)' : 'var(--text-3)' }}>{daysLeft > 0 ? `${daysLeft}d restantes` : 'Prazo vencido'}</span>}
+            <span>{t('goals.contributed') + ': '}<span className="pos t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(income)}</span></span>
+            {expense > 0 && <span>{t('goals.spent') + ': '}<span className="neg t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(expense)}</span></span>}
+            {target && <span>{t('goals.target') + ': '}<span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(target)}</span></span>}
+            {remaining !== null && remaining > 0 && <span>{t('goals.remaining') + ': '}<span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(remaining)}</span></span>}
+            {daysLeft !== null && <span style={{ color: daysLeft < 30 ? 'var(--negative)' : 'var(--text-3)' }}>{daysLeft > 0 ? `${daysLeft}${t('goals.daysLeft')}` : t('goals.deadlinePassed')}</span>}
           </div>
         </div>
 
@@ -200,16 +203,16 @@ function GoalCard({ goal, onEdit, onDelete }) {
         <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <span style={{ fontSize: 11.5, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-              {ptxs.length} lançamento{ptxs.length !== 1 ? 's' : ''}
+              {t('goals.countFn')(ptxs.length)}
             </span>
             <button className="btn primary" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => setShowTxModal(true)}>
-              <Plus size={12} /> Adicionar
+              <Plus size={12} /> {t('common.add')}
             </button>
           </div>
 
           {ptxs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-3)', fontSize: 12.5 }}>
-              Nenhum lançamento ainda.
+              {t('goals.noTransactions')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -226,7 +229,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
               ))}
               {ptxs.length > 8 && (
                 <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-3)', padding: '6px 0' }}>
-                  +{ptxs.length - 8} mais lançamentos
+                  {t('goals.moreTransactionsFn')(ptxs.length - 8)}
                 </div>
               )}
             </div>
@@ -245,6 +248,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
 }
 
 export default function Goals() {
+  const { t } = useI18n();
   const { projects, addProject, updateProject, deleteProject } = useFinance();
   const { goals, goalProjectIds, addGoal, updateGoal, removeGoal } = useGoals();
   const { transactions } = useFinance();
@@ -279,7 +283,7 @@ export default function Goals() {
   };
 
   const handleDelete = async (goalId) => {
-    if (!confirm('Excluir esta meta? Os lançamentos vinculados não serão excluídos.')) return;
+    if (!confirm(t('goals.deleteGoalConfirm'))) return;
     await deleteProject(goalId);
     removeGoal(goalId);
   };
@@ -293,34 +297,34 @@ export default function Goals() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Objetivos financeiros</div>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>{t('goals.financialObjectives')}</div>
           <h2 className="t-display" style={{ fontSize: 24 }}>
-            {goalProjects.length} <em>meta{goalProjects.length !== 1 ? 's' : ''}</em> ativa{goalProjects.length !== 1 ? 's' : ''}
+            {goalProjects.length} <em>{goalProjects.length !== 1 ? t('goals.activePlural') : t('goals.activeSingle')}</em> {goalProjects.length !== 1 ? t('goals.activePluralF') : t('goals.activeSingleF')}
           </h2>
         </div>
         <button className="btn primary" onClick={() => setShowModal(true)}>
-          <Plus size={14} /> Nova Meta
+          <Plus size={14} /> {t('goals.newGoal')}
         </button>
       </div>
 
       {goalProjects.length > 0 && (
         <div className="insight" style={{ marginBottom: 20 }}>
-          <div className="t-eyebrow" style={{ color: 'var(--accent)', marginBottom: 10 }}>Visão geral</div>
+          <div className="t-eyebrow" style={{ color: 'var(--accent)', marginBottom: 10 }}>{t('goals.overview')}</div>
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
             <div>
-              <div className="t-label" style={{ marginBottom: 4 }}>Total aportado</div>
+              <div className="t-label" style={{ marginBottom: 4 }}>{t('goals.totalContributed')}</div>
               <div className="t-num pos" style={{ fontSize: 20, fontWeight: 600 }}>
                 {privacy ? 'R$ ••••' : formatCurrency(totalIncome)}
               </div>
             </div>
             <div>
-              <div className="t-label" style={{ marginBottom: 4 }}>Total gasto</div>
+              <div className="t-label" style={{ marginBottom: 4 }}>{t('goals.totalSpent')}</div>
               <div className="t-num neg" style={{ fontSize: 20, fontWeight: 600 }}>
                 {privacy ? 'R$ ••••' : formatCurrency(totalExpense)}
               </div>
             </div>
             <div>
-              <div className="t-label" style={{ marginBottom: 4 }}>Metas ativas</div>
+              <div className="t-label" style={{ marginBottom: 4 }}>{t('goals.activeGoals')}</div>
               <div className="t-num" style={{ fontSize: 20, fontWeight: 600 }}>{goalProjects.length}</div>
             </div>
           </div>
@@ -332,12 +336,12 @@ export default function Goals() {
           <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Target size={24} style={{ color: 'var(--text-3)' }} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhuma meta definida</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('goals.noGoalsDefined')}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24, maxWidth: 320, margin: '0 auto 24px' }}>
-            Crie metas para acompanhar seu progresso: reserva de emergência, viagem, compra planejada, e muito mais.
+            {t('goals.noGoalsDesc')}
           </p>
           <button className="btn primary" onClick={() => setShowModal(true)}>
-            <Plus size={14} /> Criar primeira meta
+            <Plus size={14} /> {t('goals.createFirstGoal')}
           </button>
         </div>
       ) : (

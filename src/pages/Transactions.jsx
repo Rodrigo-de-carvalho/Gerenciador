@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
-import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
+import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import { useI18n } from '../i18n';
 import ImportCSV from '../components/ImportCSV';
 import RecurringModal from '../components/RecurringModal';
 
@@ -26,6 +27,7 @@ function groupByDate(txs) {
 }
 
 export default function Transactions() {
+  const { t } = useI18n();
   const { transactions, categories, deleteTransaction } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
@@ -76,31 +78,31 @@ export default function Transactions() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
         <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', minWidth: 110, textAlign: 'center' }}>
-          {MONTHS[month - 1]} {year}
+          {t('months')[month - 1]} {year}
         </span>
         <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
 
         <div style={{ display: 'flex', gap: 8, marginLeft: 8, flexWrap: 'wrap' }}>
-          {['all', 'income', 'expense'].map(t => (
+          {['all', 'income', 'expense'].map(type => (
             <button
-              key={t}
-              className={`chip${typeFilter === t ? ' active' : ''}`}
-              onClick={() => setTypeFilter(t)}
+              key={type}
+              className={`chip${typeFilter === type ? ' active' : ''}`}
+              onClick={() => setTypeFilter(type)}
             >
-              {t === 'all' ? 'Todos' : t === 'income' ? 'Entradas' : 'Saídas'}
+              {type === 'all' ? t('transactions.all') : type === 'income' ? t('transactions.incomes') : t('transactions.expenses')}
             </button>
           ))}
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn" onClick={() => setShowRecurring(true)}>
-            <RefreshCw size={14} /> Recorrentes
+            <RefreshCw size={14} /> {t('transactions.recurring')}
           </button>
           <button className="btn" onClick={() => setShowImport(true)}>
-            <Upload size={14} /> Importar CSV
+            <Upload size={14} /> {t('transactions.importCSV')}
           </button>
           <button className="btn primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
-            <Plus size={14} /> Lançamento
+            <Plus size={14} /> {t('transactions.newEntry')}
           </button>
         </div>
       </div>
@@ -108,19 +110,19 @@ export default function Transactions() {
       {/* Summary strip */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--chip)', borderRadius: 8 }}>
-          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Entradas</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{t('transactions.incomes')}</span>
           <span className="t-num pos" style={{ fontSize: 13, fontWeight: 600 }}>
             {privacy ? 'R$ ••••' : formatCurrency(totalIncome)}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--chip)', borderRadius: 8 }}>
-          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Saídas</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{t('transactions.expenses')}</span>
           <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
             {privacy ? 'R$ ••••' : formatCurrency(totalExpense)}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--chip)', borderRadius: 8 }}>
-          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Saldo</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{t('common.balance')}</span>
           <span className={`t-num ${totalIncome - totalExpense >= 0 ? 'pos' : 'neg'}`} style={{ fontSize: 13, fontWeight: 600 }}>
             {privacy ? 'R$ ••••' : formatCurrency(totalIncome - totalExpense)}
           </span>
@@ -133,7 +135,7 @@ export default function Transactions() {
           <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
           <input
             type="text"
-            placeholder="Buscar descrição ou categoria..."
+            placeholder={t('transactions.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
@@ -152,7 +154,7 @@ export default function Transactions() {
             cursor: 'pointer', fontFamily: 'inherit', minWidth: 160,
           }}
         >
-          <option value="">Todas as categorias</option>
+          <option value="">{t('transactions.allCategories')}</option>
           {categories.map(c => (
             <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
           ))}
@@ -163,10 +165,10 @@ export default function Transactions() {
       {filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)' }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>💭</div>
-          <div style={{ fontSize: 14, marginBottom: 4 }}>Nenhum lançamento encontrado</div>
-          <div style={{ fontSize: 12.5, marginBottom: 20 }}>Tente ajustar os filtros ou adicione um novo lançamento</div>
+          <div style={{ fontSize: 14, marginBottom: 4 }}>{t('transactions.noTransactionsFound')}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 20 }}>{t('transactions.adjustFilters')}</div>
           <button className="btn primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
-            <Plus size={14} /> Novo Lançamento
+            <Plus size={14} /> {t('transactions.newEntryBtn')}
           </button>
         </div>
       ) : (
@@ -240,7 +242,7 @@ export default function Transactions() {
 
       {filtered.length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', marginTop: 24 }}>
-          {filtered.length} lançamento{filtered.length !== 1 ? 's' : ''} em {MONTHS[month - 1]} {year}
+          {t('transactions.countFn')(filtered.length, t('months')[month - 1], year)}
         </div>
       )}
 
@@ -249,16 +251,16 @@ export default function Transactions() {
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth: 380 }}>
             <div className="modal-head">
-              <h2>Excluir lançamento?</h2>
+              <h2>{t('transactions.deleteTransaction')}</h2>
               <button className="icon-btn" onClick={() => setDeleteConfirm(null)}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 12 }}>
               <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                Esta ação não pode ser desfeita.
+                {t('transactions.deleteNotReversible')}
               </p>
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteConfirm(null)}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteConfirm(null)}>{t('common.cancel')}</button>
               <button
                 className="btn"
                 style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}

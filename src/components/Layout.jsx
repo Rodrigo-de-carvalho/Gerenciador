@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { supabase } from '../lib/supabase';
 import PrivacyPolicy from './PrivacyPolicy';
+import { useI18n } from '../i18n';
 
 const NAV_MAIN = [
   { id: 'dashboard',    label: 'Painel',        Icon: LayoutDashboard },
@@ -26,19 +27,9 @@ const NAV_TOOLS = [
   { id: 'reports',      label: 'Relatórios',  Icon: PieChart },
 ];
 
-const PAGE_TITLES = {
-  dashboard:    { title: 'Painel',        sub: 'Visão geral' },
-  transactions: { title: 'Transações',    sub: 'Histórico completo' },
-  projects:     { title: 'Projetos',      sub: 'Seus projetos' },
-  cards:        { title: 'Cartões',       sub: 'Crédito e parcelas' },
-  goals:        { title: 'Metas',         sub: 'Objetivos financeiros' },
-  investments:  { title: 'Investimentos', sub: 'Carteira de ativos' },
-  assistant:    { title: 'Cifra IA',      sub: 'Assistente pessoal' },
-  categories:   { title: 'Categorias',   sub: 'Organizar lançamentos' },
-  reports:      { title: 'Relatórios',   sub: 'Análises detalhadas' },
-};
 
 function SettingsModal({ onClose }) {
+  const { t, lang, setLang } = useI18n();
   const { user, updateProfile, deleteAccount } = useAuth();
   const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
   const [enabled, setEnabled] = useState(aiEnabled);
@@ -149,7 +140,7 @@ function SettingsModal({ onClose }) {
         <div className="modal-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Settings size={15} style={{ color: 'var(--text-3)' }} />
-            <h2>Configurações</h2>
+            <h2>{t('settings.title')}</h2>
           </div>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
@@ -157,32 +148,32 @@ function SettingsModal({ onClose }) {
         <div className="modal-form" style={{ gap: 20 }}>
           {/* Account */}
           <div>
-            <SectionLabel>Conta</SectionLabel>
+            <SectionLabel>{t('settings.account')}</SectionLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--chip)', borderRadius: 10 }}>
               <div className="avatar" style={{ width: 36, height: 36, fontSize: 14, fontWeight: 700 }}>
                 {user?.email?.[0]?.toUpperCase() || '?'}
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Conta ativa</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{t('settings.activeAccount')}</div>
               </div>
             </div>
           </div>
 
           {/* Privacy */}
           <div>
-            <SectionLabel>Privacidade</SectionLabel>
+            <SectionLabel>{t('settings.privacy')}</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <SettingRow
                 icon={<Shield size={16} />}
-                title="Política de Privacidade"
-                subtitle="Como seus dados são usados (LGPD)"
+                title={t('settings.privacyPolicyTitle')}
+                subtitle={t('settings.privacyPolicySubtitle')}
                 onClick={() => setShowPrivacy(true)}
               />
               <SettingRow
                 icon={<Download size={16} />}
-                title="Exportar meus dados"
-                subtitle={exporting ? 'Gerando arquivo...' : 'Baixar JSON com todos os seus dados'}
+                title={t('settings.exportMyData')}
+                subtitle={exporting ? t('settings.exportingEllipsis') : t('settings.exportSubtitle')}
                 onClick={handleExport}
                 disabled={exporting}
               />
@@ -191,11 +182,11 @@ function SettingsModal({ onClose }) {
 
           {/* AI Assistant */}
           <div>
-            <SectionLabel>Assistente de IA</SectionLabel>
+            <SectionLabel>{t('settings.aiAssistant')}</SectionLabel>
             <SettingRow
               icon={<BotIcon size={16} />}
-              title="Ativar Assistente de IA"
-              subtitle={enabled ? 'Ativado — chat disponível' : 'Desativado por padrão'}
+              title={t('settings.enableAI')}
+              subtitle={enabled ? t('settings.aiEnabled') : t('settings.aiDisabled')}
               onClick={handleToggle}
               right={
                 <div className={`toggle-track${enabled ? ' on' : ''}`} style={{ flexShrink: 0 }}>
@@ -206,18 +197,47 @@ function SettingsModal({ onClose }) {
             {enabled && (
               <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,192,74,0.08)', border: '1px solid rgba(255,192,74,0.2)', borderRadius: 8, marginTop: 8, fontSize: 12, color: 'var(--warn)', lineHeight: 1.5 }}>
                 <ShieldAlert size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-                Com o assistente ativado, um <strong>resumo financeiro</strong> é enviado a uma IA externa (Groq/Llama). Nenhum dado pessoal identificável é transmitido.
+                {t('settings.aiWarning')}
               </div>
             )}
           </div>
 
+          {/* Language */}
+          <div>
+            <SectionLabel>{t('settings.language')}</SectionLabel>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { code: 'pt', label: '🇧🇷 PT' },
+                { code: 'en', label: '🇺🇸 EN' },
+                { code: 'es', label: '🇪🇸 ES' },
+              ].map(({ code, label }) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setLang(code)}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 13, fontWeight: 500,
+                    background: lang === code ? 'var(--accent)' : 'var(--chip)',
+                    color: lang === code ? 'var(--accent-ink)' : 'var(--text-2)',
+                    border: '1px solid',
+                    borderColor: lang === code ? 'var(--accent)' : 'var(--line)',
+                    transition: 'all 120ms',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Danger zone */}
           <div>
-            <SectionLabel danger>Zona de Perigo</SectionLabel>
+            <SectionLabel danger>{t('settings.dangerZone')}</SectionLabel>
             <SettingRow
               icon={<Trash2 size={16} />}
-              title="Deletar minha conta"
-              subtitle="Remove permanentemente todos os seus dados"
+              title={t('settings.deleteAccount')}
+              subtitle={t('settings.deleteAccountSubtitle')}
               onClick={() => setShowDeleteConfirm(true)}
               danger
             />
@@ -225,9 +245,9 @@ function SettingsModal({ onClose }) {
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
           <button type="button" className="btn primary" style={{ flex: 1, justifyContent: 'center', opacity: (!changed || saving) ? 0.5 : 1 }} onClick={handleSave} disabled={saving || !changed}>
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? t('common.savingEllipsis') : t('common.save')}
           </button>
         </div>
       </div>
@@ -237,18 +257,18 @@ function SettingsModal({ onClose }) {
         <div className="modal-overlay" style={{ zIndex: 60 }}>
           <div className="modal-box" style={{ maxWidth: 380 }}>
             <div className="modal-head">
-              <h2>Ativar Assistente de IA?</h2>
+              <h2>{t('settings.enableAITitle')}</h2>
               <button className="icon-btn" onClick={() => setShowConsent(false)}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 12 }}>
               <div style={{ display: 'flex', gap: 10, padding: '12px 14px', background: 'rgba(255,192,74,0.08)', border: '1px solid rgba(255,192,74,0.2)', borderRadius: 10, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
                 <ShieldAlert size={15} style={{ flexShrink: 0, marginTop: 1, color: 'var(--warn)' }} />
-                <span>Ao ativar, um <strong>resumo dos seus dados financeiros</strong> será enviado ao modelo <strong>Llama 3.3</strong> da Groq a cada mensagem. <strong>Não são transmitidos</strong> dados pessoais como nome, CPF ou senhas.</span>
+                <span>{t('settings.enableAIConsent')}</span>
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowConsent(false)}>Cancelar</button>
-              <button className="btn primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleAcceptConsent}>Entendi e aceito</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowConsent(false)}>{t('common.cancel')}</button>
+              <button className="btn primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleAcceptConsent}>{t('settings.understood')}</button>
             </div>
           </div>
         </div>
@@ -261,12 +281,12 @@ function SettingsModal({ onClose }) {
         <div className="modal-overlay" style={{ zIndex: 60 }}>
           <div className="modal-box" style={{ maxWidth: 380 }}>
             <div className="modal-head">
-              <h2 style={{ color: 'var(--negative)' }}>Deletar conta permanentemente?</h2>
+              <h2 style={{ color: 'var(--negative)' }}>{t('settings.deleteAccountTitle')}</h2>
               <button className="icon-btn" onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 12 }}>
               <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.55 }}>
-                Essa ação é <strong style={{ color: 'var(--text)' }}>irreversível</strong>. Todos os seus dados serão removidos: transações, categorias, projetos, cartões e conta de acesso.
+                {t('settings.deleteAccountDesc')}
               </p>
               {deleteError && (
                 <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
@@ -275,9 +295,9 @@ function SettingsModal({ onClose }) {
               )}
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }} disabled={deleting}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }} disabled={deleting}>{t('common.cancel')}</button>
               <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: deleting ? 0.6 : 1 }} onClick={handleDelete} disabled={deleting}>
-                <Trash2 size={14} /> {deleting ? 'Deletando...' : 'Sim, deletar tudo'}
+                <Trash2 size={14} /> {deleting ? t('common.deletingEllipsis') : t('settings.deleteAll')}
               </button>
             </div>
           </div>
@@ -294,6 +314,19 @@ export default function Layout({ currentPage, onNavigate, children }) {
   const { darkMode, toggleDark } = useTheme();
   const { privacy, setPrivacy } = usePrivacy();
   const { user, signOut } = useAuth();
+  const { t, lang, setLang } = useI18n();
+
+  const PAGE_TITLES = {
+    dashboard:    { title: t('nav.dashboard'),    sub: t('pageSub.dashboard') },
+    transactions: { title: t('nav.transactions'), sub: t('pageSub.transactions') },
+    projects:     { title: t('nav.projects'),     sub: t('pageSub.projects') },
+    cards:        { title: t('nav.cards'),         sub: t('pageSub.cards') },
+    goals:        { title: t('nav.goals'),         sub: t('pageSub.goals') },
+    investments:  { title: t('nav.investments'),  sub: t('pageSub.investments') },
+    assistant:    { title: t('nav.assistant'),    sub: t('pageSub.assistant') },
+    categories:   { title: t('nav.categories'),   sub: t('pageSub.categories') },
+    reports:      { title: t('nav.reports'),      sub: t('pageSub.reports') },
+  };
 
   const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   const userEmail = user?.email || '';
@@ -329,7 +362,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
         </div>
 
         {/* Main nav */}
-        {NAV_MAIN.map(({ id, label, Icon }) => (
+        {NAV_MAIN.map(({ id, Icon }) => (
           <button
             key={id}
             className={`nav-item${currentPage === id ? ' active' : ''}`}
@@ -338,14 +371,14 @@ export default function Layout({ currentPage, onNavigate, children }) {
             <span className="nav-icon">
               <Icon size={16} />
             </span>
-            {label}
+            {t('nav.' + id)}
             {id === 'assistant' && <span className="nav-dot" />}
           </button>
         ))}
 
         {/* Tools section */}
-        <div className="nav-section-label" style={{ marginTop: 8 }}>Ferramentas</div>
-        {NAV_TOOLS.map(({ id, label, Icon }) => (
+        <div className="nav-section-label" style={{ marginTop: 8 }}>{t('nav.tools')}</div>
+        {NAV_TOOLS.map(({ id, Icon }) => (
           <button
             key={id}
             className={`nav-item${currentPage === id ? ' active' : ''}`}
@@ -354,7 +387,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
             <span className="nav-icon">
               <Icon size={16} />
             </span>
-            {label}
+            {t('nav.' + id)}
           </button>
         ))}
 
@@ -376,7 +409,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
           <span className="nav-icon" style={{ color: 'inherit' }}>
             <Smartphone size={15} />
           </span>
-          <span>Baixar app Android</span>
+          <span>{t('nav.downloadAndroid')}</span>
         </a>
 
         {/* User card */}
@@ -386,7 +419,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
             <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {userEmail}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Configurações</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('settings.configSettings')}</div>
           </div>
           <Settings size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
         </div>
@@ -460,7 +493,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
                   }}>
                     <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)' }}>
                       <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Conta ativa</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{t('settings.activeAccount')}</div>
                     </div>
                     <button
                       onClick={() => { setShowUserMenu(false); setShowSettings(true); }}
@@ -468,7 +501,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--chip)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
-                      <Settings size={14} /> Configurações
+                      <Settings size={14} /> {t('settings.configSettings')}
                     </button>
                     <button
                       onClick={() => { setShowUserMenu(false); signOut(); }}
@@ -476,7 +509,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--chip)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
-                      <LogOut size={14} /> Sair da conta
+                      <LogOut size={14} /> {t('settings.signOut')}
                     </button>
                   </div>
                 </>

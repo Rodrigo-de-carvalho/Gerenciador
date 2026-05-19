@@ -3,8 +3,10 @@ import { Upload, X, Check, AlertCircle } from 'lucide-react';
 import { parseCSVFile, detectBank, parseRows, BANK_LABELS } from '../utils/csvParsers';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 export default function ImportCSV({ onClose }) {
+  const { t } = useI18n();
   const { categories, bulkAddTransactions } = useFinance();
   const [step, setStep]       = useState('upload');
   const [bank, setBank]       = useState(null);
@@ -25,7 +27,7 @@ export default function ImportCSV({ onClose }) {
   const processFile = useCallback((file) => {
     if (!file) return;
     if (!/\.(csv|txt)$/i.test(file.name)) {
-      setError('Use um arquivo .csv ou .txt exportado pelo seu banco.');
+      setError(t('importCSV.errBadFormat'));
       return;
     }
     setError('');
@@ -41,13 +43,13 @@ export default function ImportCSV({ onClose }) {
         }
         try {
           const { data, meta } = parseCSVFile(text);
-          if (!data?.length) { setError('Arquivo vazio ou sem transações.'); return; }
+          if (!data?.length) { setError(t('importCSV.errEmpty')); return; }
 
           const headers = meta.fields || Object.keys(data[0] || {});
           const detectedBank = detectBank(headers);
 
           if (detectedBank === 'unknown') {
-            setError('Banco não reconhecido. Suportados: Nubank, Inter e Itaú.');
+            setError(t('importCSV.errUnknownBank'));
             return;
           }
 
@@ -57,7 +59,7 @@ export default function ImportCSV({ onClose }) {
           }));
 
           if (!parsed.length) {
-            setError('Nenhuma transação extraída. Verifique se o arquivo é um extrato válido.');
+            setError(t('importCSV.errNoTransactions'));
             return;
           }
 
@@ -66,7 +68,7 @@ export default function ImportCSV({ onClose }) {
           setSelected(new Set(parsed.map((_, i) => i)));
           setStep('preview');
         } catch {
-          setError('Erro ao processar o arquivo. Tente exportar novamente.');
+          setError(t('importCSV.errProcessing'));
         }
       };
       reader.readAsText(file, encoding);
@@ -92,7 +94,7 @@ export default function ImportCSV({ onClose }) {
       setImportCount(count);
       setStep('done');
     } catch {
-      setError('Erro ao importar. Tente novamente.');
+      setError(t('importCSV.errImporting'));
     } finally {
       setImporting(false);
     }
@@ -104,7 +106,7 @@ export default function ImportCSV({ onClose }) {
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: step === 'preview' ? 700 : 480, transition: 'max-width 200ms' }}>
         <div className="modal-head">
-          <h2>{step === 'done' ? 'Importação concluída' : 'Importar extrato CSV'}</h2>
+          <h2>{step === 'done' ? t('importCSV.done') : t('importCSV.title')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
 
@@ -126,10 +128,10 @@ export default function ImportCSV({ onClose }) {
               >
                 <Upload size={28} style={{ color: dragging ? 'var(--accent)' : 'var(--text-3)', marginBottom: 10 }} />
                 <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 5 }}>
-                  Arraste o arquivo ou{' '}
-                  <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>clique para selecionar</span>
+                  {t('importCSV.dropFile')}{' '}
+                  <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{t('importCSV.clickToSelect')}</span>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>.csv ou .txt exportado pelo banco</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('importCSV.fileHint')}</div>
               </div>
               <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }}
                 onChange={e => processFile(e.target.files[0])} />
@@ -142,7 +144,7 @@ export default function ImportCSV({ onClose }) {
               )}
 
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em' }}>BANCOS SUPORTADOS</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em' }}>{t('importCSV.supportedBanks')}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {[
                     { name: 'Nubank',       hint: 'Fatura (crédito) ou extrato da conta' },
@@ -160,11 +162,11 @@ export default function ImportCSV({ onClose }) {
               </div>
 
               <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
-                <strong style={{ color: 'var(--text-2)' }}>Como exportar:</strong> no app do banco, acesse Extrato → Exportar → CSV. Para o Itaú, use o internet banking no computador.
+                <strong style={{ color: 'var(--text-2)' }}>{t('importCSV.howToExport')}</strong> {t('importCSV.howToExportDesc')}
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             </div>
           </>
         )}
@@ -179,13 +181,13 @@ export default function ImportCSV({ onClose }) {
                   {BANK_LABELS[bank] || bank}
                 </span>
                 <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
-                  {rows.length} transações · {selCount} selecionada{selCount !== 1 ? 's' : ''}
+                  {`${rows.length} ${t('importCSV.transactions')} · ${selCount} ${selCount !== 1 ? t('importCSV.selectedPlural') : t('importCSV.selected')}`}
                 </span>
                 <button
                   onClick={toggleAll}
                   style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
                 >
-                  {selCount === rows.length ? 'Desmarcar tudo' : 'Selecionar tudo'}
+                  {selCount === rows.length ? t('importCSV.deselectAll') : t('importCSV.selectAll')}
                 </button>
               </div>
 
@@ -197,11 +199,11 @@ export default function ImportCSV({ onClose }) {
                       <th style={{ padding: '8px 10px', width: 32, textAlign: 'center' }}>
                         <input type="checkbox" checked={selCount === rows.length && rows.length > 0} onChange={toggleAll} style={{ cursor: 'pointer' }} />
                       </th>
-                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>DATA</th>
-                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>DESCRIÇÃO</th>
-                      <th style={{ padding: '8px 8px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>VALOR</th>
-                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>TIPO</th>
-                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>CATEGORIA</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{t('importCSV.columnDate')}</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{t('importCSV.columnDesc')}</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{t('importCSV.columnValue')}</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{t('importCSV.columnType')}</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{t('importCSV.columnCategory')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -236,7 +238,7 @@ export default function ImportCSV({ onClose }) {
                               background: row.type === 'income' ? 'rgba(199,242,132,0.1)' : 'rgba(255,122,90,0.1)',
                               color: row.type === 'income' ? 'var(--positive)' : 'var(--negative)',
                             }}>
-                              {row.type === 'income' ? 'Entrada' : 'Saída'}
+                              {row.type === 'income' ? t('importCSV.incomeType') : t('importCSV.expenseType')}
                             </span>
                           </td>
                           <td style={{ padding: '7px 8px', fontSize: 12, color: cat ? 'var(--text-2)' : 'var(--text-3)' }}>
@@ -250,7 +252,7 @@ export default function ImportCSV({ onClose }) {
               </div>
 
               <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.55 }}>
-                Categorias foram auto-detectadas pelo nome quando possível. Você pode ajustá-las após importar.
+                {t('importCSV.autoDetectedCategories')}
               </div>
 
               {error && (
@@ -260,14 +262,14 @@ export default function ImportCSV({ onClose }) {
               )}
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ justifyContent: 'center' }} onClick={() => { setStep('upload'); setError(''); }}>Voltar</button>
+              <button className="btn" style={{ justifyContent: 'center' }} onClick={() => { setStep('upload'); setError(''); }}>{t('importCSV.back')}</button>
               <button
                 className="btn primary"
                 style={{ flex: 2, justifyContent: 'center', opacity: (selCount === 0 || importing) ? 0.5 : 1 }}
                 onClick={handleImport}
                 disabled={selCount === 0 || importing}
               >
-                {importing ? 'Importando...' : `Importar ${selCount} transaç${selCount !== 1 ? 'ões' : 'ão'}`}
+                {importing ? t('common.importingEllipsis') : t('importCSV.importFn')(selCount)}
               </button>
             </div>
           </>
@@ -286,10 +288,10 @@ export default function ImportCSV({ onClose }) {
               </div>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-                  {importCount} transaç{importCount !== 1 ? 'ões importadas' : 'ão importada'}
+                  {t('importCSV.importedFn')(importCount)}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                  Os lançamentos já aparecem na lista de transações.
+                  {t('importCSV.importedDesc')}
                 </div>
               </div>
             </div>

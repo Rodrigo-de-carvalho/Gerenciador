@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 import { validateEmail, validatePassword, checkRateLimit, recordFailedAttempt, resetRateLimit } from '../utils/validation';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 
@@ -17,6 +18,7 @@ function GoogleIcon() {
 
 export default function AuthPage() {
   const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { t } = useI18n();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,11 +37,11 @@ export default function AuthPage() {
 
     const rateLimitError = checkRateLimit();
     if (rateLimitError) { setError(rateLimitError); return; }
-    if (!validateEmail(email)) { setError('Informe um e-mail válido.'); return; }
+    if (!validateEmail(email)) { setError(t('auth.invalidEmail')); return; }
     const passError = validatePassword(password);
     if (passError) { setError(passError); return; }
     if (mode === 'register' && !termsAccepted) {
-      setError('Você precisa aceitar os termos de uso para criar uma conta.');
+      setError(t('auth.needTerms'));
       return;
     }
 
@@ -52,15 +54,15 @@ export default function AuthPage() {
       } else {
         const { error: err } = await signUp(email, password);
         if (err) throw err;
-        setSuccess('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
+        setSuccess(t('auth.accountCreated'));
       }
     } catch (err) {
       recordFailedAttempt();
       const msgs = {
-        'Invalid login credentials': 'E-mail ou senha incorretos.',
-        'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
-        'User already registered': 'Este e-mail já está cadastrado.',
-        'Password should be at least 6 characters': 'A senha deve ter pelo menos 6 caracteres.',
+        'Invalid login credentials': t('auth.errInvalidCredentials'),
+        'Email not confirmed': t('auth.errEmailNotConfirmed'),
+        'User already registered': t('auth.errUserAlreadyRegistered'),
+        'Password should be at least 6 characters': t('auth.errPasswordTooShort'),
       };
       setError(msgs[err.message] || err.message);
     } finally {
@@ -115,7 +117,7 @@ export default function AuthPage() {
             Cifra
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
-            Controle suas finanças com inteligência
+            {t('auth.tagline')}
           </div>
         </div>
 
@@ -135,7 +137,7 @@ export default function AuthPage() {
               className={mode === 'login' ? 'active' : ''}
               onClick={() => switchMode('login')}
             >
-              Entrar
+              {t('auth.signIn')}
             </button>
             <button
               type="button"
@@ -143,21 +145,21 @@ export default function AuthPage() {
               className={mode === 'register' ? 'active' : ''}
               onClick={() => switchMode('register')}
             >
-              Criar conta
+              {t('auth.createAccount')}
             </button>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Email */}
             <div className="field">
-              <label className="field-label">E-mail</label>
+              <label className="field-label">{t('auth.email')}</label>
               <div style={{ position: 'relative' }}>
                 <Mail size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }} />
                 <input
                   type="email"
                   className="field-input"
                   style={{ paddingLeft: 34 }}
-                  placeholder="seu@email.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -169,14 +171,14 @@ export default function AuthPage() {
 
             {/* Password */}
             <div className="field">
-              <label className="field-label">Senha</label>
+              <label className="field-label">{t('auth.password')}</label>
               <div style={{ position: 'relative' }}>
                 <Lock size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }} />
                 <input
                   type={showPass ? 'text' : 'password'}
                   className="field-input"
                   style={{ paddingLeft: 34, paddingRight: 40 }}
-                  placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
+                  placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : t('auth.passwordPlaceholderLogin')}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
@@ -206,15 +208,15 @@ export default function AuthPage() {
                   style={{ marginTop: 2, width: 14, height: 14, accentColor: 'var(--accent)', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.5 }}>
-                  Li e aceito a{' '}
+                  {t('auth.acceptTerms')}{' '}
                   <button
                     type="button"
                     onClick={() => setShowPrivacy(true)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', textDecoration: 'underline', fontSize: 'inherit', fontFamily: 'inherit', padding: 0 }}
                   >
-                    Política de Privacidade
+                    {t('auth.privacyPolicy')}
                   </button>
-                  . Meus dados financeiros serão armazenados no Supabase e não compartilhados com terceiros.
+                  {'. ' + t('auth.termsNote')}
                 </span>
               </label>
             )}
@@ -241,14 +243,14 @@ export default function AuthPage() {
             >
               {loading
                 ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                : mode === 'login' ? 'Entrar' : 'Criar conta'}
+                : mode === 'login' ? t('auth.signIn') : t('auth.createAccount')}
             </button>
           </form>
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
             <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            <span style={{ fontSize: 11.5, color: 'var(--text-4)' }}>ou</span>
+            <span style={{ fontSize: 11.5, color: 'var(--text-4)' }}>{t('auth.or')}</span>
             <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
           </div>
 
@@ -261,18 +263,18 @@ export default function AuthPage() {
             style={{ width: '100%', justifyContent: 'center', gap: 10, opacity: googleLoading ? 0.6 : 1 }}
           >
             {googleLoading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <GoogleIcon />}
-            Continuar com Google
+            {t('auth.continueWithGoogle')}
           </button>
         </div>
 
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-4)' }}>
-          Seus dados ficam seguros e acessíveis de qualquer dispositivo.{' '}
+          {t('auth.footerNote')}{' '}
           <button
             onClick={() => setShowPrivacy(true)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', textDecoration: 'underline', fontSize: 'inherit', fontFamily: 'inherit', padding: 0 }}
           >
-            Política de Privacidade
+            {t('auth.privacyPolicy')}
           </button>
         </div>
       </div>
