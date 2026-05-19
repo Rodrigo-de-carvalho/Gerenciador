@@ -2,13 +2,16 @@ import { useState, useMemo } from 'react';
 import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
-import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
+import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import { useI18n } from '../i18n';
 
 const CARD_STYLES = ['cc-1', 'cc-2', 'cc-3', 'cc-4'];
 const CARD_ICONS = ['💳', '🏦', '💰', '🏧', '⭐', '♟️', '🌟', '📎'];
 
 function CardFormModal({ card, onClose, onSave }) {
+  const { t } = useI18n();
+  const isEdit = Boolean(card);
   const [form, setForm] = useState(
     card
       ? { name: card.name, limitAmount: card.limitAmount || '', closingDay: card.closingDay || 1, icon: card.icon || '💳' }
@@ -25,27 +28,27 @@ function CardFormModal({ card, onClose, onSave }) {
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="modal-head">
-          <h2>{card ? 'Editar Cartão' : 'Novo Cartão'}</h2>
+          <h2>{isEdit ? t('cards.editCard') : t('cards.newCard')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-form">
             <div className="field">
-              <label className="field-label">Nome do cartão *</label>
+              <label className="field-label">{t('cards.cardName')}</label>
               <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
-                <label className="field-label">Limite (opcional)</label>
+                <label className="field-label">{t('cards.limit')}</label>
                 <input type="number" className="field-input" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder="Ex: 5000" min="0" step="0.01" />
               </div>
               <div className="field">
-                <label className="field-label">Dia de fechamento</label>
+                <label className="field-label">{t('cards.closingDay')}</label>
                 <input type="number" className="field-input" value={form.closingDay} onChange={e => setForm(f => ({ ...f, closingDay: e.target.value }))} min="1" max="31" required />
               </div>
             </div>
             <div className="field">
-              <label className="field-label">Ícone</label>
+              <label className="field-label">{t('cards.icon')}</label>
               <div className="icon-grid">
                 {CARD_ICONS.map(icon => (
                   <button key={icon} type="button" className={`icon-pick${form.icon === icon ? ' sel' : ''}`} onClick={() => setForm(f => ({ ...f, icon }))}>{icon}</button>
@@ -54,9 +57,9 @@ function CardFormModal({ card, onClose, onSave }) {
             </div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
-              <Plus size={14} /> {card ? 'Salvar' : 'Criar'}
+              <Plus size={14} /> {isEdit ? t('common.save') : t('common.create')}
             </button>
           </div>
         </form>
@@ -66,6 +69,7 @@ function CardFormModal({ card, onClose, onSave }) {
 }
 
 export default function Cards() {
+  const { t } = useI18n();
   const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
@@ -128,21 +132,21 @@ export default function Cards() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
           <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', minWidth: 110, textAlign: 'center' }}>
-            {MONTHS[month - 1]} {year}
+            {t('months')[month - 1]} {year}
           </span>
           <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
         </div>
         <button className="btn primary" onClick={() => { setEditCard(null); setShowForm(true); }}>
-          <Plus size={14} /> Novo Cartão
+          <Plus size={14} /> {t('cards.newCard')}
         </button>
       </div>
 
       {/* Tabs */}
       {cards.length > 0 && (
         <div className="tabs" style={{ marginBottom: 20 }}>
-          <button className={`tab${activeTab === 'bills' ? ' active' : ''}`} onClick={() => setActiveTab('bills')}>Faturas</button>
+          <button className={`tab${activeTab === 'bills' ? ' active' : ''}`} onClick={() => setActiveTab('bills')}>{t('cards.invoices')}</button>
           <button className={`tab${activeTab === 'installments' ? ' active' : ''}`} onClick={() => setActiveTab('installments')}>
-            Parcelas Futuras {futureInstallments.length > 0 && <span style={{ marginLeft: 4, fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '1px 6px' }}>{futureInstallments.reduce((s, m) => s + m.items.length, 0)}</span>}
+            {t('cards.futureInstallments')} {futureInstallments.length > 0 && <span style={{ marginLeft: 4, fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '1px 6px' }}>{futureInstallments.reduce((s, m) => s + m.items.length, 0)}</span>}
           </button>
         </div>
       )}
@@ -152,12 +156,12 @@ export default function Cards() {
           <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <CreditCard size={24} style={{ color: 'var(--text-3)' }} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhum cartão cadastrado</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('cards.noCardsRegistered')}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
-            Adicione seus cartões para acompanhar faturas e gastos.
+            {t('cards.addCardsDesc')}
           </p>
           <button className="btn primary" onClick={() => setShowForm(true)}>
-            <Plus size={14} /> Adicionar cartão
+            <Plus size={14} /> {t('cards.addCard')}
           </button>
         </div>
       ) : activeTab === 'installments' ? (
@@ -165,14 +169,14 @@ export default function Cards() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {futureInstallments.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)', fontSize: 13 }}>
-              Nenhuma parcela futura encontrada.
+              {t('cards.noFutureInstallments')}
             </div>
           ) : (
             futureInstallments.map(group => (
               <div key={`${group.year}-${group.month}`}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-3)', fontWeight: 500 }}>
-                    {MONTHS[group.month - 1]} {group.year}
+                    {t('months')[group.month - 1]} {group.year}
                   </div>
                   <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
                     {privacy ? 'R$ ••••' : formatCurrency(group.total)}
@@ -230,7 +234,7 @@ export default function Cards() {
                   </div>
                   <div>
                     <div style={{ fontSize: 10, opacity: 0.6, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                      Fatura {MONTHS[month - 1]}
+                      {t('cards.invoice')} {t('months')[month - 1]}
                     </div>
                     <div className="cc-bal">
                       {privacy ? 'R$ ••••' : `R$ ${billTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -248,7 +252,7 @@ export default function Cards() {
                   {card.limitAmount && (
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--text-3)', marginBottom: 6 }}>
-                        <span>Utilizado</span>
+                        <span>{t('cards.used')}</span>
                         <span>{Math.round(usedPct)}%</span>
                       </div>
                       <div className="bar-track">
@@ -261,7 +265,7 @@ export default function Cards() {
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
                     <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-                      Fecha dia {card.closingDay} · {card.bill?.transactions?.length || 0} lançamentos
+                      {t('cards.closesDay')} {card.closingDay} · {card.bill?.transactions?.length || 0} {t('cards.entries')}
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => { setEditCard(card); setShowForm(true); }} title="Editar"><Pencil size={12} /></button>
@@ -274,15 +278,15 @@ export default function Cards() {
                 {selectedCardId === card.id && selectedBill && (
                   <div className="card" style={{ marginTop: 8, padding: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 500 }}>Detalhes da fatura</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 500 }}>{t('cards.invoiceDetails')}</span>
                       <button className="btn primary" style={{ marginLeft: 'auto', padding: '5px 10px', fontSize: 12 }}
                         onClick={() => setShowTxModal(true)}>
-                        <Plus size={12} /> Lançamento
+                        <Plus size={12} /> {t('cards.newEntry')}
                       </button>
                     </div>
                     {selectedBill.transactions.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-3)', fontSize: 13 }}>
-                        Nenhum lançamento nesta fatura
+                        {t('cards.noEntriesInInvoice')}
                       </div>
                     ) : (
                       <table className="tx-table">
@@ -310,7 +314,7 @@ export default function Cards() {
                       </table>
                     )}
                     <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                      <span style={{ color: 'var(--text-3)' }}>Total da fatura</span>
+                      <span style={{ color: 'var(--text-3)' }}>{t('cards.invoiceTotal')}</span>
                       <span className="t-num neg" style={{ fontWeight: 600 }}>
                         {privacy ? 'R$ ••••' : formatCurrency(selectedBill.total)}
                       </span>
@@ -337,15 +341,15 @@ export default function Cards() {
       {showDeleteConfirm && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth: 360 }}>
-            <div className="modal-head"><h2>Excluir cartão?</h2></div>
+            <div className="modal-head"><h2>{t('cards.deleteCard')}</h2></div>
             <div className="modal-form" style={{ gap: 14 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-3)' }}>O cartão será removido. Os lançamentos vinculados serão mantidos.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('cards.deleteCardDesc')}</p>
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(null)}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(null)}>{t('common.cancel')}</button>
               <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
                 onClick={() => { deleteCard(showDeleteConfirm); setShowDeleteConfirm(null); if (selectedCardId === showDeleteConfirm) setSelectedCardId(null); }}>
-                <Trash2 size={14} /> Excluir
+                <Trash2 size={14} /> {t('common.delete')}
               </button>
             </div>
           </div>

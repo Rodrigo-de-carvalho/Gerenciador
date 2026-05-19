@@ -9,11 +9,13 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { exportProjectToExcel, downloadProjectPDF, generateProjectWhatsAppText } from '../utils/exportUtils';
 import TransactionModal from '../components/TransactionModal';
+import { useI18n } from '../i18n';
 
 const PROJECT_ICONS = ['🏗️','🏠','💻','📱','🚗','🎯','💼','🌱','🎨','🏋️','📚','🎵','✈️','🍕','🎮','🛍️','💡','🔧','🎓','⚽','🎪','🏖️','🏢','🔬','🛡️'];
 const PROJECT_COLORS = ['#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16','#14b8a6'];
 
 function ProjectFormModal({ project, onClose, onSave }) {
+  const { t } = useI18n();
   const [form, setForm] = useState(
     project
       ? { name: project.name, description: project.description || '', icon: project.icon, color: project.color, includeInOverview: project.includeInOverview ?? true }
@@ -30,21 +32,21 @@ function ProjectFormModal({ project, onClose, onSave }) {
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="modal-head">
-          <h2>{project ? 'Editar Projeto' : 'Novo Projeto'}</h2>
+          <h2>{project ? t('projects.editProject') : t('projects.newProject')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-form">
             <div className="field">
-              <label className="field-label">Nome *</label>
+              <label className="field-label">{t('projects.name')}</label>
               <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Reforma da Casa" />
             </div>
             <div className="field">
-              <label className="field-label">Descrição</label>
+              <label className="field-label">{t('projects.description')}</label>
               <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descreva o projeto..." />
             </div>
             <div className="field">
-              <label className="field-label">Ícone</label>
+              <label className="field-label">{t('projects.icon')}</label>
               <div className="icon-grid" style={{ maxHeight: 120, overflowY: 'auto' }}>
                 {PROJECT_ICONS.map(icon => (
                   <button key={icon} type="button" className={`icon-pick${form.icon === icon ? ' sel' : ''}`} onClick={() => setForm(f => ({ ...f, icon }))}>
@@ -54,7 +56,7 @@ function ProjectFormModal({ project, onClose, onSave }) {
               </div>
             </div>
             <div className="field">
-              <label className="field-label">Cor</label>
+              <label className="field-label">{t('projects.color')}</label>
               <div className="color-grid">
                 {PROJECT_COLORS.map(color => (
                   <button key={color} type="button" className={`color-pick${form.color === color ? ' sel' : ''}`} style={{ background: color }} onClick={() => setForm(f => ({ ...f, color }))} />
@@ -63,9 +65,9 @@ function ProjectFormModal({ project, onClose, onSave }) {
             </div>
             <div className="toggle-row" onClick={() => setForm(f => ({ ...f, includeInOverview: !f.includeInOverview }))}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>Incluir no financeiro geral</div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{t('projects.includeInOverview')}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>
-                  {form.includeInOverview ? 'Lançamentos somam no Dashboard' : 'Lançamentos isolados neste projeto'}
+                  {form.includeInOverview ? t('projects.includeDesc') : t('projects.excludeDesc')}
                 </div>
               </div>
               <div className={`toggle-track${form.includeInOverview ? ' on' : ''}`}>
@@ -74,9 +76,9 @@ function ProjectFormModal({ project, onClose, onSave }) {
             </div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
-              <Plus size={14} /> {project ? 'Salvar' : 'Criar'}
+              <Plus size={14} /> {project ? t('common.save') : t('common.create')}
             </button>
           </div>
         </form>
@@ -86,6 +88,7 @@ function ProjectFormModal({ project, onClose, onSave }) {
 }
 
 function ProjectDetail({ project, onBack }) {
+  const { t } = useI18n();
   const { transactions, categories, updateProject, deleteProject, deleteTransaction } = useFinance();
   const { privacy } = usePrivacy();
   const [showTxModal, setShowTxModal] = useState(false);
@@ -133,7 +136,7 @@ function ProjectDetail({ project, onBack }) {
               background: project.includeInOverview ? 'rgba(59,130,246,0.12)' : 'var(--chip)',
               color: project.includeInOverview ? 'var(--info)' : 'var(--text-3)',
             }}>
-              {project.includeInOverview ? 'no geral' : 'isolado'}
+              {project.includeInOverview !== false ? t('projects.inGeneral') : t('projects.isolated')}
             </span>
           </div>
           {project.description && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{project.description}</p>}
@@ -147,9 +150,9 @@ function ProjectDetail({ project, onBack }) {
       {/* KPIs */}
       <div className="grid-cifra g-3" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Entradas', value: income, cls: 'pos' },
-          { label: 'Saídas', value: expense, cls: 'neg' },
-          { label: 'Saldo', value: balance, cls: balance >= 0 ? 'pos' : 'neg' },
+          { label: t('projects.income'), value: income, cls: 'pos' },
+          { label: t('projects.expense'), value: expense, cls: 'neg' },
+          { label: t('projects.balance'), value: balance, cls: balance >= 0 ? 'pos' : 'neg' },
         ].map(({ label, value, cls }) => (
           <div key={label} className="card" style={{ padding: '14px 18px', minWidth: 0, overflow: 'hidden' }}>
             <div className="t-label" style={{ marginBottom: 6 }}>{label}</div>
@@ -163,16 +166,16 @@ function ProjectDetail({ project, onBack }) {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button className="btn" onClick={() => exportProjectToExcel(projectTxs, categories, project)} disabled={projectTxs.length === 0}>
-          <FileSpreadsheet size={14} /> Excel
+          <FileSpreadsheet size={14} /> {t('projects.excel')}
         </button>
         <button className="btn" onClick={() => downloadProjectPDF(projectTxs, categories, project)} disabled={projectTxs.length === 0}>
-          <FileText size={14} /> PDF
+          <FileText size={14} /> {t('projects.pdf')}
         </button>
         <button className="btn" onClick={() => setShowExportPanel(p => !p)}>
-          <MessageSquare size={14} /> WhatsApp
+          <MessageSquare size={14} /> {t('projects.whatsapp')}
         </button>
         <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => { setEditTx(null); setShowTxModal(true); }}>
-          <Plus size={14} /> Lançamento
+          <Plus size={14} /> {t('projects.newEntry')}
         </button>
       </div>
 
@@ -183,11 +186,11 @@ function ProjectDetail({ project, onBack }) {
             <div style={{ width: 32, height: 32, background: 'rgba(199,242,132,0.12)', borderRadius: 10, display: 'grid', placeItems: 'center', color: 'var(--positive)', flexShrink: 0 }}>
               <MessageSquare size={15} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>Compartilhar via WhatsApp</span>
+            <span style={{ fontSize: 14, fontWeight: 600 }}>{t('projects.shareWhatsApp')}</span>
           </div>
           <div className="grid-cifra g-2">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label className="field-label">Prévia do texto</label>
+              <label className="field-label">{t('projects.previewText')}</label>
               <textarea
                 readOnly
                 value={whatsappText}
@@ -199,13 +202,13 @@ function ProjectDetail({ project, onBack }) {
                 style={{ justifyContent: 'center', color: copied ? 'var(--positive)' : undefined }}
                 onClick={handleCopy}
               >
-                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copiado!' : 'Copiar Texto'}
+                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t('projects.copied') : t('projects.copyText')}
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px', background: 'var(--chip)', borderRadius: 10, alignSelf: 'start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Share2 size={13} style={{ color: 'var(--positive)' }} />
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Enviar</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{t('projects.openWhatsApp')}</span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>Opcional: número para abrir direto.</p>
               <input
@@ -216,7 +219,7 @@ function ProjectDetail({ project, onBack }) {
                 onChange={e => setWhatsappPhone(e.target.value)}
               />
               <button className="btn primary" style={{ justifyContent: 'center' }} onClick={handleWhatsAppDirect}>
-                <Share2 size={14} /> Abrir WhatsApp
+                <Share2 size={14} /> {t('projects.openWhatsApp')}
               </button>
             </div>
           </div>

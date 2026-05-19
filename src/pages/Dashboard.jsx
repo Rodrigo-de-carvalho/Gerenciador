@@ -5,10 +5,9 @@ import {
 } from 'recharts';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
-import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
+import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
-
-const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+import { useI18n } from '../i18n';
 
 function splitBRL(n) {
   const sign = n < 0 ? '-' : '';
@@ -78,6 +77,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard({ onNavigate }) {
+  const { t } = useI18n();
+  const MONTH_NAMES = t('monthsShort');
   const { transactions, categories, projects, budgets, getSummary } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
@@ -108,7 +109,7 @@ export default function Dashboard({ onNavigate }) {
       let y = year;
       while (m <= 0) { m += 12; y -= 1; }
       const sum = getSummary(m, y);
-      data.push({ name: MONTH_NAMES[m - 1], Receita: sum.income, Despesa: sum.expense });
+      data.push({ name: MONTH_NAMES[m - 1], income: sum.income, expense: sum.expense });
     }
     return data;
   }, [transactions, month, year]);
@@ -158,16 +159,16 @@ export default function Dashboard({ onNavigate }) {
       <div className="dash-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div className="t-eyebrow" style={{ marginBottom: 12 }}>
-            Saldo atual · {MONTHS[month - 1]} {year}
+            {t('dashboard.currentBalance') + ' · '}{t('months')[month - 1]} {year}
           </div>
           <HeroNumber value={balance} privacy={privacy} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--text-3)', fontSize: 12.5 }}>
             <span className="pos" style={{ fontFamily: 'Geist Mono, monospace' }}>
-              ▲ {privacy ? '••••' : formatCurrency(income)} receitas
+              ▲ {privacy ? '••••' : formatCurrency(income)} {t('dashboard.incomeStat')}
             </span>
             <span>·</span>
             <span className="neg" style={{ fontFamily: 'Geist Mono, monospace' }}>
-              ▼ {privacy ? '••••' : formatCurrency(expense)} despesas
+              ▼ {privacy ? '••••' : formatCurrency(expense)} {t('dashboard.expenseStat')}
             </span>
           </div>
         </div>
@@ -175,22 +176,22 @@ export default function Dashboard({ onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
           <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500, minWidth: 110, textAlign: 'center' }}>
-            {MONTHS[month - 1]} {year}
+            {t('months')[month - 1]} {year}
           </span>
           <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
           <button className="btn primary" onClick={() => setShowModal(true)} style={{ marginLeft: 8 }}>
             <Plus size={14} />
-            <span>Lançamento</span>
+            <span>{t('dashboard.newEntry')}</span>
           </button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid-cifra g-4" style={{ marginBottom: 18 }}>
-        <StatCard label="Saldo atual" value={balance} privacy={privacy} positive={balance >= 0} sub={balance >= 0 ? 'Positivo' : 'Negativo'} />
-        <StatCard label="Receitas" value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} entradas`} />
-        <StatCard label="Despesas" value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} saídas`} />
-        <StatCard label="Taxa de poupança" value={0} privacy={privacy} sub={`${savingsRate}% da receita`} />
+        <StatCard label={t('dashboard.currentBalance')} value={balance} privacy={privacy} positive={balance >= 0} sub={balance >= 0 ? t('dashboard.positive') : t('dashboard.negative')} />
+        <StatCard label={t('dashboard.income')} value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} ${t('dashboard.incomeStat')}`} />
+        <StatCard label={t('dashboard.expense')} value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} ${t('dashboard.expenseStat')}`} />
+        <StatCard label={t('dashboard.savingsRate')} value={0} privacy={privacy} sub={`${savingsRate}${t('dashboard.pctOfIncome')}`} />
       </div>
 
       {/* Main grid */}
@@ -199,19 +200,19 @@ export default function Dashboard({ onNavigate }) {
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 16 }}>
             <div>
-              <div className="t-eyebrow">Fluxo de caixa</div>
+              <div className="t-eyebrow">{t('dashboard.cashFlow')}</div>
               <h3 className="t-display" style={{ fontSize: 20, marginTop: 4 }}>
-                <em style={{ fontStyle: 'italic' }}>Receitas</em> vs. <em style={{ fontStyle: 'italic' }}>despesas</em>
+                <em style={{ fontStyle: 'italic' }}>{t('dashboard.income')}</em> vs. <em style={{ fontStyle: 'italic' }}>{t('dashboard.expense').toLowerCase()}</em>
               </h3>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, fontSize: 11.5, color: 'var(--text-3)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 16, height: 2, background: 'var(--positive)', display: 'inline-block', borderRadius: 1 }} />
-                Receita
+                {t('dashboard.revenue')}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 16, height: 2, background: 'var(--negative)', display: 'inline-block', borderRadius: 1 }} />
-                Despesa
+                {t('dashboard.expenseLabel')}
               </span>
             </div>
           </div>
@@ -231,8 +232,8 @@ export default function Dashboard({ onNavigate }) {
               <YAxis tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} width={50}
                 tickFormatter={v => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="Receita" stroke="var(--positive)" strokeWidth={2} fill="url(#gInc)" />
-              <Area type="monotone" dataKey="Despesa" stroke="var(--negative)" strokeWidth={2} fill="url(#gExp)" />
+              <Area type="monotone" dataKey="income" name={t('dashboard.revenue')} stroke="var(--positive)" strokeWidth={2} fill="url(#gInc)" />
+              <Area type="monotone" dataKey="expense" name={t('dashboard.expenseLabel')} stroke="var(--negative)" strokeWidth={2} fill="url(#gExp)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -241,10 +242,10 @@ export default function Dashboard({ onNavigate }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Category breakdown */}
           <div className="card">
-            <div className="t-eyebrow" style={{ marginBottom: 14 }}>Para onde foi o dinheiro</div>
+            <div className="t-eyebrow" style={{ marginBottom: 14 }}>{t('dashboard.whereMoneyWent')}</div>
             {catBreakdown.length === 0 ? (
               <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
-                Sem despesas neste mês
+                {t('dashboard.noExpensesThisMonth')}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -271,12 +272,12 @@ export default function Dashboard({ onNavigate }) {
           {projectStats.length > 0 && (
             <div className="card">
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-                <div className="t-eyebrow">Projetos</div>
+                <div className="t-eyebrow">{t('dashboard.projects')}</div>
                 <button
                   onClick={() => onNavigate('projects')}
                   style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
-                  Ver todos <ArrowRight size={11} />
+                  {t('dashboard.viewAll')} <ArrowRight size={11} />
                 </button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -287,7 +288,7 @@ export default function Dashboard({ onNavigate }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                        {privacy ? 'R$ ••••' : formatCurrency(p.spent)} gastos
+                        {privacy ? 'R$ ••••' : formatCurrency(p.spent)} {t('dashboard.spent')}
                       </div>
                     </div>
                     <ArrowRight size={13} style={{ color: 'var(--text-4)', flexShrink: 0 }} />
@@ -303,12 +304,12 @@ export default function Dashboard({ onNavigate }) {
       {budgetProgress.length > 0 && (
         <div className="card" style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-            <div className="t-eyebrow">Orçamentos do mês</div>
+            <div className="t-eyebrow">{t('dashboard.budgets')}</div>
             <button
               onClick={() => onNavigate('categories')}
               style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              Gerenciar <ArrowRight size={11} />
+              {t('dashboard.manage')} <ArrowRight size={11} />
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -339,20 +340,20 @@ export default function Dashboard({ onNavigate }) {
       {/* Recent transactions */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 12px' }}>
-          <div className="t-eyebrow">Movimentações recentes</div>
+          <div className="t-eyebrow">{t('dashboard.recentTransactions')}</div>
           <button
             onClick={() => onNavigate('transactions')}
             style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            Ver todas <ArrowRight size={11} />
+            {t('dashboard.viewAllF')} <ArrowRight size={11} />
           </button>
         </div>
         {recentTxs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--text-3)' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>💭</div>
-            <div style={{ fontSize: 13 }}>Nenhum lançamento neste mês</div>
+            <div style={{ fontSize: 13 }}>{t('dashboard.noTransactionsThisMonth')}</div>
             <button className="btn primary" style={{ marginTop: 16 }} onClick={() => setShowModal(true)}>
-              <Plus size={14} /> Adicionar
+              <Plus size={14} /> {t('dashboard.add')}
             </button>
           </div>
         ) : (

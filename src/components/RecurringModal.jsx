@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { X, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 export default function RecurringModal({ onClose }) {
+  const { t } = useI18n();
   const { recurring, categories, addRecurring, updateRecurring, deleteRecurring, toggleRecurring } = useFinance();
 
   const emptyForm = () => ({
@@ -70,7 +72,7 @@ export default function RecurringModal({ onClose }) {
         <div className="modal-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <RefreshCw size={14} style={{ color: 'var(--accent)' }} />
-            <h2>Transações Recorrentes</h2>
+            <h2>{t('recurring.title')}</h2>
           </div>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
@@ -102,7 +104,7 @@ export default function RecurringModal({ onClose }) {
                         {rec.description}
                       </div>
                       <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
-                        todo dia {rec.dayOfMonth} · {cat?.name || 'Sem categoria'} · próx. {new Date(rec.nextDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {`${t('recurring.everyDay')} ${rec.dayOfMonth} · ${cat?.name || t('recurring.noCategory')} · ${t('recurring.next')} ${new Date(rec.nextDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`}
                       </div>
                     </div>
                     <span style={{
@@ -114,7 +116,7 @@ export default function RecurringModal({ onClose }) {
                     <button
                       className="icon-btn"
                       onClick={() => toggleRecurring(rec.id)}
-                      title={rec.active ? 'Pausar' : 'Ativar'}
+                      title={rec.active ? t('recurring.pause') : t('recurring.activate')}
                       style={{ color: rec.active ? 'var(--accent)' : 'var(--text-3)', flexShrink: 0, width: 30, height: 30 }}
                     >
                       {rec.active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
@@ -137,8 +139,8 @@ export default function RecurringModal({ onClose }) {
           {!hasList && !showForm && (
             <div style={{ textAlign: 'center', padding: '28px 0 8px', color: 'var(--text-3)' }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>🔄</div>
-              <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-2)', marginBottom: 4 }}>Nenhuma recorrência cadastrada</div>
-              <div style={{ fontSize: 12.5 }}>Automatize lançamentos que se repetem todo mês.</div>
+              <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-2)', marginBottom: 4 }}>{t('recurring.noRecurring')}</div>
+              <div style={{ fontSize: 12.5 }}>{t('recurring.noRecurringDesc')}</div>
             </div>
           )}
 
@@ -154,18 +156,18 @@ export default function RecurringModal({ onClose }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                {editingId ? 'Editar recorrência' : 'Nova recorrência'}
+                {editingId ? t('recurring.editRecurring') : t('recurring.newRecurring')}
               </div>
 
               <div className="seg" style={{ width: '100%' }}>
-                {['expense', 'income'].map(t => (
+                {['expense', 'income'].map(typ => (
                   <button
-                    key={t} type="button"
+                    key={typ} type="button"
                     style={{ flex: 1, justifyContent: 'center' }}
-                    className={form.type === t ? 'active' : ''}
-                    onClick={() => setForm(f => ({ ...f, type: t, categoryId: '' }))}
+                    className={form.type === typ ? 'active' : ''}
+                    onClick={() => setForm(f => ({ ...f, type: typ, categoryId: '' }))}
                   >
-                    {t === 'income' ? '↑ Entrada' : '↓ Saída'}
+                    {typ === 'income' ? t('recurring.income') : t('recurring.expense')}
                   </button>
                 ))}
               </div>

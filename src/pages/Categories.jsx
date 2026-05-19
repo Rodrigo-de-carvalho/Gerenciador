@@ -2,11 +2,13 @@ import { useState, useRef } from 'react';
 import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
 const DEFAULT_COLORS = ['#22c55e','#10b981','#3b82f6','#8b5cf6','#f97316','#f59e0b','#ef4444','#ec4899','#06b6d4','#a855f7','#d946ef','#6b7280'];
 
 export default function Categories() {
+  const { t } = useI18n();
   const { categories, transactions, addCategory, deleteCategory, budgets, setBudget, deleteBudget } = useFinance();
   const [showForm, setShowForm]           = useState(false);
   const [form, setForm]                   = useState({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
@@ -72,7 +74,7 @@ export default function Categories() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '6px 10px', background: 'var(--chip)', borderRadius: 8 }}>
           <Target size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
           <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-            Clique em <strong style={{ color: 'var(--text-2)' }}>Limite</strong> para definir um orçamento mensal por categoria.
+            {t('categories.limitHint')} <strong style={{ color: 'var(--text-2)' }}>{t('categories.limitStrong')}</strong> {t('categories.limitHint2')}
           </span>
         </div>
       )}
@@ -101,7 +103,7 @@ export default function Categories() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)' }}>{cat.name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>{usage} lançamento{usage !== 1 ? 's' : ''}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>{usage} {usage !== 1 ? t('categories.transactionPlural') : t('categories.transaction')}</div>
               </div>
 
               {/* Budget chip (expense categories only) */}
@@ -141,7 +143,7 @@ export default function Categories() {
                     }}
                     title={budget ? 'Editar orçamento' : 'Definir orçamento'}
                   >
-                    {budget ? formatCurrency(budget.amount) : '+ Limite'}
+                    {budget ? formatCurrency(budget.amount) : t('categories.addLimit')}
                   </button>
                 )
               )}
@@ -160,7 +162,7 @@ export default function Categories() {
         })}
         {cats.length === 0 && (
           <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            Nenhuma categoria
+            {t('categories.noCategory')}
           </div>
         )}
       </div>
@@ -171,50 +173,50 @@ export default function Categories() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button className="btn primary" onClick={() => setShowForm(true)}>
-          <Plus size={14} /> Nova Categoria
+          <Plus size={14} /> {t('categories.newCategory')}
         </button>
       </div>
 
       <div className="grid-cifra g-2">
-        <CatList cats={incomeCategories}  label="Entradas" icon={TrendingUp}   positive={true} />
-        <CatList cats={expenseCategories} label="Saídas"   icon={TrendingDown} positive={false} />
+        <CatList cats={incomeCategories}  label={t('categories.income')}  icon={TrendingUp}   positive={true} />
+        <CatList cats={expenseCategories} label={t('categories.expense')} icon={TrendingDown} positive={false} />
       </div>
 
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth: 400 }}>
             <div className="modal-head">
-              <h2>Nova Categoria</h2>
+              <h2>{t('categories.newCategory')}</h2>
               <button className="icon-btn" onClick={() => setShowForm(false)}><X size={15} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-form">
                 <div className="seg" style={{ width: '100%' }}>
-                  {['expense', 'income'].map(t => (
+                  {['expense', 'income'].map(typ => (
                     <button
-                      key={t} type="button"
+                      key={typ} type="button"
                       style={{ flex: 1, justifyContent: 'center' }}
-                      className={form.type === t ? 'active' : ''}
-                      onClick={() => setForm(f => ({ ...f, type: t }))}
+                      className={form.type === typ ? 'active' : ''}
+                      onClick={() => setForm(f => ({ ...f, type: typ }))}
                     >
-                      {t === 'income' ? '↑ Entrada' : '↓ Saída'}
+                      {typ === 'income' ? t('categories.incomeType') : t('categories.expenseType')}
                     </button>
                   ))}
                 </div>
 
                 <div className="field">
-                  <label className="field-label">Nome *</label>
+                  <label className="field-label">{t('categories.name')}</label>
                   <input
                     type="text" className="field-input"
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     required
-                    placeholder="Ex: Alimentação"
+                    placeholder={t('categories.namePlaceholder')}
                   />
                 </div>
 
                 <div className="field">
-                  <label className="field-label">Ícone</label>
+                  <label className="field-label">{t('categories.icon')}</label>
                   <div className="icon-grid" style={{ maxHeight: 112, overflowY: 'auto' }}>
                     {ICONS.map(icon => (
                       <button
@@ -229,7 +231,7 @@ export default function Categories() {
                 </div>
 
                 <div className="field">
-                  <label className="field-label">Cor</label>
+                  <label className="field-label">{t('categories.color')}</label>
                   <div className="color-grid">
                     {DEFAULT_COLORS.map(color => (
                       <button
@@ -253,17 +255,17 @@ export default function Categories() {
                   <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', fontSize: 18, background: form.color + '22' }}>
                     {form.icon}
                   </div>
-                  <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{form.name || 'Prévia'}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{form.name || t('categories.preview')}</span>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: form.color }} />
                 </div>
               </div>
 
               <div className="modal-actions">
                 <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowForm(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
-                  <Plus size={14} /> Criar
+                  <Plus size={14} /> {t('common.create')}
                 </button>
               </div>
             </form>
@@ -275,24 +277,24 @@ export default function Categories() {
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth: 380 }}>
             <div className="modal-head">
-              <h2>Categoria em uso</h2>
+              <h2>{t('categories.categoryInUse')}</h2>
               <button className="icon-btn" onClick={() => setDeleteConfirm(null)}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 12 }}>
               <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                Esta categoria possui <strong style={{ color: 'var(--text)' }}>{getCategoryUsage(deleteConfirm)} lançamento(s)</strong>. Ao excluí-la, esses lançamentos ficarão sem categoria.
+                {t('categories.categoryInUseDesc1')} <strong style={{ color: 'var(--text)' }}>{getCategoryUsage(deleteConfirm)}</strong> {t('categories.categoryInUseDesc2')}
               </p>
             </div>
             <div className="modal-actions">
               <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteConfirm(null)}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 className="btn"
                 style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
                 onClick={() => { deleteCategory(deleteConfirm); setDeleteConfirm(null); }}
               >
-                <Trash2 size={14} /> Excluir mesmo assim
+                <Trash2 size={14} /> {t('categories.deleteAnyway')}
               </button>
             </div>
           </div>

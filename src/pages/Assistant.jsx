@@ -3,6 +3,7 @@ import { Send, Trash2, Loader2, Lock, Settings } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 function buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month, year, getCardBill }) {
   const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : '0.0';
@@ -40,17 +41,16 @@ Responda sempre em português brasileiro. Seja direto e prático. Quando o usuá
 }
 
 export default function Assistant() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { transactions, categories, projects, cards, getSummary, getCardBill, addTransaction } = useFinance();
   const now = getCurrentMonthYear();
   const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
 
-  const INITIAL_MSG = {
+  const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: 'Olá! Sou o Cifra IA. Além de analisar suas finanças, posso registrar transações diretamente — é só dizer, por exemplo: "gastei R$50 no mercado hoje". Como posso te ajudar?',
-  };
-
-  const [messages, setMessages] = useState([INITIAL_MSG]);
+    content: t('assistant.initialMessage'),
+  }]);
   const [apiHistory, setApiHistory] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,13 +81,13 @@ export default function Assistant() {
         <div style={{ width: 64, height: 64, background: 'var(--chip)', borderRadius: 16, display: 'grid', placeItems: 'center', marginBottom: 20 }}>
           <Lock size={28} style={{ color: 'var(--text-3)' }} />
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Assistente de IA desativado</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>{t('assistant.aiDisabledTitle')}</h2>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', maxWidth: 360, lineHeight: 1.6, marginBottom: 24 }}>
-          O Cifra IA está desativado por padrão para proteger sua privacidade. Para usar o chat, ative-o nas configurações da conta.
+          {t('assistant.aiDisabledDesc')}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'var(--chip)', borderRadius: 10, fontSize: 13, color: 'var(--text-2)' }}>
           <Settings size={14} style={{ flexShrink: 0 }} />
-          <span>Clique no seu avatar (sidebar) → <strong>Configurações</strong></span>
+          <span>{t('assistant.aiDisabledHint')} <strong>{t('assistant.configSettings')}</strong></span>
         </div>
       </div>
     );
@@ -181,10 +181,7 @@ export default function Assistant() {
         setApiHistory([...currentHistory, assistantMsg]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Desculpe, ocorreu um erro. ${err.message ? `(${err.message})` : ''}`,
-      }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `${t('assistant.errorMessage')} ${err.message ? `(${err.message})` : ''}` }]);
       setApiHistory(currentHistory);
     } finally {
       setLoading(false);
@@ -196,15 +193,15 @@ export default function Assistant() {
   };
 
   const clearConversation = () => {
-    setMessages([{ role: 'assistant', content: 'Conversa reiniciada. Como posso te ajudar?' }]);
+    setMessages([{ role: 'assistant', content: t('assistant.conversationReset') }]);
     setApiHistory([]);
   };
 
   const suggestions = [
-    'Como está minha saúde financeira?',
-    'Gastei R$80 no supermercado hoje',
-    'Recebi R$3.000 de salário',
-    'Onde posso economizar mais?',
+    t('assistant.suggestion1'),
+    t('assistant.suggestion2'),
+    t('assistant.suggestion3'),
+    t('assistant.suggestion4'),
   ];
 
   return (
@@ -219,17 +216,17 @@ export default function Assistant() {
           <span style={{ fontSize: 18 }}>❆</span>
         </div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>Cifra IA</div>
-          <div className="t-meta">Assistente financeiro · Groq · Llama 3.3</div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{t('assistant.title')}</div>
+          <div className="t-meta">{t('assistant.subtitle')}</div>
         </div>
         <button
           className="btn"
           style={{ marginLeft: 'auto', padding: '6px 12px', fontSize: 12 }}
           onClick={clearConversation}
-          title="Limpar conversa"
+          title={t('assistant.clear')}
         >
           <Trash2 size={13} />
-          <span>Limpar</span>
+          <span>{t('assistant.clear')}</span>
         </button>
       </div>
 
@@ -266,7 +263,7 @@ export default function Assistant() {
       {/* Suggestions */}
       {messages.length === 1 && !loading && (
         <div style={{ flexShrink: 0, padding: '12px 0 8px' }}>
-          <div className="t-label" style={{ marginBottom: 8 }}>Sugestões</div>
+          <div className="t-label" style={{ marginBottom: 8 }}>{t('assistant.suggestions')}</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {suggestions.map((q, i) => (
               <button key={i} className="chip" onClick={() => { setInput(q); inputRef.current?.focus(); }}>
@@ -290,7 +287,7 @@ export default function Assistant() {
             }}
             onFocus={e => e.target.style.borderColor = 'var(--accent)'}
             onBlur={e => e.target.style.borderColor = 'var(--line)'}
-            placeholder="Pergunte algo ou diga o que gastou..."
+            placeholder={t('assistant.inputPlaceholder')}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -307,7 +304,7 @@ export default function Assistant() {
           </button>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
-          Enter para enviar · Shift+Enter para nova linha
+          {t('assistant.enterHint')}
         </div>
       </div>
 

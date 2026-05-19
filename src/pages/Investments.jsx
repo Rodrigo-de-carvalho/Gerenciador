@@ -5,6 +5,7 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 const TYPES = [
   { id: 'acoes',      label: 'Ações',       color: '#C7F284' },
@@ -19,6 +20,7 @@ const typeColor = (id) => TYPES.find(t => t.id === id)?.color || '#888';
 const emptyForm = { name: '', type: 'acoes', invested: '', currentValue: '', notes: '' };
 
 function InvestmentModal({ inv, onClose, onSave }) {
+  const { t } = useI18n();
   const isEdit = !!inv;
   const [form, setForm] = useState(inv ? {
     name: inv.name,
@@ -49,31 +51,31 @@ function InvestmentModal({ inv, onClose, onSave }) {
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="modal-head">
-          <h2>{isEdit ? 'Editar Investimento' : 'Novo Investimento'}</h2>
+          <h2>{isEdit ? t('investments.editInvestment') : t('investments.newInvestment')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-form">
             <div className="field">
-              <label className="field-label">Nome / Ticker *</label>
+              <label className="field-label">{t('investments.nameTicker')}</label>
               <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: PETR4, Tesouro Selic, Bitcoin" required />
             </div>
 
             <div className="field">
-              <label className="field-label">Tipo</label>
+              <label className="field-label">{t('investments.typeLabel')}</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {TYPES.map(t => (
-                  <button key={t.id} type="button"
-                    onClick={() => set('type', t.id)}
+                {TYPES.map(tp => (
+                  <button key={tp.id} type="button"
+                    onClick={() => set('type', tp.id)}
                     style={{
                       padding: '6px 12px', borderRadius: 8, fontSize: 12.5, cursor: 'pointer',
                       fontFamily: 'inherit', border: '1px solid',
-                      background: form.type === t.id ? t.color + '18' : 'transparent',
-                      borderColor: form.type === t.id ? t.color : 'var(--line)',
-                      color: form.type === t.id ? t.color : 'var(--text-3)',
-                      fontWeight: form.type === t.id ? 600 : 400,
+                      background: form.type === tp.id ? tp.color + '18' : 'transparent',
+                      borderColor: form.type === tp.id ? tp.color : 'var(--line)',
+                      color: form.type === tp.id ? tp.color : 'var(--text-3)',
+                      fontWeight: form.type === tp.id ? 600 : 400,
                     }}>
-                    {t.label}
+                    {t('investments.' + tp.id)}
                   </button>
                 ))}
               </div>
@@ -81,24 +83,24 @@ function InvestmentModal({ inv, onClose, onSave }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
-                <label className="field-label">Valor investido (R$) *</label>
+                <label className="field-label">{t('investments.investedAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.invested} onChange={e => set('invested', e.target.value)} placeholder="0,00" required />
               </div>
               <div className="field">
-                <label className="field-label">Valor atual (R$) *</label>
+                <label className="field-label">{t('investments.currentAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.currentValue} onChange={e => set('currentValue', e.target.value)} placeholder="0,00" required />
               </div>
             </div>
 
             <div className="field">
-              <label className="field-label">Observações</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Corretora, vencimento, notas..." />
+              <label className="field-label">{t('common.notes')}</label>
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder={t('investments.notesPlaceholder')} />
             </div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>{t('common.cancel')}</button>
             <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
-              <Plus size={14} /> {isEdit ? 'Salvar' : 'Adicionar'}
+              <Plus size={14} /> {isEdit ? t('common.save') : t('common.add')}
             </button>
           </div>
         </form>
@@ -108,6 +110,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
 }
 
 export default function Investments() {
+  const { t } = useI18n();
   const { privacy } = usePrivacy();
   const { user } = useAuth();
   const [investments, setInvestments] = useState([]);
@@ -155,7 +158,7 @@ export default function Investments() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Excluir este investimento?')) return;
+    if (!confirm(t('investments.deleteInvestment'))) return;
     await supabase.from('investments').delete().eq('id', id).eq('user_id', user.id);
     setInvestments(prev => prev.filter(i => i.id !== id));
   };
@@ -174,7 +177,7 @@ export default function Investments() {
       if (!map[inv.type]) map[inv.type] = 0;
       map[inv.type] += inv.currentValue;
     });
-    return TYPES.filter(t => map[t.id] > 0).map(t => ({ name: t.label, value: map[t.id], color: t.color }));
+    return TYPES.filter(tp => map[tp.id] > 0).map(tp => ({ name: t('investments.' + tp.id), value: map[tp.id], color: tp.color, id: tp.id }));
   }, [investments]);
 
   const filtered = filterType === 'all' ? investments : investments.filter(i => i.type === filterType);
@@ -183,13 +186,13 @@ export default function Investments() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <div>
-          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Carteira de investimentos</div>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>{t('investments.portfolio')}</div>
           <h2 className="t-display" style={{ fontSize: 24 }}>
-            {investments.length} <em>ativo{investments.length !== 1 ? 's' : ''}</em>
+            {investments.length} <em>{investments.length !== 1 ? t('investments.assets') : t('investments.asset')}</em>
           </h2>
         </div>
         <button className="btn primary" onClick={() => setShowModal(true)}>
-          <Plus size={14} /> Novo Ativo
+          <Plus size={14} /> {t('investments.newAsset')}
         </button>
       </div>
 
