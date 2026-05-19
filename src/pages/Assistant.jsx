@@ -13,7 +13,8 @@ function buildSystemPrompt({ income, expense, balance, topCategories, categories
     ? cards.map(c => { const bill = getCardBill(c.id, month, year); return `  - ${c.icon} ${c.name}: fatura ${formatCurrency(bill.total)}`; }).join('\n')
     : '  Nenhum cartão';
   const allCatLines = categories.map(c => `  - ${c.icon} ${c.name} (${c.type === 'income' ? 'receita' : 'despesa'})`).join('\n');
-  const today = new Date().toISOString().split('T')[0];
+  const _d = new Date();
+  const today = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`;
 
   return `Você é o Cifra IA, assistente financeiro pessoal inteligente e amigável, especialista em finanças pessoais brasileiras.
 

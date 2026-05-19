@@ -370,7 +370,7 @@ export default function Dashboard({ onNavigate }) {
                     <td>
                       <div style={{ fontWeight: 500, fontSize: 13.5 }}>{t.description}</div>
                       <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
-                        {cat?.name} · {new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                        {cat?.name} · {new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </div>
                     </td>
                     <td style={{ textAlign: 'right', fontFamily: 'Geist Mono, monospace', fontWeight: 600, fontSize: 13.5 }}

@@ -10,7 +10,7 @@ import RecurringModal from '../components/RecurringModal';
 function groupByDate(txs) {
   const groups = {};
   txs.forEach(t => {
-    const d = new Date(t.date);
+    const d = new Date(t.date + 'T00:00:00');
     const key = t.date;
     if (!groups[key]) {
       groups[key] = {
@@ -51,7 +51,7 @@ export default function Transactions() {
 
   const filtered = useMemo(() => {
     let list = transactions.filter(t => {
-      const d = new Date(t.date);
+      const d = new Date(t.date + 'T00:00:00');
       return d.getMonth() + 1 === month && d.getFullYear() === year;
     });
     if (typeFilter !== 'all') list = list.filter(t => t.type === typeFilter);
