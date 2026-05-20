@@ -61,7 +61,7 @@ export function detectBank(headers) {
   const has = (...words) => words.every(w => h.some(k => k.includes(w)));
   const any = (...words) => words.some(w => h.some(k => k.includes(w)));
 
-  if (has('titulo') && has('categoria') && has('valor')) return 'nubank_credit';
+  if (has('titulo') && has('valor')) return 'nubank_credit';          // Nubank fatura (com ou sem coluna Categoria/Hora)
   if (has('identificador') && has('valor') && any('descricao', 'descri')) return 'nubank_conta';
   if (has('lancamento') && has('tipo') && has('valor') && !has('historico')) return 'c6_credit';
   if (any('estabelecimento', 'parcelas') && has('data') && has('valor')) return 'santander_credit';
@@ -86,18 +86,23 @@ export const BANK_LABELS = {
 export function parseRows(bank, data) {
   switch (bank) {
 
-    case 'nubank_credit':
+    case 'nubank_credit': {
       return data.map(r => {
-        const amount = parseAmount(r['Valor'] || r['valor']);
+        const dateKey   = findKey(r, 'data');
+        const titleKey  = findKey(r, 'titulo', 'title', 'descri', 'descr');
+        const catKey    = findKey(r, 'categoria', 'category');
+        const valKey    = findKey(r, 'valor', 'value', 'amount');
+        const amount    = parseAmount(valKey ? r[valKey] : null);
         if (amount === null) return null;
         return {
-          date:         parseDateBR(r['Data'] || r['data']),
-          description:  String(r['Título'] || r['Titulo'] || r['titulo'] || '-').trim(),
-          categoryHint: String(r['Categoria'] || r['categoria'] || '').trim(),
+          date:         parseDateBR(dateKey ? r[dateKey] : null),
+          description:  String(titleKey ? r[titleKey] : '-').trim(),
+          categoryHint: catKey ? String(r[catKey]).trim() : '',
           amount:       Math.abs(amount),
-          type:         amount >= 0 ? 'expense' : 'income', // negativo = estorno
+          type:         amount >= 0 ? 'expense' : 'income',
         };
       }).filter(r => r && r.date && r.amount > 0);
+    }
 
     case 'nubank_conta':
       return data.map(r => {
