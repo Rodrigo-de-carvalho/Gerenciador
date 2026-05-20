@@ -63,6 +63,8 @@ export function detectBank(headers) {
 
   if (has('titulo') && has('categoria') && has('valor')) return 'nubank_credit';
   if (has('identificador') && has('valor') && any('descricao', 'descri')) return 'nubank_conta';
+  if (has('lancamento') && has('tipo') && has('valor') && !has('historico')) return 'c6_credit';
+  if (any('estabelecimento', 'parcelas') && has('data') && has('valor')) return 'santander_credit';
   if (any('lancamento') && any('historico')) return 'inter';
   if (has('historico') && any('credito', 'cred') && any('debito', 'deb')) return 'itau';
   if (has('historico') && has('valor')) return 'inter'; // Inter fallback
@@ -71,12 +73,14 @@ export function detectBank(headers) {
 }
 
 export const BANK_LABELS = {
-  nubank_credit: 'Nubank — Fatura',
-  nubank_conta:  'Nubank — Conta',
-  inter:         'Banco Inter',
-  itau:          'Itaú',
-  mercadopago:   'Mercado Pago',
-  unknown:       'Banco desconhecido',
+  nubank_credit:    'Nubank — Fatura',
+  nubank_conta:     'Nubank — Conta',
+  inter:            'Banco Inter',
+  itau:             'Itaú',
+  mercadopago:      'Mercado Pago',
+  c6_credit:        'C6 Bank — Fatura',
+  santander_credit: 'Santander — Fatura',
+  unknown:          'Banco desconhecido',
 };
 
 export function parseRows(bank, data) {
@@ -171,6 +175,40 @@ export function parseRows(bank, data) {
           categoryHint: '',
           amount:       Math.abs(amount),
           type,
+        };
+      }).filter(r => r && r.date && r.amount > 0);
+    }
+
+    case 'c6_credit': {
+      return data.map(r => {
+        const dateKey = findKey(r, 'data');
+        const descKey = findKey(r, 'lancamento', 'descri');
+        const valKey  = findKey(r, 'valor');
+        const amount  = parseAmount(valKey ? r[valKey] : null);
+        if (amount === null) return null;
+        return {
+          date:         parseDateBR(dateKey ? r[dateKey] : null),
+          description:  String(descKey ? r[descKey] : '-').trim(),
+          categoryHint: '',
+          amount:       Math.abs(amount),
+          type:         amount >= 0 ? 'expense' : 'income',
+        };
+      }).filter(r => r && r.date && r.amount > 0);
+    }
+
+    case 'santander_credit': {
+      return data.map(r => {
+        const dateKey = findKey(r, 'data');
+        const descKey = findKey(r, 'estabelecimento', 'descri', 'hist');
+        const valKey  = findKey(r, 'valor');
+        const amount  = parseAmount(valKey ? r[valKey] : null);
+        if (amount === null) return null;
+        return {
+          date:         parseDateBR(dateKey ? r[dateKey] : null),
+          description:  String(descKey ? r[descKey] : '-').trim(),
+          categoryHint: '',
+          amount:       Math.abs(amount),
+          type:         amount >= 0 ? 'expense' : 'income',
         };
       }).filter(r => r && r.date && r.amount > 0);
     }

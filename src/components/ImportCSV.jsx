@@ -7,7 +7,7 @@ import { useI18n } from '../i18n';
 
 export default function ImportCSV({ onClose }) {
   const { t } = useI18n();
-  const { categories, bulkAddTransactions } = useFinance();
+  const { categories, cards, bulkAddTransactions } = useFinance();
   const [step, setStep]       = useState('upload');
   const [bank, setBank]       = useState(null);
   const [rows, setRows]       = useState([]);
@@ -16,7 +16,11 @@ export default function ImportCSV({ onClose }) {
   const [importCount, setImportCount] = useState(0);
   const [error, setError]     = useState('');
   const [dragging, setDragging] = useState(false);
+  const [cardId, setCardId]   = useState('');
   const fileRef = useRef();
+
+  const CREDIT_CARD_BANKS = ['nubank_credit', 'c6_credit', 'santander_credit'];
+  const isCreditCardBank = (b) => CREDIT_CARD_BANKS.includes(b);
 
   // Try to match Nubank's built-in category names to user's categories
   const autoCategory = useCallback((hint, type) => {
@@ -89,7 +93,11 @@ export default function ImportCSV({ onClose }) {
     setImporting(true);
     setError('');
     try {
-      const toImport = rows.filter((_, i) => selected.has(i));
+      const resolvedCardId = isCreditCardBank(bank) ? (cardId || null) : null;
+      const toImport = rows.filter((_, i) => selected.has(i)).map(r => ({
+        ...r,
+        cardId: resolvedCardId,
+      }));
       const count = await bulkAddTransactions(toImport);
       setImportCount(count);
       setStep('done');
@@ -190,6 +198,32 @@ export default function ImportCSV({ onClose }) {
                   {selCount === rows.length ? t('importCSV.deselectAll') : t('importCSV.selectAll')}
                 </button>
               </div>
+
+              {/* Card selector — only for credit card imports */}
+              {isCreditCardBank(bank) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--chip)', borderRadius: 8, flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                    Vincular ao cartão:
+                  </label>
+                  <select
+                    value={cardId}
+                    onChange={e => setCardId(e.target.value)}
+                    style={{
+                      flex: 1, minWidth: 180,
+                      background: 'var(--surface)', color: 'var(--text-1)',
+                      border: '1px solid var(--line-2)', borderRadius: 6,
+                      padding: '5px 10px', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">Nenhum (sem vínculo)</option>
+                    {cards.map(card => (
+                      <option key={card.id} value={card.id}>
+                        {card.icon ? `${card.icon} ${card.name}` : card.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Table */}
               <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)' }}>
