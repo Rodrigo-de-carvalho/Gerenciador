@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Component } from 'react';
 import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, Circle, Upload } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
@@ -6,6 +6,28 @@ import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/format
 import TransactionModal from '../components/TransactionModal';
 import ImportCSV from '../components/ImportCSV';
 import { useI18n } from '../i18n';
+
+class ImportBoundary extends Component {
+  state = { err: null };
+  static getDerivedStateFromError(e) { return { err: e?.message || String(e) }; }
+  render() {
+    if (this.state.err) return (
+      <div className="modal-overlay">
+        <div className="modal-box" style={{ maxWidth: 420 }}>
+          <div className="modal-head"><h2>Erro na importação</h2></div>
+          <div className="modal-form">
+            <p style={{ fontSize: 13, color: 'var(--negative)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{this.state.err}</p>
+          </div>
+          <div className="modal-actions">
+            <button className="btn" style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => { this.setState({ err: null }); this.props.onClose(); }}>Fechar</button>
+          </div>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 const CARD_STYLES = ['cc-1', 'cc-2', 'cc-3', 'cc-4'];
 const CARD_ICONS = ['💳', '🏦', '💰', '🏧', '⭐', '♟️', '🌟', '📎'];
@@ -419,7 +441,11 @@ export default function Cards() {
         />
       )}
 
-      {showImport && <ImportCSV onClose={() => setShowImport(false)} />}
+      {showImport && (
+        <ImportBoundary onClose={() => setShowImport(false)}>
+          <ImportCSV onClose={() => setShowImport(false)} />
+        </ImportBoundary>
+      )}
     </div>
   );
 }
