@@ -122,28 +122,33 @@ export default function ImportCSV({ onClose }) {
         {step === 'upload' && (
           <>
             <div className="modal-form" style={{ gap: 16 }}>
-              <label
-                htmlFor="csv-file-input"
+              <div
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
                 style={{
-                  display: 'block',
+                  position: 'relative',
                   border: `2px dashed ${dragging ? 'var(--accent)' : 'var(--line-2)'}`,
                   borderRadius: 12, padding: '36px 20px', textAlign: 'center',
                   cursor: 'pointer', background: dragging ? 'rgba(199,242,132,0.05)' : 'var(--chip)',
                   transition: 'border-color 120ms, background 120ms',
                 }}
               >
+                {/* input overlaps the entire area — works on all browsers including iOS/WebView */}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".csv,.txt"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  onChange={e => processFile(e.target.files[0])}
+                />
                 <Upload size={28} style={{ color: dragging ? 'var(--accent)' : 'var(--text-3)', marginBottom: 10 }} />
                 <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 5 }}>
                   {t('importCSV.dropFile')}{' '}
                   <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{t('importCSV.clickToSelect')}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('importCSV.fileHint')}</div>
-              </label>
-              <input id="csv-file-input" ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }}
-                onChange={e => processFile(e.target.files[0])} />
+              </div>
 
               {error && (
                 <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>

@@ -10,7 +10,7 @@ import {
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
-import { exportToExcel, downloadPDF, generateWhatsAppText } from '../utils/exportUtils';
+import { exportToExcel, generatePDFReport, generateWhatsAppText } from '../utils/exportUtils';
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -31,6 +31,7 @@ export default function Reports() {
   const [month, setMonth] = useState(now.month);
   const [year, setYear] = useState(now.year);
   const [copied, setCopied] = useState(false);
+  const [exportError, setExportError] = useState('');
   const [showWhatsapp, setShowWhatsapp] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -72,6 +73,30 @@ export default function Reports() {
     navigator.clipboard.writeText(whatsappText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
   };
 
+  const handleExcelExport = () => {
+    try {
+      exportToExcel(monthTxs, categories, month, year);
+    } catch (e) {
+      setExportError('Não foi possível exportar o Excel. Tente pelo computador.');
+      setTimeout(() => setExportError(''), 4000);
+    }
+  };
+
+  const handlePDFExport = () => {
+    try {
+      const doc = generatePDFReport(monthTxs, categories, month, year);
+      const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1));
+      try {
+        doc.save(`Financeiro_${monthLabel.replace(/ /g, '_')}.pdf`);
+      } catch {
+        window.open(doc.output('bloburl'), '_blank');
+      }
+    } catch (e) {
+      setExportError('Não foi possível gerar o PDF. Tente pelo computador.');
+      setTimeout(() => setExportError(''), 4000);
+    }
+  };
+
   const CHART_COLORS = { income: '#C7F284', expense: '#FF7A5A', balance: '#8FB7FF' };
 
   return (
@@ -86,11 +111,14 @@ export default function Reports() {
           <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn" onClick={() => exportToExcel(monthTxs, categories, month, year)} disabled={monthTxs.length === 0}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {exportError && (
+            <span style={{ fontSize: 12, color: 'var(--negative)', alignSelf: 'center', maxWidth: 220 }}>{exportError}</span>
+          )}
+          <button className="btn" onClick={handleExcelExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? 'Nenhum lançamento neste mês' : ''}>
             <FileSpreadsheet size={14} style={{ color: 'var(--positive)' }} /> Excel
           </button>
-          <button className="btn" onClick={() => downloadPDF(monthTxs, categories, month, year)} disabled={monthTxs.length === 0}>
+          <button className="btn" onClick={handlePDFExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? 'Nenhum lançamento neste mês' : ''}>
             <FileText size={14} style={{ color: 'var(--negative)' }} /> PDF
           </button>
           <button className="btn" onClick={() => setShowWhatsapp(p => !p)}>
