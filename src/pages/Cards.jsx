@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, Circle, Upload } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import ImportCSV from '../components/ImportCSV';
 import { useI18n } from '../i18n';
 
 const CARD_STYLES = ['cc-1', 'cc-2', 'cc-3', 'cc-4'];
@@ -80,6 +81,7 @@ export default function Cards() {
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showTxModal, setShowTxModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [activeTab, setActiveTab] = useState('bills');
   const [paying, setPaying] = useState(false);
 
@@ -142,9 +144,14 @@ export default function Cards() {
           </span>
           <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
         </div>
-        <button className="btn primary" onClick={() => { setEditCard(null); setShowForm(true); }}>
-          <Plus size={14} /> {t('cards.newCard')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={() => setShowImport(true)}>
+            <Upload size={14} /> Importar fatura
+          </button>
+          <button className="btn primary" onClick={() => { setEditCard(null); setShowForm(true); }}>
+            <Plus size={14} /> {t('cards.newCard')}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -411,6 +418,8 @@ export default function Cards() {
           onClose={() => setShowTxModal(false)}
         />
       )}
+
+      {showImport && <ImportCSV onClose={() => setShowImport(false)} />}
     </div>
   );
 }
