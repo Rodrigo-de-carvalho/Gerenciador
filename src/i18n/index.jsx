@@ -186,6 +186,8 @@ const translations = {
       noCardsRegistered: 'Nenhum cartão cadastrado',
       addCardsDesc: 'Adicionar seus cartões para acompanhar faturas e gastos.',
       addCard: 'Adicionar cartão', noFutureInstallments: 'Nenhuma parcela futura encontrada.',
+      billPaid: 'Paga', billPending: 'Pendente', payBill: 'Pagar Fatura',
+      paying: 'Pagando...', billPaidOn: 'Fatura paga', noBillThisMonth: 'Sem lançamentos este mês',
     },
     projects: {
       yourProjects: 'Seus projetos', activeProjects: 'projeto(s) ativo(s)',
@@ -445,6 +447,8 @@ const translations = {
       noCardsRegistered: 'No cards registered',
       addCardsDesc: 'Add your cards to track invoices and expenses.',
       addCard: 'Add card', noFutureInstallments: 'No future installments found.',
+      billPaid: 'Paid', billPending: 'Pending', payBill: 'Pay Invoice',
+      paying: 'Paying...', billPaidOn: 'Invoice paid', noBillThisMonth: 'No entries this month',
     },
     projects: {
       yourProjects: 'Your projects', activeProjects: 'active project(s)',
@@ -705,6 +709,8 @@ const translations = {
       noCardsRegistered: 'Ninguna tarjeta registrada',
       addCardsDesc: 'Agrega tus tarjetas para seguir facturas y gastos.',
       addCard: 'Agregar tarjeta', noFutureInstallments: 'No se encontraron cuotas futuras.',
+      billPaid: 'Pagada', billPending: 'Pendiente', payBill: 'Pagar Factura',
+      paying: 'Pagando...', billPaidOn: 'Factura pagada', noBillThisMonth: 'Sin movimientos este mes',
     },
     projects: {
       yourProjects: 'Tus proyectos', activeProjects: 'proyecto(s) activo(s)',

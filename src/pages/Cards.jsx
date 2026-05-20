@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, CreditCard, Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/formatters';
@@ -70,7 +70,7 @@ function CardFormModal({ card, onClose, onSave }) {
 
 export default function Cards() {
   const { t } = useI18n();
-  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill } = useFinance();
+  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -81,6 +81,7 @@ export default function Cards() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showTxModal, setShowTxModal] = useState(false);
   const [activeTab, setActiveTab] = useState('bills');
+  const [paying, setPaying] = useState(false);
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -122,6 +123,11 @@ export default function Cards() {
     });
     return Object.values(byMonth).sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
   }, [transactions]);
+
+  const handlePayBill = async (cardId) => {
+    setPaying(true);
+    try { await payCardBill(cardId, month, year); } finally { setPaying(false); }
+  };
 
   const getCardStyle = (card, index) => CARD_STYLES[index % CARD_STYLES.length];
 
@@ -264,8 +270,24 @@ export default function Cards() {
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
-                    <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-                      {t('cards.closesDay')} {card.closingDay} · {card.bill?.transactions?.length || 0} {t('cards.entries')}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+                        {t('cards.closesDay')} {card.closingDay} · {card.bill?.transactions?.length || 0} {t('cards.entries')}
+                      </span>
+                      {card.bill?.transactions?.length > 0 && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                          fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
+                          background: card.bill.paid ? 'rgba(134,239,172,0.15)' : 'rgba(251,191,36,0.15)',
+                          color: card.bill.paid ? 'var(--positive)' : '#d97706',
+                          border: `1px solid ${card.bill.paid ? 'rgba(134,239,172,0.3)' : 'rgba(251,191,36,0.3)'}`,
+                        }}>
+                          {card.bill.paid
+                            ? <><CheckCircle2 size={10} /> {t('cards.billPaid')}</>
+                            : <><Circle size={10} /> {t('cards.billPending')}</>
+                          }
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => { setEditCard(card); setShowForm(true); }} title="Editar"><Pencil size={12} /></button>
@@ -277,9 +299,9 @@ export default function Cards() {
                 {/* Bill detail (expandable) */}
                 {selectedCardId === card.id && selectedBill && (
                   <div className="card" style={{ marginTop: 8, padding: 0, overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--line)', gap: 8 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 500 }}>{t('cards.invoiceDetails')}</span>
-                      <button className="btn primary" style={{ marginLeft: 'auto', padding: '5px 10px', fontSize: 12 }}
+                      <button className="btn" style={{ marginLeft: 'auto', padding: '5px 10px', fontSize: 12 }}
                         onClick={() => setShowTxModal(true)}>
                         <Plus size={12} /> {t('cards.newEntry')}
                       </button>
@@ -291,21 +313,27 @@ export default function Cards() {
                     ) : (
                       <table className="tx-table">
                         <tbody>
-                          {selectedBill.transactions.map(t => {
-                            const cat = categories.find(c => c.id === t.categoryId);
+                          {selectedBill.transactions.map(tx => {
+                            const cat = categories.find(c => c.id === tx.categoryId);
                             return (
-                              <tr key={t.id}>
+                              <tr key={tx.id}>
                                 <td style={{ width: 36, paddingRight: 0 }}>
                                   <div className="tx-row-icon"><span style={{ fontSize: 12 }}>{cat?.icon || '📋'}</span></div>
                                 </td>
                                 <td>
-                                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t.description}</div>
-                                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{formatDate(t.date)}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 500 }}>{privacy ? '••••••' : tx.description}</div>
+                                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{formatDate(tx.date)}</div>
                                 </td>
-                                <td style={{ textAlign: 'right' }}>
-                                  <div className={`t-num ${t.type === 'income' ? 'pos' : 'neg'}`} style={{ fontSize: 13, fontWeight: 600 }}>
-                                    {privacy ? 'R$ ••••' : `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
+                                <td style={{ textAlign: 'right', paddingRight: 8 }}>
+                                  <div className={`t-num ${tx.type === 'income' ? 'pos' : 'neg'}`} style={{ fontSize: 13, fontWeight: 600 }}>
+                                    {privacy ? 'R$ ••••' : `${tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}`}
                                   </div>
+                                </td>
+                                <td style={{ width: 24, paddingLeft: 0 }}>
+                                  {tx.paid
+                                    ? <CheckCircle2 size={13} style={{ color: 'var(--positive)' }} />
+                                    : <Circle size={13} style={{ color: 'var(--text-3)', opacity: 0.4 }} />
+                                  }
                                 </td>
                               </tr>
                             );
@@ -313,11 +341,32 @@ export default function Cards() {
                         </tbody>
                       </table>
                     )}
-                    <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
+                    <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12.5, gap: 8 }}>
                       <span style={{ color: 'var(--text-3)' }}>{t('cards.invoiceTotal')}</span>
-                      <span className="t-num neg" style={{ fontWeight: 600 }}>
-                        {privacy ? 'R$ ••••' : formatCurrency(selectedBill.total)}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+                        <span className="t-num neg" style={{ fontWeight: 600 }}>
+                          {privacy ? 'R$ ••••' : formatCurrency(selectedBill.total)}
+                        </span>
+                        {selectedBill.transactions.length > 0 && (
+                          selectedBill.paid ? (
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: 11.5, fontWeight: 600, color: 'var(--positive)',
+                            }}>
+                              <CheckCircle2 size={13} /> {t('cards.billPaid')}
+                            </span>
+                          ) : (
+                            <button
+                              className="btn primary"
+                              style={{ padding: '4px 10px', fontSize: 12, opacity: paying ? 0.6 : 1 }}
+                              onClick={() => handlePayBill(card.id)}
+                              disabled={paying}
+                            >
+                              {paying ? t('cards.paying') : t('cards.payBill')}
+                            </button>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
