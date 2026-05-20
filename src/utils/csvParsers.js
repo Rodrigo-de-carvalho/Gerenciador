@@ -61,7 +61,7 @@ export function detectBank(headers) {
   const has = (...words) => words.every(w => h.some(k => k.includes(w)));
   const any = (...words) => words.some(w => h.some(k => k.includes(w)));
 
-  if (has('titulo') && has('valor')) return 'nubank_credit';          // Nubank fatura (com ou sem coluna Categoria/Hora)
+  if ((has('titulo') || has('title')) && (has('valor') || has('amount'))) return 'nubank_credit'; // Nubank fatura PT e EN
   if (has('identificador') && has('valor') && any('descricao', 'descri')) return 'nubank_conta';
   if (has('lancamento') && has('tipo') && has('valor') && !has('historico')) return 'c6_credit';
   if (any('estabelecimento', 'parcelas') && has('data') && has('valor')) return 'santander_credit';
