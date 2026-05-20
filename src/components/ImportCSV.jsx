@@ -122,12 +122,13 @@ export default function ImportCSV({ onClose }) {
         {step === 'upload' && (
           <>
             <div className="modal-form" style={{ gap: 16 }}>
-              <div
+              <label
+                htmlFor="csv-file-input"
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
-                onClick={() => fileRef.current?.click()}
                 style={{
+                  display: 'block',
                   border: `2px dashed ${dragging ? 'var(--accent)' : 'var(--line-2)'}`,
                   borderRadius: 12, padding: '36px 20px', textAlign: 'center',
                   cursor: 'pointer', background: dragging ? 'rgba(199,242,132,0.05)' : 'var(--chip)',
@@ -140,8 +141,8 @@ export default function ImportCSV({ onClose }) {
                   <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{t('importCSV.clickToSelect')}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('importCSV.fileHint')}</div>
-              </div>
-              <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }}
+              </label>
+              <input id="csv-file-input" ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }}
                 onChange={e => processFile(e.target.files[0])} />
 
               {error && (
