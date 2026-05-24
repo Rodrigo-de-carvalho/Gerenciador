@@ -47,6 +47,20 @@ function findKey(obj, ...candidates) {
   return null;
 }
 
+// Returns true when a credit-card row is a bill *payment* (not a purchase).
+// These are transfers between your bank account and the card — they must NOT
+// be imported as income/expense because the purchases were already counted.
+// Examples: "Pagamento recebido", "Pagamento de fatura", "Pagamento", "Payment"
+function isCreditCardPayment(description) {
+  const d = norm(description);
+  return (
+    /^pagamento/.test(d) ||          // Nubank: "Pagamento recebido", "Pagamento"
+    /^payment/.test(d) ||            // English exports
+    d === 'pagamento de fatura' ||
+    d === 'fatura'
+  );
+}
+
 // ── public ─────────────────────────────────────────────────
 
 export function parseCSVFile(text) {
@@ -93,7 +107,8 @@ export function parseRows(bank, data) {
     case 'nubank_credit': {
       // Nubank credit CSV sign convention:
       //   negative amount → expense (purchase charged to card)
-      //   positive amount → income  (refund / cashback / payment received)
+      //   positive amount → income  (refund / cashback)
+      //                  OR transfer (bill payment — excluded below)
       // The English export uses 'date' header; Portuguese uses 'data'.
       return data.map(r => {
         const dateKey   = findKey(r, 'data', 'date');
@@ -102,9 +117,12 @@ export function parseRows(bank, data) {
         const valKey    = findKey(r, 'valor', 'value', 'amount');
         const amount    = parseAmount(valKey ? r[valKey] : null);
         if (amount === null) return null;
+        const description = String(titleKey ? r[titleKey] : '-').trim();
+        // Skip bill payment entries — they're transfers, not income/expense
+        if (isCreditCardPayment(description)) return null;
         return {
           date:         parseDateBR(dateKey ? r[dateKey] : null),
-          description:  String(titleKey ? r[titleKey] : '-').trim(),
+          description,
           categoryHint: catKey ? String(r[catKey]).trim() : '',
           amount:       Math.abs(amount),
           type:         amount < 0 ? 'expense' : 'income',
@@ -199,15 +217,18 @@ export function parseRows(bank, data) {
     }
 
     case 'c6_credit': {
+      // C6: positive = expense (purchase), negative = credit (refund or payment)
       return data.map(r => {
         const dateKey = findKey(r, 'data');
         const descKey = findKey(r, 'lancamento', 'descri');
         const valKey  = findKey(r, 'valor');
         const amount  = parseAmount(valKey ? r[valKey] : null);
         if (amount === null) return null;
+        const description = String(descKey ? r[descKey] : '-').trim();
+        if (isCreditCardPayment(description)) return null;
         return {
           date:         parseDateBR(dateKey ? r[dateKey] : null),
-          description:  String(descKey ? r[descKey] : '-').trim(),
+          description,
           categoryHint: '',
           amount:       Math.abs(amount),
           type:         amount >= 0 ? 'expense' : 'income',
@@ -216,15 +237,18 @@ export function parseRows(bank, data) {
     }
 
     case 'santander_credit': {
+      // Santander: positive = expense (purchase), negative = credit (refund or payment)
       return data.map(r => {
         const dateKey = findKey(r, 'data');
         const descKey = findKey(r, 'estabelecimento', 'descri', 'hist');
         const valKey  = findKey(r, 'valor');
         const amount  = parseAmount(valKey ? r[valKey] : null);
         if (amount === null) return null;
+        const description = String(descKey ? r[descKey] : '-').trim();
+        if (isCreditCardPayment(description)) return null;
         return {
           date:         parseDateBR(dateKey ? r[dateKey] : null),
-          description:  String(descKey ? r[descKey] : '-').trim(),
+          description,
           categoryHint: '',
           amount:       Math.abs(amount),
           type:         amount >= 0 ? 'expense' : 'income',

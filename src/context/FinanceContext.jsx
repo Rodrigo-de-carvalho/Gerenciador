@@ -310,8 +310,11 @@ export function FinanceProvider({ children }) {
       amount:      tx.amount,
       date:        tx.date,
       category_id: tx.categoryId || null,
+      card_id:     tx.cardId     || null,
       notes:       null,
-      paid:        true,
+      // Credit card transactions are unpaid until the bill is settled.
+      // Account/cash transactions are considered paid immediately.
+      paid: tx.cardId ? false : true,
     }));
     const { data, error } = await supabase.from('transactions').insert(rows).select();
     if (error) throw new Error(error.message);
