@@ -2,9 +2,9 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.gerenciadorfinanceiro.app.debug",
+    "package_name": "com.gerenciadorfinanceiro.app",
     "sha256_cert_fingerprints": [
-      "D1:A7:CB:54:12:8C:5E:51:21:54:C2:11:68:9F:2B:42:EF:B1:74:E9:FB:86:76:20:62:2D:27:82:D8:34:09:CB"
+      "10:B3:D5:BB:1D:CE:31:EE:45:E1:24:9A:A5:BD:9C:C3:94:F9:09:DC:CE:CA:FA:9F:82:D1:83:37:35:C4:9F:22"
     ]
   }
 }]

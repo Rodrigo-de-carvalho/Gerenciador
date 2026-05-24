@@ -39,11 +39,16 @@ export function AuthProvider({ children }) {
   const signUp = (email, password) =>
     supabase.auth.signUp({ email, password });
 
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
+  const signInWithGoogle = () => {
+    // When running inside the Android WebView, redirect to the custom scheme so
+    // the OS intercepts it immediately and brings the user back to the app.
+    // This avoids relying on App Links / assetlinks.json verification, which
+    // breaks if the signing key changes.
+    // On web (browser), keep using the origin URL as usual.
+    const isAndroidApp = typeof window !== 'undefined' && typeof window.CifraApp !== 'undefined';
+    const redirectTo   = isAndroidApp ? 'cifra://callback' : `${window.location.origin}/`;
+    return supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+  };
 
   const signOut = () => supabase.auth.signOut();
 

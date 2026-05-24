@@ -229,10 +229,21 @@ class MainActivity : AppCompatActivity() {
         customTabOpened = false
         val url = intent?.data?.toString() ?: return
         when {
-            // Chrome Custom Tab returned PKCE code via custom scheme → load in WebView
+            // Chrome Custom Tab returned OAuth callback via custom scheme.
+            // Supabase PKCE sends code as query param (?code=...) or
+            // implicit flow uses fragment (#access_token=...).
+            // Forward both back into the WebView so Supabase JS can finish
+            // the session exchange inside the app.
             url.startsWith("cifra://callback") -> {
-                val query = intent.data?.query ?: ""
-                binding.webView.loadUrl("$APP_URL${if (query.isNotEmpty()) "?$query" else ""}")
+                val uri      = intent.data ?: return
+                val fragment = uri.fragment ?: ""
+                val query    = uri.query    ?: ""
+                val target   = when {
+                    fragment.isNotEmpty() -> "$APP_URL/#$fragment"
+                    query.isNotEmpty()    -> "$APP_URL/?$query"
+                    else                  -> APP_URL
+                }
+                binding.webView.loadUrl(target)
             }
             url.startsWith(APP_URL) -> binding.webView.loadUrl(url)
         }
