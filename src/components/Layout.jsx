@@ -9,6 +9,7 @@ import TransactionModal from './TransactionModal';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { usePrivacy } from '../context/PrivacyContext';
+import { useFinance } from '../context/FinanceContext';
 import { supabase } from '../lib/supabase';
 import PrivacyPolicy from './PrivacyPolicy';
 import { useI18n } from '../i18n';
@@ -316,6 +317,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
   const { darkMode, toggleDark } = useTheme();
   const { privacy, setPrivacy } = usePrivacy();
   const { user, signOut } = useAuth();
+  const { clearCache } = useFinance();
   const { t, lang, setLang } = useI18n();
 
   const PAGE_TITLES = {
@@ -506,7 +508,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
                       <Settings size={14} /> {t('settings.configSettings')}
                     </button>
                     <button
-                      onClick={() => { setShowUserMenu(false); signOut(); }}
+                      onClick={() => { setShowUserMenu(false); clearCache(); signOut(); }}
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'none', border: 'none', color: 'var(--negative)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 120ms' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--chip)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}

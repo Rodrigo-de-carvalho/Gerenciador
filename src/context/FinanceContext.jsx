@@ -90,6 +90,36 @@ const mapRecurring = (row) => ({
   nextDate: row.next_date,
 });
 
+// ── localStorage cache (stale-while-revalidate) ────────────────────────────
+const CACHE_VERSION = 1; // bump this to invalidate all caches after schema changes
+
+function cacheKey(userId) {
+  return `cifra_v${CACHE_VERSION}_${userId}`;
+}
+
+function readCache(userId) {
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeCache(userId, data) {
+  try {
+    localStorage.setItem(cacheKey(userId), JSON.stringify(data));
+  } catch (_) {
+    // Ignore QuotaExceededError — cache is best-effort
+  }
+}
+
+function clearCache(userId) {
+  try { localStorage.removeItem(cacheKey(userId)); } catch (_) {}
+}
+
+// ── Context ─────────────────────────────────────────────────────────────────
+
 const FinanceContext = createContext(null);
 
 export function FinanceProvider({ children }) {
@@ -100,6 +130,8 @@ export function FinanceProvider({ children }) {
   const [cards, setCards]               = useState([]);
   const [budgets, setBudgetsState]      = useState([]);
   const [recurring, setRecurring]       = useState([]);
+  // loading=true only on the very first load (no cache). After that the cache
+  // fills the UI instantly and the background refresh is invisible.
   const [loading, setLoading]           = useState(true);
 
   const loadData = useCallback(async () => {
@@ -114,7 +146,21 @@ export function FinanceProvider({ children }) {
       return;
     }
 
-    setLoading(true);
+    // ── 1. Populate UI from cache immediately (zero network wait) ──────────
+    const cached = readCache(user.id);
+    if (cached) {
+      setTransactions(cached.transactions || []);
+      setCategories(cached.categories   || []);
+      setProjects(cached.projects       || []);
+      setCards(cached.cards             || []);
+      setBudgetsState(cached.budgets    || []);
+      setRecurring(cached.recurring     || []);
+      setLoading(false); // hide spinner — show cached data right away
+    } else {
+      setLoading(true);  // first-ever load, no cache yet
+    }
+
+    // ── 2. Fetch fresh data from Supabase in background ────────────────────
     try {
       const [txRes, catRes, projRes, cardsRes, budgetsRes, recurringRes] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
@@ -178,12 +224,27 @@ export function FinanceProvider({ children }) {
         });
       }
 
+      const freshProjects = projRes.data?.map(mapProject) || [];
+      const freshCards    = cardsRes.data?.map(mapCard)    || [];
+      const freshBudgets  = budgetsRes.data?.map(mapBudget) || [];
+
+      // ── 3. Update UI with fresh data (silently replaces cached view) ──────
       setTransactions(allTxs);
       setCategories(cats);
-      setProjects(projRes.data?.map(mapProject) || []);
-      setCards(cardsRes.data?.map(mapCard) || []);
-      setBudgetsState(budgetsRes.data?.map(mapBudget) || []);
+      setProjects(freshProjects);
+      setCards(freshCards);
+      setBudgetsState(freshBudgets);
       setRecurring(recurringData);
+
+      // ── 4. Persist fresh data to cache for next reload ────────────────────
+      writeCache(user.id, {
+        transactions: allTxs,
+        categories:   cats,
+        projects:     freshProjects,
+        cards:        freshCards,
+        budgets:      freshBudgets,
+        recurring:    recurringData,
+      });
     } finally {
       setLoading(false);
     }
@@ -492,6 +553,7 @@ export function FinanceProvider({ children }) {
       budgets,
       recurring,
       loading,
+      clearCache: () => user && clearCache(user.id),
       addTransaction,
       addInstallmentTransaction,
       bulkAddTransactions,
