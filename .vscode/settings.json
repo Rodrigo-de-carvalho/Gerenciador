@@ -1,0 +1,32 @@
+{
+  // ── Git ──────────────────────────────────────────────────────────────────
+  // Busca mudanças do GitHub automaticamente a cada 3 minutos
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+
+  // Depois de commitar, sincroniza (push + pull) automaticamente sem perguntar
+  "git.postCommitCommand": "sync",
+  "git.confirmSync": false,
+
+  // Mostra quantos commits você está à frente/atrás do GitHub na barra inferior
+  "git.statusBar.enabled": true,
+
+  // Sempre faz rebase ao puxar (evita commits de merge desnecessários)
+  "git.rebaseWhenSync": true,
+
+  // Avisa se há mudanças não salvas antes de commitar
+  "git.promptToSaveFilesBeforeCommit": "staged",
+
+  // Habilita o painel de controle de código-fonte
+  "scm.defaultViewMode": "tree",
+
+  // ── Editor ───────────────────────────────────────────────────────────────
+  // Salva o arquivo automaticamente ao mudar de aba
+  "files.autoSave": "onFocusChange",
+
+  // Mostra a barra de status do Git na parte inferior
+  "editor.formatOnSave": false,
+
+  // ── Extensões recomendadas (sem instalar automaticamente) ─────────────────
+  "extensions.ignoreRecommendations": false
+}
