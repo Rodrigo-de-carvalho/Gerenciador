@@ -1,0 +1,305 @@
+import { useState, useRef } from 'react';
+import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react';
+import { useFinance } from '../context/FinanceContext';
+import { formatCurrency } from '../utils/formatters';
+import { useI18n } from '../i18n';
+
+const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
+const DEFAULT_COLORS = ['#22c55e','#10b981','#3b82f6','#8b5cf6','#f97316','#f59e0b','#ef4444','#ec4899','#06b6d4','#a855f7','#d946ef','#6b7280'];
+
+export default function Categories() {
+  const { t } = useI18n();
+  const { categories, transactions, addCategory, deleteCategory, budgets, setBudget, deleteBudget } = useFinance();
+  const [showForm, setShowForm]           = useState(false);
+  const [form, setForm]                   = useState({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [hoveredCat, setHoveredCat]       = useState(null);
+  const [budgetEdit, setBudgetEdit]       = useState(null); // catId being edited
+  const [budgetInput, setBudgetInput]     = useState('');
+  const budgetInputRef                    = useRef();
+
+  const incomeCategories  = categories.filter(c => c.type === 'income');
+  const expenseCategories = categories.filter(c => c.type === 'expense');
+
+  const getCategoryUsage = (id) => transactions.filter(t => t.categoryId === id).length;
+  const getBudget        = (catId) => budgets.find(b => b.categoryId === catId);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    addCategory(form);
+    setForm({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
+    setShowForm(false);
+  };
+
+  const handleDelete = (id) => {
+    if (getCategoryUsage(id) > 0) setDeleteConfirm(id);
+    else deleteCategory(id);
+  };
+
+  const startBudgetEdit = (catId) => {
+    const existing = getBudget(catId);
+    setBudgetInput(existing ? String(existing.amount) : '');
+    setBudgetEdit(catId);
+    setTimeout(() => budgetInputRef.current?.focus(), 40);
+  };
+
+  const saveBudgetEdit = async () => {
+    if (!budgetEdit) return;
+    const amount = parseFloat(budgetInput.replace(',', '.'));
+    if (!isNaN(amount) && amount > 0) {
+      await setBudget({ categoryId: budgetEdit, amount });
+    } else if (getBudget(budgetEdit)) {
+      await deleteBudget(budgetEdit);
+    }
+    setBudgetEdit(null);
+    setBudgetInput('');
+  };
+
+  const CatList = ({ cats, label, icon: Icon, positive }) => (
+    <div className="card">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8,
+          background: positive ? 'rgba(199,242,132,0.15)' : 'rgba(255,122,90,0.12)',
+          display: 'grid', placeItems: 'center',
+          color: positive ? 'var(--positive)' : 'var(--negative)',
+        }}>
+          <Icon size={14} />
+        </div>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+        <span className="chip" style={{ marginLeft: 'auto', cursor: 'default', fontSize: 11 }}>{cats.length}</span>
+      </div>
+
+      {!positive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '6px 10px', background: 'var(--chip)', borderRadius: 8 }}>
+          <Target size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+            {t('categories.limitHint')} <strong style={{ color: 'var(--text-2)' }}>{t('categories.limitStrong')}</strong> {t('categories.limitHint2')}
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {cats.map(cat => {
+          const usage    = getCategoryUsage(cat.id);
+          const isHov    = hoveredCat === cat.id;
+          const budget   = !positive ? getBudget(cat.id) : null;
+          const isEditing = budgetEdit === cat.id;
+
+          return (
+            <div
+              key={cat.id}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 10,
+                background: isHov ? 'var(--chip)' : 'transparent',
+                transition: 'background 120ms',
+              }}
+              onMouseEnter={() => setHoveredCat(cat.id)}
+              onMouseLeave={() => setHoveredCat(null)}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0, background: cat.color + '22' }}>
+                {cat.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)' }}>{cat.name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>{usage} {usage !== 1 ? t('categories.transactionPlural') : t('categories.transaction')}</div>
+              </div>
+
+              {/* Budget chip (expense categories only) */}
+              {!positive && (
+                isEditing ? (
+                  <input
+                    ref={budgetInputRef}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Limite..."
+                    value={budgetInput}
+                    onChange={e => setBudgetInput(e.target.value)}
+                    onBlur={saveBudgetEdit}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); saveBudgetEdit(); }
+                      if (e.key === 'Escape') { setBudgetEdit(null); setBudgetInput(''); }
+                    }}
+                    style={{
+                      width: 90, padding: '3px 8px', fontSize: 12,
+                      background: 'var(--surface)', border: '1px solid var(--accent)',
+                      borderRadius: 6, color: 'var(--text)', fontFamily: 'inherit',
+                      outline: 'none',
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <button
+                    onClick={() => startBudgetEdit(cat.id)}
+                    style={{
+                      fontSize: 11.5, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
+                      background: budget ? 'rgba(199,242,132,0.1)' : 'var(--chip)',
+                      border: `1px solid ${budget ? 'rgba(199,242,132,0.25)' : 'var(--line)'}`,
+                      color: budget ? 'var(--accent)' : 'var(--text-3)',
+                      fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      transition: 'opacity 120ms', opacity: isHov || budget ? 1 : 0,
+                    }}
+                    title={budget ? 'Editar orçamento' : 'Definir orçamento'}
+                  >
+                    {budget ? formatCurrency(budget.amount) : t('categories.addLimit')}
+                  </button>
+                )
+              )}
+
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+              <button
+                className="icon-btn"
+                style={{ width: 28, height: 28, opacity: isHov ? 1 : 0, transition: 'opacity 120ms' }}
+                onClick={() => handleDelete(cat.id)}
+                title="Excluir"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          );
+        })}
+        {cats.length === 0 && (
+          <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
+            {t('categories.noCategory')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="btn primary" onClick={() => setShowForm(true)}>
+          <Plus size={14} /> {t('categories.newCategory')}
+        </button>
+      </div>
+
+      <div className="grid-cifra g-2">
+        <CatList cats={incomeCategories}  label={t('categories.income')}  icon={TrendingUp}   positive={true} />
+        <CatList cats={expenseCategories} label={t('categories.expense')} icon={TrendingDown} positive={false} />
+      </div>
+
+      {showForm && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <div className="modal-head">
+              <h2>{t('categories.newCategory')}</h2>
+              <button className="icon-btn" onClick={() => setShowForm(false)}><X size={15} /></button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-form">
+                <div className="seg" style={{ width: '100%' }}>
+                  {['expense', 'income'].map(typ => (
+                    <button
+                      key={typ} type="button"
+                      style={{ flex: 1, justifyContent: 'center' }}
+                      className={form.type === typ ? 'active' : ''}
+                      onClick={() => setForm(f => ({ ...f, type: typ }))}
+                    >
+                      {typ === 'income' ? t('categories.incomeType') : t('categories.expenseType')}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="field">
+                  <label className="field-label">{t('categories.name')}</label>
+                  <input
+                    type="text" className="field-input"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    required
+                    placeholder={t('categories.namePlaceholder')}
+                  />
+                </div>
+
+                <div className="field">
+                  <label className="field-label">{t('categories.icon')}</label>
+                  <div className="icon-grid" style={{ maxHeight: 112, overflowY: 'auto' }}>
+                    {ICONS.map(icon => (
+                      <button
+                        key={icon} type="button"
+                        className={`icon-pick${form.icon === icon ? ' sel' : ''}`}
+                        onClick={() => setForm(f => ({ ...f, icon }))}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label className="field-label">{t('categories.color')}</label>
+                  <div className="color-grid">
+                    {DEFAULT_COLORS.map(color => (
+                      <button
+                        key={color} type="button"
+                        className={`color-pick${form.color === color ? ' sel' : ''}`}
+                        style={{ background: color }}
+                        onClick={() => setForm(f => ({ ...f, color }))}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={form.color}
+                      onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                      style={{ width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', border: 0, padding: 0 }}
+                      title="Cor personalizada"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--chip)', borderRadius: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', fontSize: 18, background: form.color + '22' }}>
+                    {form.icon}
+                  </div>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{form.name || t('categories.preview')}</span>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: form.color }} />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowForm(false)}>
+                  {t('common.cancel')}
+                </button>
+                <button type="submit" className="btn primary" style={{ flex: 1, justifyContent: 'center' }}>
+                  <Plus size={14} /> {t('common.create')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 380 }}>
+            <div className="modal-head">
+              <h2>{t('categories.categoryInUse')}</h2>
+              <button className="icon-btn" onClick={() => setDeleteConfirm(null)}><X size={15} /></button>
+            </div>
+            <div className="modal-form" style={{ gap: 12 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+                {t('categories.categoryInUseDesc1')} <strong style={{ color: 'var(--text)' }}>{getCategoryUsage(deleteConfirm)}</strong> {t('categories.categoryInUseDesc2')}
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteConfirm(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
+                onClick={() => { deleteCategory(deleteConfirm); setDeleteConfirm(null); }}
+              >
+                <Trash2 size={14} /> {t('categories.deleteAnyway')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

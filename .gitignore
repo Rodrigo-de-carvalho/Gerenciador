@@ -1,0 +1,44 @@
+.env
+.env.local
+.env.*.local
+.claude/
+
+# Android build outputs
+android-app/app/build/
+android-app/build/
+android-app/.gradle/
+android-app/local.properties
+
+# Android signing — NEVER commit these
+android-app/keystore.properties
+android-app/app/*.jks
+android-app/app/*.keystore
+
+# APK at root (accidentally generated)
+app-debug.apk
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+dist/

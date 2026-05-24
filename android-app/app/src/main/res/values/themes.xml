@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema sem ActionBar para o WebView ocupar tela inteira -->
+    <style name="Theme.GerenciadorFinanceiro" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">#111111</item>
+        <item name="android:statusBarColor">#111111</item>
+        <item name="android:navigationBarColor">#111111</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

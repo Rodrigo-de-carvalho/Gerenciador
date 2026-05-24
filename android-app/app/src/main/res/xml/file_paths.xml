@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!--
+        Cobre getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        que é usado pelo DownloadManager para salvar o APK de atualização.
+    -->
+    <external-files-path
+        name="apk_files"
+        path="." />
+</paths>
