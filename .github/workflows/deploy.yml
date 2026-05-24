@@ -1,0 +1,42 @@
+name: Deploy para Vercel
+
+# Roda sempre que você fizer push na branch main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Faz checkout do código
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Configura Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Instala dependências
+      - name: Instalar dependências
+        run: npm ci
+
+      # 4. Build do projeto
+      - name: Build
+        run: npm run build
+
+      # 5. Deploy para Vercel
+      - name: Deploy para Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./

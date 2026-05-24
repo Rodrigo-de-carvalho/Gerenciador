@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    // GitHub integration — sincroniza com o repositório, mostra PRs, issues
+    "github.vscode-pull-request-github",
+    // GitLens — mostra quem mudou cada linha, histórico visual, comparações
+    "eamodio.gitlens",
+    // Realça erros de ESLint direto no editor
+    "dbaeumer.vscode-eslint",
+    // Formata código automaticamente (Prettier)
+    "esbenp.prettier-vscode",
+    // Suporte a Tailwind CSS com autocomplete
+    "bradlc.vscode-tailwindcss",
+    // Highlights de erros do TypeScript/JSX em tempo real
+    "dsznajder.es7-react-js-snippets"
+  ]
+}
