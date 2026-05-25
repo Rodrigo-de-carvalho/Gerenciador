@@ -72,6 +72,17 @@ export function AuthProvider({ children }) {
       });
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Erro ao deletar conta.' };
+      // Limpa dados locais do usuário antes de deslogar
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('cifra_') || key.startsWith('sb-'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      } catch { /* ignora erros de storage */ }
       await supabase.auth.signOut();
       return { error: null };
     } catch (e) {

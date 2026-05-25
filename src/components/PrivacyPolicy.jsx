@@ -45,7 +45,8 @@ export default function PrivacyPolicy({ onClose }) {
             <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>4. Compartilhamento de dados</h3>
             <p style={{ margin: 0 }}><strong style={{ color: 'var(--text)' }}>Seus dados não são vendidos, alugados ou compartilhados com terceiros.</strong></p>
             <p style={{ margin: 0 }}>
-              <strong style={{ color: 'var(--text)' }}>Exceção — Assistente de IA (opcional):</strong> se você optar por ativar o assistente financeiro, um resumo agregado dos seus dados do mês (totais de entradas, saídas e categorias) é enviado à Groq para processamento pelo modelo Llama 3.3. Nenhum dado pessoal identificável é transmitido. Essa função é desativada por padrão e pode ser desligada a qualquer momento em Configurações.
+              <strong style={{ color: 'var(--text)' }}>Exceção — Assistente de IA (opcional):</strong> se você utilizar o assistente financeiro, os dados dos seus lançamentos dos últimos 3 meses (descrição, valor, data e categoria de cada transação, além dos totais mensais) são enviados à <strong style={{ color: 'var(--text)' }}>Groq</strong> para processamento pelo modelo Llama 3.3. Esses dados são usados exclusivamente para gerar as respostas do assistente e não são associados à sua identidade pessoal (nome, CPF, e-mail). Para saber como a Groq trata esses dados, consulte a{' '}
+              <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Política de Privacidade da Groq</a>.
             </p>
           </section>
 
@@ -72,7 +73,17 @@ export default function PrivacyPolicy({ onClose }) {
           </section>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>8. Encarregado de Proteção de Dados (DPO)</h3>
+            <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>8. Público-alvo e restrição de idade</h3>
+            <p style={{ margin: 0 }}>O Cifra é destinado exclusivamente a <strong style={{ color: 'var(--text)' }}>pessoas com 18 anos ou mais</strong>. Não coletamos intencionalmente dados de menores de idade. Ao criar uma conta, você declara ter 18 anos ou mais. Caso identifiquemos que uma conta pertence a um menor, ela será encerrada e os dados removidos, conforme o Art. 14 da LGPD.</p>
+          </section>
+
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>9. Incidentes de segurança (Art. 48)</h3>
+            <p style={{ margin: 0 }}>Em caso de incidente de segurança que possa acarretar risco ou dano relevante aos titulares dos dados, notificaremos os usuários afetados e a Autoridade Nacional de Proteção de Dados (ANPD) em prazo razoável, conforme determina o Art. 48 da Lei 13.709/2018, com informações sobre a natureza do incidente, os dados envolvidos e as medidas adotadas.</p>
+          </section>
+
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>10. Encarregado de Proteção de Dados (DPO)</h3>
             <p style={{ margin: 0 }}>Em atendimento ao Art. 41 da LGPD, o responsável pelo tratamento de dados pessoais e canal para exercício dos seus direitos é:</p>
             <p style={{ margin: 0 }}><strong style={{ color: 'var(--text)' }}>Rodrigo de Carvalho</strong><br />E-mail: <a href="mailto:rorodrigo012007@gmail.com" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>rorodrigo012007@gmail.com</a></p>
             <p style={{ margin: 0 }}>Solicitações de acesso, correção, portabilidade ou exclusão de dados serão respondidas em até 15 dias.</p>

@@ -221,6 +221,13 @@ export default function AuthPage() {
               </label>
             )}
 
+            {/* Age declaration (register only) */}
+            {mode === 'register' && (
+              <p style={{ fontSize: 11.5, color: 'var(--text-4)', margin: 0, lineHeight: 1.5 }}>
+                Ao criar uma conta você declara ter <strong style={{ color: 'var(--text-3)' }}>18 anos ou mais</strong>, conforme nossa Política de Privacidade (Art. 14 da LGPD).
+              </p>
+            )}
+
             {/* Error / success */}
             {error && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>

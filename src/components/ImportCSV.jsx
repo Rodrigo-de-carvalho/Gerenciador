@@ -2,8 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Check, AlertCircle, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
 import { parseCSVFile, detectBank, parseRows, BANK_LABELS } from '../utils/csvParsers';
 import { useFinance } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { useI18n } from '../i18n';
+import { recordImport, markUndone } from '../hooks/useImportHistory';
 
 // Detects touch-only devices (phones/tablets) where drag-and-drop doesn't apply
 const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -23,6 +25,7 @@ const isCreditCardBank = (b) => CREDIT_CARD_BANKS.includes(b);
 
 export default function ImportCSV({ onClose }) {
   const { t } = useI18n();
+  const { user } = useAuth();
   const { categories, cards, bulkAddTransactions, bulkDeleteTransactions } = useFinance();
   const [step, setStep]             = useState('upload');
   const [bank, setBank]             = useState(null);
@@ -32,9 +35,10 @@ export default function ImportCSV({ onClose }) {
   const [selected, setSelected]     = useState(new Set());
   const [importing, setImporting]   = useState(false);
   const [importCount, setImportCount] = useState(0);
-  const [importedIds, setImportedIds] = useState([]);  // IDs of last import (for undo)
-  const [undoing, setUndoing]       = useState(false);
-  const [undone, setUndone]         = useState(false);
+  const [importedIds, setImportedIds]   = useState([]);    // IDs of last import (for undo)
+  const [currentImportId, setCurrentImportId] = useState(null); // localStorage history entry ID
+  const [undoing, setUndoing]           = useState(false);
+  const [undone, setUndone]             = useState(false);
   const [error, setError]           = useState('');
   const [dragging, setDragging]     = useState(false);
   const [cardId, setCardId]         = useState('');
@@ -136,8 +140,19 @@ export default function ImportCSV({ onClose }) {
         cardId: resolvedCardId,
       }));
       const imported = await bulkAddTransactions(toImport);
-      setImportedIds(imported.map(tx => tx.id));
+      const ids = imported.map(tx => tx.id);
+      setImportedIds(ids);
       setImportCount(imported.length);
+      // Persist to localStorage so undo works even after closing the modal
+      if (user && ids.length > 0) {
+        recordImport(user.id, {
+          bank,
+          bankLabel: BANK_LABELS[bank] || bank,
+          count: ids.length,
+          txIds: ids,
+          cardId: resolvedCardId,
+        });
+      }
       setStep('done');
     } catch {
       setError(t('importCSV.errImporting'));
@@ -146,12 +161,14 @@ export default function ImportCSV({ onClose }) {
     }
   };
 
-  const handleUndo = async () => {
-    if (!importedIds.length) return;
+  const handleUndo = async (idsOverride) => {
+    const ids = idsOverride || importedIds;
+    if (!ids.length) return;
     setUndoing(true);
     setError('');
     try {
-      await bulkDeleteTransactions(importedIds);
+      await bulkDeleteTransactions(ids);
+      if (user && currentImportId) markUndone(user.id, currentImportId);
       setUndone(true);
       setImportedIds([]);
     } catch {
