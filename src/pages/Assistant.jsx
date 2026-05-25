@@ -133,8 +133,8 @@ export default function Assistant() {
       recentMonths.push({ month: m, year: y, income: s.income, expense: s.expense, balance: s.balance });
     }
 
-    // All transactions from the last 3 months (most recent first), capped at 120
-    // to avoid exceeding the model's context window on very active accounts.
+    // All transactions from the last 3 months (most recent first), capped at 60
+    // to stay within Groq's token-per-minute limits on the free tier.
     const cutoff = (() => {
       let m = now.month - 2; let y = now.year;
       if (m <= 0) { m += 12; y -= 1; }
@@ -143,7 +143,7 @@ export default function Assistant() {
     const recentTransactions = [...transactions]
       .filter(tx => tx.date >= cutoff)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 120);
+      .slice(0, 60);
 
     return buildSystemPrompt({
       income, expense, balance, topCategories,
@@ -380,7 +380,14 @@ export default function Assistant() {
         setApiHistory([...currentHistory, assistantMsg]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `${t('assistant.errorMessage')} ${err.message ? `(${err.message})` : ''}` }]);
+      const detail = err.message || '';
+      const isRateLimit = detail.toLowerCase().includes('rate') || detail.toLowerCase().includes('429') || detail.toLowerCase().includes('limit');
+      const isKey = detail.toLowerCase().includes('401') || detail.toLowerCase().includes('key') || detail.toLowerCase().includes('auth');
+      let userMsg = t('assistant.errorMessage');
+      if (isRateLimit) userMsg = '⚠️ Limite de requisições atingido. Aguarde alguns segundos e tente novamente.';
+      else if (isKey)  userMsg = '⚠️ Chave da API de IA inválida. Verifique GROQ_API_KEY nas variáveis de ambiente do Vercel.';
+      else if (detail)  userMsg = `⚠️ Erro: ${detail}`;
+      setMessages(prev => [...prev, { role: 'assistant', content: userMsg }]);
       setApiHistory(currentHistory);
     } finally {
       setLoading(false);
