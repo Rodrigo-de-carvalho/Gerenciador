@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Check, AlertCircle, ChevronRight } from 'lucide-react';
+
+// Detects touch-only devices (phones/tablets) where drag-and-drop doesn't apply
+const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 import { parseCSVFile, detectBank, parseRows, BANK_LABELS } from '../utils/csvParsers';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
@@ -143,14 +146,17 @@ export default function ImportCSV({ onClose }) {
           <>
             <div className="modal-form" style={{ gap: 16 }}>
               <div
-                onDragOver={e => { e.preventDefault(); setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
+                onDragOver={isTouch ? undefined : e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={isTouch ? undefined : () => setDragging(false)}
+                onDrop={isTouch ? undefined : handleDrop}
                 style={{
                   position: 'relative',
                   border: `2px dashed ${dragging ? 'var(--accent)' : 'var(--line-2)'}`,
-                  borderRadius: 12, padding: '36px 20px', textAlign: 'center',
-                  cursor: 'pointer', background: dragging ? 'rgba(199,242,132,0.05)' : 'var(--chip)',
+                  borderRadius: 12,
+                  padding: isTouch ? '44px 20px' : '36px 20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  background: dragging ? 'rgba(199,242,132,0.05)' : 'var(--chip)',
                   transition: 'border-color 120ms, background 120ms',
                 }}
               >
@@ -161,11 +167,17 @@ export default function ImportCSV({ onClose }) {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                   onChange={e => processFile(e.target.files[0])}
                 />
-                <Upload size={28} style={{ color: dragging ? 'var(--accent)' : 'var(--text-3)', marginBottom: 10 }} />
-                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 5 }}>
-                  {t('importCSV.dropFile')}{' '}
-                  <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{t('importCSV.clickToSelect')}</span>
-                </div>
+                <Upload size={isTouch ? 32 : 28} style={{ color: dragging ? 'var(--accent)' : 'var(--accent)', marginBottom: 12, opacity: 0.8 }} />
+                {isTouch ? (
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--accent)' }}>
+                    {t('importCSV.touchToSelect')}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 5 }}>
+                    {t('importCSV.dropFile')}{' '}
+                    <span style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{t('importCSV.clickToSelect')}</span>
+                  </div>
+                )}
                 <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('importCSV.fileHint')}</div>
               </div>
 
@@ -392,7 +404,7 @@ export default function ImportCSV({ onClose }) {
             </div>
             <div className="modal-actions">
               <button className="btn primary" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
-                Ver transações
+                {t('importCSV.viewTransactions')}
               </button>
             </div>
           </>

@@ -168,7 +168,7 @@ export default function Cards() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={() => setShowImport(true)}>
-            <Upload size={14} /> Importar fatura
+            <Upload size={14} /> {t('cards.importBill')}
           </button>
           <button className="btn primary" onClick={() => { setEditCard(null); setShowForm(true); }}>
             <Plus size={14} /> {t('cards.newCard')}
@@ -187,17 +187,44 @@ export default function Cards() {
       )}
 
       {cards.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <CreditCard size={24} style={{ color: 'var(--text-3)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card" style={{ textAlign: 'center', padding: '48px 20px 36px' }}>
+            <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <CreditCard size={24} style={{ color: 'var(--text-3)' }} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('cards.noCardsRegistered')}</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
+              {t('cards.addCardsDesc')}
+            </p>
+            <button className="btn primary" onClick={() => setShowForm(true)}>
+              <Plus size={14} /> {t('cards.addCard')}
+            </button>
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('cards.noCardsRegistered')}</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
-            {t('cards.addCardsDesc')}
-          </p>
-          <button className="btn primary" onClick={() => setShowForm(true)}>
-            <Plus size={14} /> {t('cards.addCard')}
-          </button>
+
+          {/* How credit card tracking works */}
+          <div className="card" style={{ padding: '18px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 16 }}>💡</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{t('cards.howItWorksTitle')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { num: '1', text: t('cards.howItWorksStep1') },
+                { num: '2', text: t('cards.howItWorksStep2') },
+                { num: '3', text: t('cards.howItWorksStep3') },
+              ].map(({ num, text }) => (
+                <div key={num} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <span style={{
+                    flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                    background: 'rgba(199,242,132,0.15)', border: '1px solid rgba(199,242,132,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: 'var(--accent)',
+                  }}>{num}</span>
+                  <span style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.55 }}>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       ) : activeTab === 'installments' ? (
         /* Parcelas Futuras tab */

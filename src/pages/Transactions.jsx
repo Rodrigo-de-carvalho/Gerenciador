@@ -74,6 +74,9 @@ export default function Transactions() {
   const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const groups = useMemo(() => groupByDate(filtered), [filtered]);
 
+  // True when no filters are active (empty state = no transactions this month)
+  const hasActiveFilters = typeFilter !== 'all' || catFilter !== '' || search !== '';
+
   return (
     <div>
       {/* Header row */}
@@ -165,14 +168,35 @@ export default function Transactions() {
 
       {/* Transaction groups */}
       {filtered.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)' }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>💭</div>
-          <div style={{ fontSize: 14, marginBottom: 4 }}>{t('transactions.noTransactionsFound')}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 20 }}>{t('transactions.adjustFilters')}</div>
-          <button className="btn primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
-            <Plus size={14} /> {t('transactions.newEntryBtn')}
-          </button>
-        </div>
+        hasActiveFilters ? (
+          /* Filters active but no results */
+          <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{t('transactions.noTransactionsFound')}</div>
+            <div style={{ fontSize: 12.5, marginBottom: 20 }}>{t('transactions.adjustFilters')}</div>
+            <button
+              className="btn"
+              onClick={() => { setSearch(''); setTypeFilter('all'); setCatFilter(''); }}
+            >
+              <X size={14} /> {t('transactions.clearFilters')}
+            </button>
+          </div>
+        ) : (
+          /* No transactions at all for this month */
+          <div className="card" style={{ textAlign: 'center', padding: '52px 20px', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>{t('transactions.noTransactionsMonth')}</div>
+            <div style={{ fontSize: 12.5, marginBottom: 24, maxWidth: 300, margin: '0 auto 24px' }}>{t('transactions.addFirstHint')}</div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn" onClick={() => setShowImport(true)}>
+                <Upload size={14} /> {t('transactions.importCSV')}
+              </button>
+              <button className="btn primary" onClick={() => { setEditTx(null); setShowModal(true); }}>
+                <Plus size={14} /> {t('transactions.newEntryBtn')}
+              </button>
+            </div>
+          </div>
+        )
       ) : (
         groups.map(group => (
           <div key={group.date.toISOString()}>
