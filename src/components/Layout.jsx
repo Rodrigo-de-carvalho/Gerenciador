@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, FolderOpen, CreditCard, Target,
   Bot, Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
   Plus, Menu, X, ToggleLeft, ToggleRight, Bot as BotIcon,
-  ShieldAlert, Trash2, Shield, Download, TrendingUp, Smartphone,
+  ShieldAlert, Trash2, Shield, Download, TrendingUp, Smartphone, Loader2,
 } from 'lucide-react';
 import TransactionModal from './TransactionModal';
 import { useTheme } from '../context/ThemeContext';
@@ -33,6 +33,7 @@ const NAV_TOOLS = [
 function SettingsModal({ onClose }) {
   const { t, lang, setLang } = useI18n();
   const { user, updateProfile, deleteAccount } = useAuth();
+  const { transactions, bulkDeleteTransactions } = useFinance();
   const aiEnabled = user?.user_metadata?.ai_assistant_enabled === true;
   const [enabled, setEnabled] = useState(aiEnabled);
   const [saving, setSaving] = useState(false);
@@ -42,6 +43,10 @@ function SettingsModal({ onClose }) {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [clearAllText, setClearAllText] = useState('');
+  const [clearingAll, setClearingAll] = useState(false);
+  const [clearAllError, setClearAllError] = useState('');
 
   const handleToggle = () => { if (!enabled) setShowConsent(true); else setEnabled(false); };
   const handleAcceptConsent = () => { setEnabled(true); setShowConsent(false); };
@@ -95,6 +100,21 @@ function SettingsModal({ onClose }) {
     setDeleteError('');
     const { error } = await deleteAccount();
     if (error) { setDeleteError(error); setDeleting(false); }
+  };
+
+  const handleClearAll = async () => {
+    setClearingAll(true);
+    setClearAllError('');
+    try {
+      const ids = transactions.map(tx => tx.id);
+      if (ids.length > 0) await bulkDeleteTransactions(ids);
+      setShowClearAllConfirm(false);
+      setClearAllText('');
+    } catch (e) {
+      setClearAllError(e.message || 'Erro ao apagar. Tente novamente.');
+    } finally {
+      setClearingAll(false);
+    }
   };
 
   const changed = enabled !== aiEnabled;
@@ -236,13 +256,22 @@ function SettingsModal({ onClose }) {
           {/* Danger zone */}
           <div>
             <SectionLabel danger>{t('settings.dangerZone')}</SectionLabel>
-            <SettingRow
-              icon={<Trash2 size={16} />}
-              title={t('settings.deleteAccount')}
-              subtitle={t('settings.deleteAccountSubtitle')}
-              onClick={() => setShowDeleteConfirm(true)}
-              danger
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <SettingRow
+                icon={<Trash2 size={16} />}
+                title="Apagar todos os lançamentos"
+                subtitle={`Zera o histórico financeiro (${transactions.length} lançamento${transactions.length !== 1 ? 's' : ''}). Categorias e projetos são mantidos.`}
+                onClick={() => { setShowClearAllConfirm(true); setClearAllText(''); setClearAllError(''); }}
+                danger
+              />
+              <SettingRow
+                icon={<Trash2 size={16} />}
+                title={t('settings.deleteAccount')}
+                subtitle={t('settings.deleteAccountSubtitle')}
+                onClick={() => setShowDeleteConfirm(true)}
+                danger
+              />
+            </div>
           </div>
         </div>
 
@@ -277,6 +306,55 @@ function SettingsModal({ onClose }) {
       )}
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+
+      {/* Clear all transactions sub-modal */}
+      {showClearAllConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 60 }}>
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <div className="modal-head">
+              <h2 style={{ color: 'var(--negative)' }}>⚠️ Apagar todos os lançamentos?</h2>
+              <button className="icon-btn" onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll}><X size={15} /></button>
+            </div>
+            <div className="modal-form" style={{ gap: 14 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                Essa ação irá apagar <strong style={{ color: 'var(--negative)' }}>todos os {transactions.length} lançamentos</strong> da sua conta permanentemente. Categorias, cartões, projetos, metas e investimentos <strong style={{ color: 'var(--text)' }}>não serão afetados</strong>.
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                Para confirmar, digite <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: 1 }}>CONFIRMAR</strong> abaixo:
+              </p>
+              <input
+                type="text"
+                className="field-input"
+                placeholder="Digite CONFIRMAR"
+                value={clearAllText}
+                onChange={e => setClearAllText(e.target.value)}
+                disabled={clearingAll}
+                autoComplete="off"
+                style={{ fontFamily: 'monospace', letterSpacing: 1 }}
+              />
+              {clearAllError && (
+                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                  {clearAllError}
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll}>Cancelar</button>
+              <button
+                className="btn"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearAllText !== 'CONFIRMAR' || clearingAll) ? 0.4 : 1 }}
+                onClick={handleClearAll}
+                disabled={clearAllText !== 'CONFIRMAR' || clearingAll}
+              >
+                {clearingAll
+                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Apagando…</>
+                  : <><Trash2 size={14} /> Apagar tudo</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirm sub-modal */}
       {showDeleteConfirm && (

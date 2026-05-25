@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   Plus, ArrowLeft, Pencil, Trash2, FolderOpen,
   FileSpreadsheet, FileText, MessageSquare, Copy, Check, Share2, X,
-  LayoutDashboard,
+  LayoutDashboard, Loader2,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
@@ -89,7 +89,7 @@ function ProjectFormModal({ project, onClose, onSave }) {
 
 function ProjectDetail({ project, onBack }) {
   const { t } = useI18n();
-  const { transactions, categories, updateProject, deleteProject, deleteTransaction } = useFinance();
+  const { transactions, categories, updateProject, deleteProject, deleteTransaction, bulkDeleteTransactions } = useFinance();
   const { privacy } = usePrivacy();
   const [showTxModal, setShowTxModal] = useState(false);
   const [editTx, setEditTx] = useState(null);
@@ -99,6 +99,10 @@ function ProjectDetail({ project, onBack }) {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [copied, setCopied] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [showClearProjectConfirm, setShowClearProjectConfirm] = useState(false);
+  const [clearProjectText, setClearProjectText] = useState('');
+  const [clearingProject, setClearingProject] = useState(false);
+  const [clearProjectError, setClearProjectError] = useState('');
 
   const projectTxs = useMemo(
     () => transactions.filter(t => t.projectId === project.id).sort((a, b) => new Date(b.date) - new Date(a.date)),
@@ -110,6 +114,21 @@ function ProjectDetail({ project, onBack }) {
   const balance = income - expense;
 
   const handleDeleteProject = () => { deleteProject(project.id); onBack(); };
+
+  const handleClearProject = async () => {
+    setClearingProject(true);
+    setClearProjectError('');
+    try {
+      const ids = projectTxs.map(tx => tx.id);
+      if (ids.length > 0) await bulkDeleteTransactions(ids);
+      setShowClearProjectConfirm(false);
+      setClearProjectText('');
+    } catch (e) {
+      setClearProjectError(e.message || 'Erro ao apagar. Tente novamente.');
+    } finally {
+      setClearingProject(false);
+    }
+  };
 
   const whatsappText = useMemo(() => generateProjectWhatsAppText(projectTxs, categories, project), [projectTxs, categories, project]);
 
@@ -173,6 +192,15 @@ function ProjectDetail({ project, onBack }) {
         </button>
         <button className="btn" onClick={() => setShowExportPanel(p => !p)}>
           <MessageSquare size={14} /> {t('projects.whatsapp')}
+        </button>
+        <button
+          className="btn"
+          style={{ color: 'var(--negative)', borderColor: 'color-mix(in oklab, var(--negative) 30%, transparent)' }}
+          onClick={() => { setShowClearProjectConfirm(true); setClearProjectText(''); setClearProjectError(''); }}
+          disabled={projectTxs.length === 0}
+          title="Apagar todos os lançamentos deste projeto"
+        >
+          <Trash2 size={14} /> Apagar lançamentos
         </button>
         <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => { setEditTx(null); setShowTxModal(true); }}>
           <Plus size={14} /> {t('projects.newEntry')}
@@ -326,7 +354,55 @@ function ProjectDetail({ project, onBack }) {
         </div>
       )}
 
-      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }`}</style>
+      {showClearProjectConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <div className="modal-head">
+              <h2 style={{ color: 'var(--negative)' }}>⚠️ Apagar lançamentos do projeto?</h2>
+              <button className="icon-btn" onClick={() => setShowClearProjectConfirm(false)} disabled={clearingProject}><X size={15} /></button>
+            </div>
+            <div className="modal-form" style={{ gap: 14 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                Isso irá apagar <strong style={{ color: 'var(--negative)' }}>todos os {projectTxs.length} lançamentos</strong> do projeto <strong style={{ color: 'var(--text)' }}>{project.name}</strong> permanentemente. O projeto em si <strong style={{ color: 'var(--text)' }}>não será excluído</strong>.
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                Para confirmar, digite <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: 1 }}>CONFIRMAR</strong> abaixo:
+              </p>
+              <input
+                type="text"
+                className="field-input"
+                placeholder="Digite CONFIRMAR"
+                value={clearProjectText}
+                onChange={e => setClearProjectText(e.target.value)}
+                disabled={clearingProject}
+                autoComplete="off"
+                style={{ fontFamily: 'monospace', letterSpacing: 1 }}
+              />
+              {clearProjectError && (
+                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                  {clearProjectError}
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearProjectConfirm(false); setClearProjectText(''); }} disabled={clearingProject}>Cancelar</button>
+              <button
+                className="btn"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearProjectText !== 'CONFIRMAR' || clearingProject) ? 0.4 : 1 }}
+                onClick={handleClearProject}
+                disabled={clearProjectText !== 'CONFIRMAR' || clearingProject}
+              >
+                {clearingProject
+                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Apagando…</>
+                  : <><Trash2 size={14} /> Apagar lançamentos</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
