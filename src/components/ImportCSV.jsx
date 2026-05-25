@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback } from 'react';
-import { Upload, X, Check, AlertCircle, ChevronRight } from 'lucide-react';
-
-// Detects touch-only devices (phones/tablets) where drag-and-drop doesn't apply
-const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+import { Upload, X, Check, AlertCircle, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
 import { parseCSVFile, detectBank, parseRows, BANK_LABELS } from '../utils/csvParsers';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
 import { useI18n } from '../i18n';
+
+// Detects touch-only devices (phones/tablets) where drag-and-drop doesn't apply
+const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
 const SELECTABLE_BANKS = [
   { id: 'nubank_credit', label: 'Nubank',        hint: 'Fatura do cartão de crédito', emoji: '💜' },
@@ -18,24 +18,27 @@ const SELECTABLE_BANKS = [
   { id: 'santander_credit', label: 'Santander',  hint: 'Fatura do cartão',            emoji: '🔴' },
 ];
 
+const CREDIT_CARD_BANKS = ['nubank_credit', 'c6_credit', 'santander_credit'];
+const isCreditCardBank = (b) => CREDIT_CARD_BANKS.includes(b);
+
 export default function ImportCSV({ onClose }) {
   const { t } = useI18n();
-  const { categories, cards, bulkAddTransactions } = useFinance();
-  const [step, setStep]         = useState('upload');
-  const [bank, setBank]         = useState(null);
-  const [rawData, setRawData]   = useState([]);
+  const { categories, cards, bulkAddTransactions, bulkDeleteTransactions } = useFinance();
+  const [step, setStep]             = useState('upload');
+  const [bank, setBank]             = useState(null);
+  const [rawData, setRawData]       = useState([]);
   const [rawHeaders, setRawHeaders] = useState([]);
-  const [rows, setRows]         = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [importing, setImporting] = useState(false);
+  const [rows, setRows]             = useState([]);
+  const [selected, setSelected]     = useState(new Set());
+  const [importing, setImporting]   = useState(false);
   const [importCount, setImportCount] = useState(0);
-  const [error, setError]       = useState('');
-  const [dragging, setDragging] = useState(false);
-  const [cardId, setCardId]     = useState('');
+  const [importedIds, setImportedIds] = useState([]);  // IDs of last import (for undo)
+  const [undoing, setUndoing]       = useState(false);
+  const [undone, setUndone]         = useState(false);
+  const [error, setError]           = useState('');
+  const [dragging, setDragging]     = useState(false);
+  const [cardId, setCardId]         = useState('');
   const fileRef = useRef();
-
-  const CREDIT_CARD_BANKS = ['nubank_credit', 'c6_credit', 'santander_credit'];
-  const isCreditCardBank = (b) => CREDIT_CARD_BANKS.includes(b);
 
   const autoCategory = useCallback((hint, type) => {
     if (!hint) return null;
@@ -80,7 +83,6 @@ export default function ImportCSV({ onClose }) {
           const detectedBank = detectBank(headers);
 
           if (detectedBank === 'unknown') {
-            // Let user pick the bank manually
             setRawData(data);
             setRawHeaders(headers);
             setStep('select-bank');
@@ -109,20 +111,33 @@ export default function ImportCSV({ onClose }) {
     if (!ok) setStep('select-bank');
   };
 
-  const toggleRow  = (i) => setSelected(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s; });
-  const toggleAll  = () => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map((_, i) => i)));
+  const toggleRow = (i) => setSelected(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s; });
+  const toggleAll = () => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map((_, i) => i)));
 
   const handleImport = async () => {
+    // Validate: credit card bank requires a card to be selected
+    if (isCreditCardBank(bank)) {
+      if (cards.length === 0) {
+        setError('Cadastre um cartão em Cartões → Novo Cartão antes de importar uma fatura.');
+        return;
+      }
+      if (!cardId) {
+        setError('Selecione o cartão ao qual esta fatura pertence antes de importar.');
+        return;
+      }
+    }
+
     setImporting(true);
     setError('');
     try {
-      const resolvedCardId = isCreditCardBank(bank) ? (cardId || null) : null;
+      const resolvedCardId = isCreditCardBank(bank) ? cardId : null;
       const toImport = rows.filter((_, i) => selected.has(i)).map(r => ({
         ...r,
         cardId: resolvedCardId,
       }));
-      const count = await bulkAddTransactions(toImport);
-      setImportCount(count);
+      const imported = await bulkAddTransactions(toImport);
+      setImportedIds(imported.map(tx => tx.id));
+      setImportCount(imported.length);
       setStep('done');
     } catch {
       setError(t('importCSV.errImporting'));
@@ -131,7 +146,26 @@ export default function ImportCSV({ onClose }) {
     }
   };
 
+  const handleUndo = async () => {
+    if (!importedIds.length) return;
+    setUndoing(true);
+    setError('');
+    try {
+      await bulkDeleteTransactions(importedIds);
+      setUndone(true);
+      setImportedIds([]);
+    } catch {
+      setError('Erro ao desfazer. Exclua manualmente na lista de transações.');
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const selCount = selected.size;
+  // Import button is only enabled when there's a selection, not already importing,
+  // and (for credit card banks) a card is selected.
+  const canImport = selCount > 0 && !importing &&
+    (!isCreditCardBank(bank) || (cards.length > 0 && !!cardId));
 
   return (
     <div className="modal-overlay">
@@ -167,7 +201,7 @@ export default function ImportCSV({ onClose }) {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                   onChange={e => processFile(e.target.files[0])}
                 />
-                <Upload size={isTouch ? 32 : 28} style={{ color: dragging ? 'var(--accent)' : 'var(--accent)', marginBottom: 12, opacity: 0.8 }} />
+                <Upload size={isTouch ? 32 : 28} style={{ color: 'var(--accent)', marginBottom: 12, opacity: 0.8 }} />
                 {isTouch ? (
                   <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--accent)' }}>
                     {t('importCSV.touchToSelect')}
@@ -294,24 +328,37 @@ export default function ImportCSV({ onClose }) {
                 </button>
               </div>
 
-              {isCreditCardBank(bank) && cards.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <label style={{ fontSize: 12.5, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>Vincular ao cartão:</label>
-                  <select
-                    className="field-input"
-                    value={cardId}
-                    onChange={e => setCardId(e.target.value)}
-                    style={{ flex: 1, fontSize: 13 }}
-                  >
-                    <option value="">Nenhum (sem vínculo)</option>
-                    {cards.map(c => (
-                      <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                    ))}
-                  </select>
+              {/* Card selector — mandatory for credit card banks */}
+              {isCreditCardBank(bank) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-2)' }}>
+                      Cartão <span style={{ color: 'var(--negative)' }}>*</span>
+                    </label>
+                    <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>— obrigatório para fatura de cartão</span>
+                  </div>
+                  {cards.length > 0 ? (
+                    <select
+                      className="field-input"
+                      value={cardId}
+                      onChange={e => { setCardId(e.target.value); setError(''); }}
+                      style={{ fontSize: 13, borderColor: !cardId ? 'var(--negative)' : undefined }}
+                    >
+                      <option value="">Selecione o cartão desta fatura…</option>
+                      {cards.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
+                      <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                      <span>Nenhum cartão cadastrado. Vá em <strong>Cartões → Novo Cartão</strong> e volte aqui.</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)' }}>
+              <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--chip)', position: 'sticky', top: 0, zIndex: 1 }}>
@@ -367,7 +414,8 @@ export default function ImportCSV({ onClose }) {
               </div>
 
               {error && (
-                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
+                  <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                   {error}
                 </div>
               )}
@@ -376,11 +424,14 @@ export default function ImportCSV({ onClose }) {
               <button className="btn" style={{ justifyContent: 'center' }} onClick={() => { setStep('upload'); setError(''); }}>{t('importCSV.back')}</button>
               <button
                 className="btn primary"
-                style={{ flex: 2, justifyContent: 'center', opacity: (selCount === 0 || importing) ? 0.5 : 1 }}
+                style={{ flex: 2, justifyContent: 'center', opacity: canImport ? 1 : 0.45 }}
                 onClick={handleImport}
-                disabled={selCount === 0 || importing}
+                disabled={!canImport}
               >
-                {importing ? t('common.importingEllipsis') : t('importCSV.importFn')(selCount)}
+                {importing
+                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.importingEllipsis')}</>
+                  : t('importCSV.importFn')(selCount)
+                }
               </button>
             </div>
           </>
@@ -390,26 +441,63 @@ export default function ImportCSV({ onClose }) {
         {step === 'done' && (
           <>
             <div className="modal-form" style={{ alignItems: 'center', textAlign: 'center', padding: '12px 0 20px', gap: 16 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(199,242,132,0.1)', border: '1px solid rgba(199,242,132,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Check size={26} style={{ color: 'var(--positive)' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-                  {t('importCSV.importedFn')(importCount)}
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                  {t('importCSV.importedDesc')}
-                </div>
-              </div>
+              {undone ? (
+                <>
+                  <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--chip)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <RotateCcw size={24} style={{ color: 'var(--text-3)' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Importação desfeita</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
+                      As {importCount} transações foram removidas.
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(199,242,132,0.1)', border: '1px solid rgba(199,242,132,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Check size={26} style={{ color: 'var(--positive)' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
+                      {t('importCSV.importedFn')(importCount)}
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
+                      {t('importCSV.importedDesc')}
+                    </div>
+                  </div>
+                  {error && (
+                    <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px', width: '100%', textAlign: 'left' }}>
+                      {error}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="modal-actions">
+              {!undone && importedIds.length > 0 && (
+                <button
+                  className="btn"
+                  style={{ justifyContent: 'center', opacity: undoing ? 0.6 : 1 }}
+                  onClick={handleUndo}
+                  disabled={undoing}
+                  title="Remove todas as transações desta importação"
+                >
+                  {undoing
+                    ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                    : <RotateCcw size={14} />
+                  }
+                  Desfazer
+                </button>
+              )}
               <button className="btn primary" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
-                {t('importCSV.viewTransactions')}
+                {undone ? t('common.close') : t('importCSV.viewTransactions')}
               </button>
             </div>
           </>
         )}
       </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

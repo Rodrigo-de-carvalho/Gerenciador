@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { formatCurrency, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import { useI18n } from '../i18n';
 
-function buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month, year, getCardBill }) {
+function buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month, year, getCardBill, recentMonths, recentTransactions }) {
   const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : '0.0';
   const monthName = MONTHS[month - 1];
   const spendingLines = topCategories.slice(0, 5).map(c => `  - ${c.name}: ${formatCurrency(c.total)}`).join('\n');
@@ -20,19 +20,42 @@ function buildSystemPrompt({ income, expense, balance, topCategories, categories
   const _d = new Date();
   const today = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`;
 
+  // Last 3 months summary (oldest → newest)
+  const historyLines = recentMonths.map(m => {
+    const isCurrent = m.month === month && m.year === year;
+    return `  - ${MONTHS[m.month - 1]} ${m.year}${isCurrent ? ' (atual)' : ''}: Entradas ${formatCurrency(m.income)}, Saídas ${formatCurrency(m.expense)}, Saldo ${formatCurrency(m.balance)}`;
+  }).join('\n');
+
+  // Last 15 transactions across all months
+  const recentTxLines = recentTransactions.length > 0
+    ? recentTransactions.slice(0, 15).map(tx => {
+        const cat = categories.find(c => c.id === tx.categoryId);
+        const catName = cat ? cat.name : 'Sem categoria';
+        const sign = tx.type === 'income' ? '+' : '-';
+        return `  - ${tx.date}: ${tx.description} (${catName}) ${sign}${formatCurrency(tx.amount)}`;
+      }).join('\n')
+    : '  Nenhuma transação registrada';
+
   return `Você é o Cifra IA, assistente financeiro pessoal inteligente e amigável, especialista em finanças pessoais brasileiras.
 
 Contexto financeiro atual do usuário:
-- Mês: ${monthName} ${year}
+- Mês atual: ${monthName} ${year}
 - Entradas: ${formatCurrency(income)}
 - Saídas: ${formatCurrency(expense)}
 - Saldo: ${formatCurrency(balance)}
 - Taxa de poupança: ${savingsRate}%
-- Maiores gastos por categoria:
+- Maiores gastos por categoria (${monthName}):
 ${spendingLines || '  Nenhum gasto registrado'}
-- Projetos existentes:
+
+Histórico dos últimos 3 meses:
+${historyLines || '  Sem histórico'}
+
+Últimas 15 transações (todos os meses):
+${recentTxLines}
+
+Projetos existentes:
 ${projectLines}
-- Cartões:
+Cartões:
 ${cardLines}
 
 Categorias disponíveis:
@@ -56,7 +79,8 @@ Regras de comportamento:
 4. Quando o usuário pedir para criar, editar ou excluir um projeto, categoria, investimento ou orçamento, execute a ferramenta adequada imediatamente.
 5. Para referenciar projetos nas ferramentas, use o nome exato como aparece na lista acima.
 6. Após executar qualquer ferramenta, confirme o que foi feito de forma sucinta.
-7. Se uma operação falhar, informe o erro claramente.`;
+7. Se uma operação falhar, informe o erro claramente.
+8. Ao responder perguntas sobre gastos passados ou tendências, use o histórico e as transações recentes para dar respostas precisas.`;
 }
 
 export default function Assistant() {
@@ -87,6 +111,8 @@ export default function Assistant() {
 
   const systemPrompt = useMemo(() => {
     const { income, expense, balance, transactions: monthTxs } = getSummary(now.month, now.year);
+
+    // Top spending categories this month
     const catTotals = {};
     monthTxs.filter(t => t.type === 'expense').forEach(t => {
       const cat = categories.find(c => c.id === t.categoryId);
@@ -96,7 +122,30 @@ export default function Assistant() {
     const topCategories = Object.entries(catTotals)
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total);
-    return buildSystemPrompt({ income, expense, balance, topCategories, categories, projects, cards, month: now.month, year: now.year, getCardBill });
+
+    // Last 3 months summary (includes current month)
+    const recentMonths = [];
+    for (let i = 2; i >= 0; i--) {
+      let m = now.month - i;
+      let y = now.year;
+      if (m <= 0) { m += 12; y -= 1; }
+      const s = getSummary(m, y);
+      recentMonths.push({ month: m, year: y, income: s.income, expense: s.expense, balance: s.balance });
+    }
+
+    // Last 15 transactions across all months (most recent first)
+    const recentTransactions = [...transactions]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 15);
+
+    return buildSystemPrompt({
+      income, expense, balance, topCategories,
+      categories, projects, cards,
+      month: now.month, year: now.year,
+      getCardBill,
+      recentMonths,
+      recentTransactions,
+    });
   }, [transactions, categories, projects, cards, now.month, now.year]);
 
   if (!aiEnabled) {

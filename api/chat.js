@@ -165,26 +165,38 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      return res.status(500).json({ error: err });
+      let errMsg = `Serviço de IA indisponível (HTTP ${response.status})`;
+      try {
+        const errData = await response.json();
+        errMsg = errData.error?.message || errData.error || errMsg;
+      } catch {
+        try { errMsg = (await response.text()) || errMsg; } catch { /* ignore */ }
+      }
+      return res.status(500).json({ error: errMsg });
     }
 
     const data = await response.json();
     const choice = data.choices?.[0];
 
-    if (choice?.finish_reason === 'tool_calls' && choice?.message?.tool_calls?.length) {
+    if (!choice) {
+      return res.status(500).json({ error: 'Resposta vazia do modelo de IA. Tente novamente.' });
+    }
+
+    // tool_calls can appear with finish_reason 'tool_calls' or sometimes 'stop'
+    const toolCalls = choice.message?.tool_calls;
+    if (toolCalls?.length) {
       return res.json({
-        tool_calls: choice.message.tool_calls,
+        tool_calls: toolCalls,
         assistant_message: {
           role: 'assistant',
           content: choice.message.content ?? null,
-          tool_calls: choice.message.tool_calls,
+          tool_calls: toolCalls,
         },
       });
     }
 
-    res.json({ content: choice?.message?.content || 'Não foi possível obter resposta.' });
+    res.json({ content: choice.message?.content || 'Não foi possível obter resposta.' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message || 'Erro interno no servidor.' });
   }
 }

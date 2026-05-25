@@ -302,7 +302,7 @@ export function FinanceProvider({ children }) {
   };
 
   const bulkAddTransactions = async (txArray) => {
-    if (!txArray.length) return 0;
+    if (!txArray.length) return [];
     const rows = txArray.map(tx => ({
       user_id:     user.id,
       type:        tx.type,
@@ -318,8 +318,16 @@ export function FinanceProvider({ children }) {
     }));
     const { data, error } = await supabase.from('transactions').insert(rows).select();
     if (error) throw new Error(error.message);
-    if (data) setTransactions(prev => [...data.map(mapTx), ...prev]);
-    return data?.length || 0;
+    const mapped = data?.map(mapTx) || [];
+    if (mapped.length) setTransactions(prev => [...mapped, ...prev]);
+    return mapped; // returns the full mapped array so callers can get IDs
+  };
+
+  const bulkDeleteTransactions = async (ids) => {
+    if (!ids?.length) return;
+    const { error } = await supabase.from('transactions').delete().in('id', ids);
+    if (error) throw new Error(error.message);
+    setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
   };
 
   const updateTransaction = async (tx) => {
@@ -560,6 +568,7 @@ export function FinanceProvider({ children }) {
       addTransaction,
       addInstallmentTransaction,
       bulkAddTransactions,
+      bulkDeleteTransactions,
       updateTransaction,
       deleteTransaction,
       addCategory,
