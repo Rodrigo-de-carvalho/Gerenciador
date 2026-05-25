@@ -16,6 +16,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.webkit.*
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabColorSchemeParams
@@ -34,6 +35,16 @@ class MainActivity : AppCompatActivity() {
     // APK update download state
     private var downloadId = -1L
     private var downloadReceiver: BroadcastReceiver? = null
+
+    // File chooser callback for <input type="file"> in the WebView
+    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        val result = if (uri != null) arrayOf(uri) else null
+        fileChooserCallback?.onReceiveValue(result)
+        fileChooserCallback = null
+    }
 
     private val MOBILE_UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -368,6 +379,27 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onJsConfirm(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm(); return false
+            }
+
+            // Handles <input type="file"> — without this the file picker never opens in WebView
+            override fun onShowFileChooser(
+                webView: WebView,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: FileChooserParams,
+            ): Boolean {
+                // Cancel any pending callback before starting a new one
+                fileChooserCallback?.onReceiveValue(null)
+                fileChooserCallback = filePathCallback
+                try {
+                    // Accept CSV and plain-text files; fall back to all files
+                    filePickerLauncher.launch(
+                        arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")
+                    )
+                } catch (_: Exception) {
+                    fileChooserCallback?.onReceiveValue(null)
+                    fileChooserCallback = null
+                }
+                return true
             }
         }
     }
