@@ -26,9 +26,9 @@ function buildSystemPrompt({ income, expense, balance, topCategories, categories
     return `  - ${MONTHS[m.month - 1]} ${m.year}${isCurrent ? ' (atual)' : ''}: Entradas ${formatCurrency(m.income)}, Saídas ${formatCurrency(m.expense)}, Saldo ${formatCurrency(m.balance)}`;
   }).join('\n');
 
-  // Last 15 transactions across all months
+  // All transactions from the last 3 months (ordered most recent first)
   const recentTxLines = recentTransactions.length > 0
-    ? recentTransactions.slice(0, 15).map(tx => {
+    ? recentTransactions.map(tx => {
         const cat = categories.find(c => c.id === tx.categoryId);
         const catName = cat ? cat.name : 'Sem categoria';
         const sign = tx.type === 'income' ? '+' : '-';
@@ -50,7 +50,7 @@ ${spendingLines || '  Nenhum gasto registrado'}
 Histórico dos últimos 3 meses:
 ${historyLines || '  Sem histórico'}
 
-Últimas 15 transações (todos os meses):
+Todos os lançamentos dos últimos 3 meses (${recentTransactions.length} no total):
 ${recentTxLines}
 
 Projetos existentes:
@@ -133,10 +133,17 @@ export default function Assistant() {
       recentMonths.push({ month: m, year: y, income: s.income, expense: s.expense, balance: s.balance });
     }
 
-    // Last 15 transactions across all months (most recent first)
+    // All transactions from the last 3 months (most recent first), capped at 120
+    // to avoid exceeding the model's context window on very active accounts.
+    const cutoff = (() => {
+      let m = now.month - 2; let y = now.year;
+      if (m <= 0) { m += 12; y -= 1; }
+      return `${y}-${String(m).padStart(2, '0')}-01`;
+    })();
     const recentTransactions = [...transactions]
+      .filter(tx => tx.date >= cutoff)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 15);
+      .slice(0, 120);
 
     return buildSystemPrompt({
       income, expense, balance, topCategories,
