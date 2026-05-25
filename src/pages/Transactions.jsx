@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw, Loader2, AlertCircle, History } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 import { useI18n } from '../i18n';
 import ImportCSV from '../components/ImportCSV';
+import ImportHistory from '../components/ImportHistory';
 import RecurringModal from '../components/RecurringModal';
 
 function groupByDate(txs) {
@@ -37,9 +38,10 @@ export default function Transactions() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [catFilter, setCatFilter] = useState('');
   const [editTx, setEditTx] = useState(null);
-  const [showModal, setShowModal]       = useState(false);
-  const [showImport, setShowImport]     = useState(false);
-  const [showRecurring, setShowRecurring] = useState(false);
+  const [showModal, setShowModal]           = useState(false);
+  const [showImport, setShowImport]         = useState(false);
+  const [showImportHistory, setShowImportHistory] = useState(false);
+  const [showRecurring, setShowRecurring]   = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -102,6 +104,9 @@ export default function Transactions() {
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn" onClick={() => setShowRecurring(true)}>
             <RefreshCw size={14} /> {t('transactions.recurring')}
+          </button>
+          <button className="btn" onClick={() => setShowImportHistory(true)} title="Ver histórico de importações CSV">
+            <History size={14} />
           </button>
           <button className="btn" onClick={() => setShowImport(true)}>
             <Upload size={14} /> {t('transactions.importCSV')}
@@ -331,8 +336,9 @@ export default function Transactions() {
         />
       )}
 
-      {showImport    && <ImportCSV onClose={() => setShowImport(false)} />}
-      {showRecurring && <RecurringModal onClose={() => setShowRecurring(false)} />}
+      {showImport         && <ImportCSV onClose={() => setShowImport(false)} />}
+      {showImportHistory  && <ImportHistory onClose={() => setShowImportHistory(false)} />}
+      {showRecurring      && <RecurringModal onClose={() => setShowRecurring(false)} />}
 
       <style>{`
         .tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }
