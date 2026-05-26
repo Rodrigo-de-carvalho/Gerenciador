@@ -616,6 +616,9 @@ export function FinanceProvider({ children }) {
     );
     const filtered = transactions.filter(t => {
       if (t.projectId && excludedProjectIds.has(t.projectId)) return false;
+      // Transações de cartão só entram no resumo após o pagamento da fatura.
+      // Antes de pagar (paid: false) são obrigações futuras, não saída de caixa.
+      if (t.cardId && !t.paid) return false;
       const d = new Date(t.date + 'T00:00:00');
       return d.getMonth() + 1 === month && d.getFullYear() === year;
     });
@@ -623,6 +626,16 @@ export function FinanceProvider({ children }) {
     const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, transactions: filtered };
   };
+
+  /**
+   * Retorna o total já comprometido (não pago) em um cartão,
+   * considerando TODAS as transações em aberto — mês atual + parcelas futuras.
+   * Usado para calcular o limite disponível real.
+   */
+  const getCardUsedLimit = (cardId) =>
+    transactions
+      .filter(t => t.cardId === cardId && !t.paid)
+      .reduce((s, t) => s + t.amount, 0);
 
   const getProjectSummary = (projectId) => {
     const txs     = transactions.filter(t => t.projectId === projectId);
@@ -662,6 +675,7 @@ export function FinanceProvider({ children }) {
       updateCard,
       deleteCard,
       getCardBill,
+      getCardUsedLimit,
       payCardBill,
       investments,
       addInvestment,

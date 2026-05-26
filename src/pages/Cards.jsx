@@ -94,7 +94,7 @@ function CardFormModal({ card, onClose, onSave }) {
 
 export default function Cards() {
   const { t } = useI18n();
-  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill } = useFinance();
+  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill, getCardUsedLimit } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -278,8 +278,11 @@ export default function Cards() {
       ) : (
         <div className="grid-cifra g-2" style={{ marginBottom: 24 }}>
           {cardBills.map((card, index) => {
-            const billTotal = card.bill?.total || 0;
-            const usedPct = card.limitAmount ? Math.min(billTotal / card.limitAmount * 100, 100) : 0;
+            const billTotal  = card.bill?.total || 0;
+            // usedTotal = tudo que está comprometido no cartão (fatura atual + parcelas futuras)
+            const usedTotal  = getCardUsedLimit(card.id);
+            const available  = card.limitAmount ? Math.max(card.limitAmount - usedTotal, 0) : null;
+            const usedPct    = card.limitAmount ? Math.min(usedTotal / card.limitAmount * 100, 100) : 0;
             const style = getCardStyle(card, index);
             return (
               <div key={card.id}>
@@ -304,7 +307,7 @@ export default function Cards() {
                     </div>
                     {card.limitAmount && (
                       <div style={{ fontSize: 10.5, opacity: 0.6, marginTop: 4 }}>
-                        de {privacy ? 'R$ ••••' : `R$ ${card.limitAmount.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} de limite
+                        {privacy ? 'R$ ••••' : `R$ ${available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} disponível
                       </div>
                     )}
                   </div>
@@ -315,7 +318,14 @@ export default function Cards() {
                   {card.limitAmount && (
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--text-3)', marginBottom: 6 }}>
-                        <span>{t('cards.used')}</span>
+                        <span>
+                          {t('cards.used')}
+                          {usedTotal !== billTotal && (
+                            <span style={{ fontSize: 10.5, color: 'var(--text-4)', marginLeft: 6 }}>
+                              (inclui parcelas futuras)
+                            </span>
+                          )}
+                        </span>
                         <span>{Math.round(usedPct)}%</span>
                       </div>
                       <div className="bar-track">
