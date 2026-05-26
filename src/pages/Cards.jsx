@@ -5,6 +5,7 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 import ImportCSV from '../components/ImportCSV';
+import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 class ImportBoundary extends Component {
@@ -444,21 +445,16 @@ export default function Cards() {
       )}
 
       {showDeleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 360 }}>
-            <div className="modal-head"><h2>{t('cards.deleteCard')}</h2></div>
-            <div className="modal-form" style={{ gap: 14 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('cards.deleteCardDesc')}</p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(null)}>{t('common.cancel')}</button>
-              <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
-                onClick={() => { deleteCard(showDeleteConfirm); setShowDeleteConfirm(null); if (selectedCardId === showDeleteConfirm) setSelectedCardId(null); }}>
-                <Trash2 size={14} /> {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={t('cards.deleteCard')}
+          message={t('cards.deleteCardDesc')}
+          confirmLabel={t('common.delete')}
+          onConfirm={async () => {
+            await deleteCard(showDeleteConfirm);
+            if (selectedCardId === showDeleteConfirm) setSelectedCardId(null);
+          }}
+          onClose={() => setShowDeleteConfirm(null)}
+        />
       )}
 
       {showTxModal && (

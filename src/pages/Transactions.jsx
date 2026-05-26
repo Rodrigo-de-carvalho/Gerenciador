@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw, Loader2, AlertCircle, History } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw, History } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
@@ -8,6 +8,7 @@ import { useI18n } from '../i18n';
 import ImportCSV from '../components/ImportCSV';
 import ImportHistory from '../components/ImportHistory';
 import RecurringModal from '../components/RecurringModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 function groupByDate(txs) {
   const groups = {};
@@ -43,8 +44,6 @@ export default function Transactions() {
   const [showImportHistory, setShowImportHistory] = useState(false);
   const [showRecurring, setShowRecurring]   = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -279,54 +278,13 @@ export default function Transactions() {
 
       {/* Delete confirm */}
       {deleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>{t('transactions.deleteTransaction')}</h2>
-              <button className="icon-btn" onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                {t('transactions.deleteNotReversible')}
-              </p>
-              {deleteError && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', borderRadius: 8,
-                  background: 'color-mix(in oklab, var(--negative) 12%, transparent)',
-                  border: '1px solid color-mix(in oklab, var(--negative) 30%, transparent)',
-                  fontSize: 12.5, color: 'var(--negative)',
-                }}>
-                  <AlertCircle size={13} style={{ flexShrink: 0 }} />
-                  {deleteError}
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}>{t('common.cancel')}</button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: deleting ? 0.7 : 1 }}
-                disabled={deleting}
-                onClick={async () => {
-                  setDeleting(true);
-                  setDeleteError('');
-                  try {
-                    await deleteTransaction(deleteConfirm);
-                    setDeleteConfirm(null);
-                  } catch (err) {
-                    setDeleteError(err.message || 'Erro ao excluir. Tente novamente.');
-                  } finally {
-                    setDeleting(false);
-                  }
-                }}
-              >
-                {deleting ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} />}
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={t('transactions.deleteTransaction')}
+          message={t('transactions.deleteNotReversible')}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => deleteTransaction(deleteConfirm)}
+          onClose={() => setDeleteConfirm(null)}
+        />
       )}
 
       {showModal && (
@@ -340,10 +298,7 @@ export default function Transactions() {
       {showImportHistory  && <ImportHistory onClose={() => setShowImportHistory(false)} />}
       {showRecurring      && <RecurringModal onClose={() => setShowRecurring(false)} />}
 
-      <style>{`
-        .tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }`}</style>
     </div>
   );
 }

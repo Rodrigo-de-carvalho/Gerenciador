@@ -9,6 +9,7 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { exportProjectToExcel, downloadProjectPDF, generateProjectWhatsAppText } from '../utils/exportUtils';
 import TransactionModal from '../components/TransactionModal';
+import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 const PROJECT_ICONS = ['🏗️','🏠','💻','📱','🚗','🎯','💼','🌱','🎨','🏋️','📚','🎵','✈️','🍕','🎮','🛍️','💡','🔧','🎓','⚽','🎪','🏖️','🏢','🔬','🛡️'];
@@ -112,8 +113,6 @@ function ProjectDetail({ project, onBack }) {
   const income = projectTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = projectTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance = income - expense;
-
-  const handleDeleteProject = () => { deleteProject(project.id); onBack(); };
 
   const handleClearProject = async () => {
     setClearingProject(true);
@@ -303,55 +302,29 @@ function ProjectDetail({ project, onBack }) {
       {showEditProject && <ProjectFormModal project={project} onClose={() => setShowEditProject(false)} onSave={(data) => updateProject({ ...project, ...data })} />}
 
       {showDeleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>Excluir projeto?</h2>
-              <button className="icon-btn" onClick={() => setShowDeleteConfirm(false)}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                O projeto será excluído. Os <strong style={{ color: 'var(--text)' }}>{projectTxs.length} lançamentos</strong> vinculados serão mantidos sem projeto.
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(false)}>Cancelar</button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
-                onClick={handleDeleteProject}
-              >
-                <Trash2 size={14} /> Excluir
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Excluir projeto?"
+          message={
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+              O projeto será excluído. Os{' '}
+              <strong style={{ color: 'var(--text)' }}>{projectTxs.length} lançamentos</strong>{' '}
+              vinculados serão mantidos sem projeto.
+            </p>
+          }
+          confirmLabel="Excluir"
+          onConfirm={async () => { await deleteProject(project.id); onBack(); }}
+          onClose={() => setShowDeleteConfirm(false)}
+        />
       )}
 
       {deleteTxConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>Excluir lançamento?</h2>
-              <button className="icon-btn" onClick={() => setDeleteTxConfirm(null)}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteTxConfirm(null)}>Cancelar</button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
-                onClick={() => { deleteTransaction(deleteTxConfirm); setDeleteTxConfirm(null); }}
-              >
-                <Trash2 size={14} /> Excluir
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Excluir lançamento?"
+          message="Esta ação não pode ser desfeita."
+          confirmLabel="Excluir"
+          onConfirm={() => deleteTransaction(deleteTxConfirm)}
+          onClose={() => setDeleteTxConfirm(null)}
+        />
       )}
 
       {showClearProjectConfirm && (
@@ -402,7 +375,7 @@ function ProjectDetail({ project, onBack }) {
         </div>
       )}
 
-      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }`}</style>
     </div>
   );
 }

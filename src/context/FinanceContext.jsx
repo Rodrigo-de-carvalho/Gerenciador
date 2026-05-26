@@ -90,8 +90,18 @@ const mapRecurring = (row) => ({
   nextDate: row.next_date,
 });
 
+const mapInvestment = (row) => ({
+  id: row.id,
+  name: row.name,
+  type: row.type,
+  invested: Number(row.invested),
+  currentValue: Number(row.current_value),
+  notes: row.notes || '',
+  date: row.date,
+});
+
 // ── localStorage cache (stale-while-revalidate) ────────────────────────────
-const CACHE_VERSION = 1; // bump this to invalidate all caches after schema changes
+const CACHE_VERSION = 2; // bump this to invalidate all caches after schema changes
 
 function cacheKey(userId) {
   return `cifra_v${CACHE_VERSION}_${userId}`;
@@ -130,6 +140,7 @@ export function FinanceProvider({ children }) {
   const [cards, setCards]               = useState([]);
   const [budgets, setBudgetsState]      = useState([]);
   const [recurring, setRecurring]       = useState([]);
+  const [investments, setInvestments]   = useState([]);
   // loading=true only on the very first load (no cache). After that the cache
   // fills the UI instantly and the background refresh is invisible.
   const [loading, setLoading]           = useState(true);
@@ -150,11 +161,12 @@ export function FinanceProvider({ children }) {
     const cached = readCache(user.id);
     if (cached) {
       setTransactions(cached.transactions || []);
-      setCategories(cached.categories   || []);
-      setProjects(cached.projects       || []);
-      setCards(cached.cards             || []);
-      setBudgetsState(cached.budgets    || []);
-      setRecurring(cached.recurring     || []);
+      setCategories(cached.categories     || []);
+      setProjects(cached.projects         || []);
+      setCards(cached.cards               || []);
+      setBudgetsState(cached.budgets      || []);
+      setRecurring(cached.recurring       || []);
+      setInvestments(cached.investments   || []);
       setLoading(false); // hide spinner — show cached data right away
     } else {
       setLoading(true);  // first-ever load, no cache yet
@@ -162,13 +174,14 @@ export function FinanceProvider({ children }) {
 
     // ── 2. Fetch fresh data from Supabase in background ────────────────────
     try {
-      const [txRes, catRes, projRes, cardsRes, budgetsRes, recurringRes] = await Promise.all([
+      const [txRes, catRes, projRes, cardsRes, budgetsRes, recurringRes, invRes] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('cards').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('budgets').select('*').eq('user_id', user.id),
         supabase.from('recurring').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('investments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
 
       let cats = catRes.data?.map(mapCat) || [];
@@ -224,9 +237,10 @@ export function FinanceProvider({ children }) {
         });
       }
 
-      const freshProjects = projRes.data?.map(mapProject) || [];
-      const freshCards    = cardsRes.data?.map(mapCard)    || [];
-      const freshBudgets  = budgetsRes.data?.map(mapBudget) || [];
+      const freshProjects    = projRes.data?.map(mapProject)       || [];
+      const freshCards       = cardsRes.data?.map(mapCard)          || [];
+      const freshBudgets     = budgetsRes.data?.map(mapBudget)      || [];
+      const freshInvestments = invRes.data?.map(mapInvestment)      || [];
 
       // ── 3. Update UI with fresh data (silently replaces cached view) ──────
       setTransactions(allTxs);
@@ -235,6 +249,7 @@ export function FinanceProvider({ children }) {
       setCards(freshCards);
       setBudgetsState(freshBudgets);
       setRecurring(recurringData);
+      setInvestments(freshInvestments);
 
       // ── 4. Persist fresh data to cache for next reload ────────────────────
       writeCache(user.id, {
@@ -244,6 +259,7 @@ export function FinanceProvider({ children }) {
         cards:        freshCards,
         budgets:      freshBudgets,
         recurring:    recurringData,
+        investments:  freshInvestments,
       });
     } finally {
       setLoading(false);
@@ -532,6 +548,66 @@ export function FinanceProvider({ children }) {
     setTransactions(prev => prev.map(t => ids.includes(t.id) ? { ...t, paid: true } : t));
   };
 
+  // ── Investimentos ─────────────────────────────────────────
+
+  const addInvestment = async (data) => {
+    const { data: row, error } = await supabase.from('investments').insert({
+      user_id:       user.id,
+      name:          data.name,
+      type:          data.type,
+      invested:      data.invested,
+      current_value: data.currentValue,
+      notes:         data.notes || null,
+      date:          data.date || new Date().toISOString().split('T')[0],
+    }).select().single();
+    if (error) throw new Error(error.message);
+    const mapped = mapInvestment(row);
+    setInvestments(prev => [mapped, ...prev]);
+    return mapped;
+  };
+
+  const updateInvestment = async (data) => {
+    const { data: row, error } = await supabase.from('investments').update({
+      name:          data.name,
+      type:          data.type,
+      invested:      data.invested,
+      current_value: data.currentValue,
+      notes:         data.notes || null,
+    }).eq('id', data.id).eq('user_id', user.id).select().single();
+    if (error) throw new Error(error.message);
+    const mapped = mapInvestment(row);
+    setInvestments(prev => prev.map(i => i.id === data.id ? mapped : i));
+    return mapped;
+  };
+
+  const deleteInvestment = async (id) => {
+    const { error } = await supabase.from('investments').delete().eq('id', id).eq('user_id', user.id);
+    if (error) throw new Error(error.message);
+    setInvestments(prev => prev.filter(i => i.id !== id));
+  };
+
+  // ── Exportação de dados (LGPD Art. 18 — Portabilidade) ────
+
+  const exportAllData = async () => {
+    const [txRes, catRes, projRes, cardRes, goalRes, invRes] = await Promise.all([
+      supabase.from('transactions').select('*').eq('user_id', user.id),
+      supabase.from('categories').select('*').eq('user_id', user.id),
+      supabase.from('projects').select('*').eq('user_id', user.id),
+      supabase.from('cards').select('*').eq('user_id', user.id),
+      supabase.from('goals').select('*').eq('user_id', user.id),
+      supabase.from('investments').select('*').eq('user_id', user.id),
+    ]);
+    return {
+      exportDate:   new Date().toISOString(),
+      transactions: txRes.data  || [],
+      categories:   catRes.data  || [],
+      projects:     projRes.data || [],
+      cards:        cardRes.data || [],
+      goals:        goalRes.data || [],
+      investments:  invRes.data  || [],
+    };
+  };
+
   // ── Summaries ─────────────────────────────────────────────
 
   const getSummary = (month, year) => {
@@ -587,6 +663,11 @@ export function FinanceProvider({ children }) {
       deleteCard,
       getCardBill,
       payCardBill,
+      investments,
+      addInvestment,
+      updateInvestment,
+      deleteInvestment,
+      exportAllData,
       getSummary,
       getProjectSummary,
     }}>

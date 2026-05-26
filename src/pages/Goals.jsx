@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Plus, Target, X, Edit2, Trash2, ChevronDown, ChevronUp, TrendingUp, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Target, X, Edit2, Trash2, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useGoals } from '../context/GoalContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import ConfirmModal from '../components/ConfirmModal';
+import Ring from '../components/Ring';
 import { useI18n } from '../i18n';
 
 const ICONS = ['🎯','🏠','✈️','📚','🚗','💻','🌱','🏋️','💰','🛹','🏖️','🎓','💍','🏗️','🎵','⚽','🎮','🏢','🔬','🛡️'];
@@ -113,22 +115,6 @@ function GoalModal({ goal, onClose, onSave }) {
   );
 }
 
-function Ring({ pct, size = 54, thickness = 5, color = 'var(--accent)' }) {
-  const r = (size - thickness) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = Math.min(pct / 100, 1) * circ;
-  return (
-    <svg width={size} height={size} style={{ flexShrink: 0 }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--chip-strong)" strokeWidth={thickness} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={thickness}
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize={10} fill="var(--text-3)" fontFamily="Geist Mono, monospace">
-        {Math.round(pct)}%
-      </text>
-    </svg>
-  );
-}
 
 function GoalCard({ goal, onEdit, onDelete }) {
   const { t } = useI18n();
@@ -256,8 +242,6 @@ export default function Goals() {
   const [showModal, setShowModal] = useState(false);
   const [editGoal, setEditGoal] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // stores goalId
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const goalProjects = projects.filter(p => goalProjectIds.has(p.id));
 
@@ -286,17 +270,8 @@ export default function Goals() {
   };
 
   const handleDelete = async (goalId) => {
-    setDeleting(true);
-    setDeleteError('');
-    try {
-      await deleteProject(goalId);
-      removeGoal(goalId);
-      setDeleteConfirm(null);
-    } catch (err) {
-      setDeleteError(err.message || 'Erro ao excluir. Tente novamente.');
-    } finally {
-      setDeleting(false);
-    }
+    await deleteProject(goalId);
+    removeGoal(goalId);
   };
 
   const openEdit = (p) => {
@@ -362,7 +337,7 @@ export default function Goals() {
               key={p.id}
               goal={p}
               onEdit={() => openEdit(p)}
-              onDelete={() => { setDeleteConfirm(p.id); setDeleteError(''); }}
+              onDelete={() => setDeleteConfirm(p.id)}
             />
           ))}
         </div>
@@ -376,45 +351,14 @@ export default function Goals() {
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>{t('common.delete')} {t('goals.goal') || 'meta'}</h2>
-              <button className="icon-btn" onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                {t('goals.deleteGoalConfirm')}
-              </p>
-              {deleteError && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', borderRadius: 8,
-                  background: 'color-mix(in oklab, var(--negative) 12%, transparent)',
-                  border: '1px solid color-mix(in oklab, var(--negative) 30%, transparent)',
-                  fontSize: 12.5, color: 'var(--negative)',
-                }}>
-                  <AlertCircle size={13} style={{ flexShrink: 0 }} />
-                  {deleteError}
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}>{t('common.cancel')}</button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: deleting ? 0.7 : 1 }}
-                disabled={deleting}
-                onClick={() => handleDelete(deleteConfirm)}
-              >
-                {deleting ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} />}
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={`${t('common.delete')} ${t('goals.goal') || 'meta'}`}
+          message={t('goals.deleteGoalConfirm')}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => handleDelete(deleteConfirm)}
+          onClose={() => setDeleteConfirm(null)}
+        />
       )}
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

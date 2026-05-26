@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Plus, X, Edit2, Trash2, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, X, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { usePrivacy } from '../context/PrivacyContext';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 const TYPES = [
@@ -112,68 +112,16 @@ function InvestmentModal({ inv, onClose, onSave }) {
 export default function Investments() {
   const { t } = useI18n();
   const { privacy } = usePrivacy();
-  const { user } = useAuth();
-  const [investments, setInvestments] = useState([]);
+  const { investments, addInvestment, updateInvestment, deleteInvestment } = useFinance();
   const [showModal, setShowModal] = useState(false);
   const [editInv, setEditInv] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('investments')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setInvestments(data.map(r => ({
-          id: r.id,
-          name: r.name,
-          type: r.type,
-          invested: Number(r.invested),
-          currentValue: Number(r.current_value),
-          notes: r.notes || '',
-          date: r.date,
-        })));
-      });
-  }, [user]);
 
   const handleSave = async (inv) => {
     const isEdit = investments.some(i => i.id === inv.id);
-    if (isEdit) {
-      const { data } = await supabase
-        .from('investments')
-        .update({ name: inv.name, type: inv.type, invested: inv.invested, current_value: inv.currentValue, notes: inv.notes })
-        .eq('id', inv.id)
-        .eq('user_id', user.id)
-        .select().single();
-      if (data) setInvestments(prev => prev.map(i => i.id === inv.id ? { ...inv, currentValue: Number(data.current_value), invested: Number(data.invested) } : i));
-    } else {
-      const { data } = await supabase
-        .from('investments')
-        .insert({ user_id: user.id, name: inv.name, type: inv.type, invested: inv.invested, current_value: inv.currentValue, notes: inv.notes, date: inv.date })
-        .select().single();
-      if (data) setInvestments(prev => [{ id: data.id, name: data.name, type: data.type, invested: Number(data.invested), currentValue: Number(data.current_value), notes: data.notes || '', date: data.date }, ...prev]);
-    }
-  };
-
-  const handleDeleteConfirmed = async () => {
-    if (!deleteConfirm) return;
-    setDeleting(true);
-    setDeleteError('');
-    try {
-      const { error } = await supabase.from('investments').delete().eq('id', deleteConfirm).eq('user_id', user.id);
-      if (error) throw new Error(error.message);
-      setInvestments(prev => prev.filter(i => i.id !== deleteConfirm));
-      setDeleteConfirm(null);
-    } catch (err) {
-      setDeleteError(err.message || 'Erro ao excluir. Tente novamente.');
-    } finally {
-      setDeleting(false);
-    }
+    if (isEdit) await updateInvestment(inv);
+    else await addInvestment(inv);
   };
 
   const totals = useMemo(() => ({
@@ -341,7 +289,7 @@ export default function Investments() {
                     <td>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                         <button className="icon-btn" onClick={() => { setEditInv(inv); }} title="Editar"><Edit2 size={13} /></button>
-                        <button className="icon-btn" onClick={() => { setDeleteConfirm(inv.id); setDeleteError(''); }} title="Excluir" style={{ color: 'var(--negative)' }}><Trash2 size={13} /></button>
+                        <button className="icon-btn" onClick={() => setDeleteConfirm(inv.id)} title="Excluir" style={{ color: 'var(--negative)' }}><Trash2 size={13} /></button>
                       </div>
                     </td>
                   </tr>
@@ -356,45 +304,14 @@ export default function Investments() {
       {editInv && <InvestmentModal inv={editInv} onClose={() => setEditInv(null)} onSave={handleSave} />}
 
       {deleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>{t('investments.deleteInvestment')}</h2>
-              <button className="icon-btn" onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                Essa ação não pode ser desfeita.
-              </p>
-              {deleteError && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', borderRadius: 8,
-                  background: 'color-mix(in oklab, var(--negative) 12%, transparent)',
-                  border: '1px solid color-mix(in oklab, var(--negative) 30%, transparent)',
-                  fontSize: 12.5, color: 'var(--negative)',
-                }}>
-                  <AlertCircle size={13} style={{ flexShrink: 0 }} />
-                  {deleteError}
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setDeleteConfirm(null); setDeleteError(''); }} disabled={deleting}>{t('common.cancel')}</button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: deleting ? 0.7 : 1 }}
-                disabled={deleting}
-                onClick={handleDeleteConfirmed}
-              >
-                {deleting ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} />}
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={t('investments.deleteInvestment')}
+          message="Essa ação não pode ser desfeita."
+          confirmLabel={t('common.delete')}
+          onConfirm={() => deleteInvestment(deleteConfirm)}
+          onClose={() => setDeleteConfirm(null)}
+        />
       )}
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

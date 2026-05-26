@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
@@ -274,31 +275,19 @@ export default function Categories() {
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 380 }}>
-            <div className="modal-head">
-              <h2>{t('categories.categoryInUse')}</h2>
-              <button className="icon-btn" onClick={() => setDeleteConfirm(null)}><X size={15} /></button>
-            </div>
-            <div className="modal-form" style={{ gap: 12 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-                {t('categories.categoryInUseDesc1')} <strong style={{ color: 'var(--text)' }}>{getCategoryUsage(deleteConfirm)}</strong> {t('categories.categoryInUseDesc2')}
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setDeleteConfirm(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent' }}
-                onClick={() => { deleteCategory(deleteConfirm); setDeleteConfirm(null); }}
-              >
-                <Trash2 size={14} /> {t('categories.deleteAnyway')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={t('categories.categoryInUse')}
+          message={
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+              {t('categories.categoryInUseDesc1')}{' '}
+              <strong style={{ color: 'var(--text)' }}>{getCategoryUsage(deleteConfirm)}</strong>{' '}
+              {t('categories.categoryInUseDesc2')}
+            </p>
+          }
+          confirmLabel={t('categories.deleteAnyway')}
+          onConfirm={() => deleteCategory(deleteConfirm)}
+          onClose={() => setDeleteConfirm(null)}
+        />
       )}
     </div>
   );
