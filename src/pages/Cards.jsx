@@ -131,23 +131,27 @@ export default function Cards() {
     return getCardBill(selectedCardId, month, year);
   }, [selectedCardId, transactions, month, year]);
 
+  // Todos os lançamentos de cartão não pagos, agrupados por mês
+  // (fatura atual + parcelas futuras + compras avulsas em aberto)
   const futureInstallments = useMemo(() => {
-    const today = new Date();
-    const upcoming = transactions.filter(t => {
-      if (!t.cardId || t.installmentTotal <= 1) return false;
-      const d = new Date(t.date + 'T00:00:00');
-      return d > today;
-    });
+    const unpaid = transactions
+      .filter(t => t.cardId && !t.paid)
+      .sort((a, b) => a.date.localeCompare(b.date));
     const byMonth = {};
-    upcoming.forEach(t => {
-      const d = new Date(t.date + 'T00:00:00');
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!byMonth[key]) byMonth[key] = { month: d.getMonth() + 1, year: d.getFullYear(), items: [], total: 0 };
+    unpaid.forEach(t => {
+      const key = t.date.slice(0, 7); // "YYYY-MM"
+      const [y, m] = key.split('-');
+      if (!byMonth[key]) byMonth[key] = { month: Number(m), year: Number(y), items: [], total: 0 };
       byMonth[key].items.push(t);
       byMonth[key].total += t.amount;
     });
-    return Object.values(byMonth).sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+    return Object.values(byMonth).sort((a, b) =>
+      a.year !== b.year ? a.year - b.year : a.month - b.month,
+    );
   }, [transactions]);
+
+  const futureTotalAmount = futureInstallments.reduce((s, g) => s + g.total, 0);
+  const futureTotalItems  = futureInstallments.reduce((s, g) => s + g.items.length, 0);
 
   const handlePayBill = async (cardId) => {
     setPaying(true);
@@ -182,7 +186,12 @@ export default function Cards() {
         <div className="tabs" style={{ marginBottom: 20 }}>
           <button className={`tab${activeTab === 'bills' ? ' active' : ''}`} onClick={() => setActiveTab('bills')}>{t('cards.invoices')}</button>
           <button className={`tab${activeTab === 'installments' ? ' active' : ''}`} onClick={() => setActiveTab('installments')}>
-            {t('cards.futureInstallments')} {futureInstallments.length > 0 && <span style={{ marginLeft: 4, fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '1px 6px' }}>{futureInstallments.reduce((s, m) => s + m.items.length, 0)}</span>}
+            {t('cards.futureInstallments')}
+            {futureTotalItems > 0 && (
+              <span style={{ marginLeft: 4, fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '1px 6px' }}>
+                {futureTotalItems}
+              </span>
+            )}
           </button>
         </div>
       )}
@@ -228,51 +237,97 @@ export default function Cards() {
           </div>
         </div>
       ) : activeTab === 'installments' ? (
-        /* Parcelas Futuras tab */
+        /* Compromissos futuros — todos os lançamentos de cartão em aberto */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {futureInstallments.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-3)', fontSize: 13 }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>🎉</div>
               {t('cards.noFutureInstallments')}
             </div>
           ) : (
-            futureInstallments.map(group => (
-              <div key={`${group.year}-${group.month}`}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-3)', fontWeight: 500 }}>
-                    {t('months')[group.month - 1]} {group.year}
+            <>
+              {/* Resumo geral */}
+              <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
+                    Total comprometido
                   </div>
-                  <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
-                    {privacy ? 'R$ ••••' : formatCurrency(group.total)}
-                  </span>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--negative)', fontFamily: 'Geist Mono, monospace' }}>
+                    {privacy ? 'R$ ••••' : formatCurrency(futureTotalAmount)}
+                  </div>
                 </div>
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                  <table className="tx-table">
-                    <tbody>
-                      {group.items.map(t => {
-                        const card = cards.find(c => c.id === t.cardId);
-                        const cat = categories.find(c => c.id === t.categoryId);
-                        return (
-                          <tr key={t.id}>
-                            <td style={{ width: 36, paddingRight: 0 }}>
-                              <div className="tx-row-icon"><span style={{ fontSize: 12 }}>{cat?.icon || '💳'}</span></div>
-                            </td>
-                            <td>
-                              <div style={{ fontSize: 13, fontWeight: 500 }}>{privacy ? '••••••' : t.description}</div>
-                              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{card?.icon} {card?.name} · {formatDate(t.date)}</div>
-                            </td>
-                            <td style={{ textAlign: 'right' }}>
-                              <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
-                                {privacy ? '••••' : formatCurrency(t.amount)}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-3)' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 16 }}>{futureInstallments.length}</div>
+                    <div>meses</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 16 }}>{futureTotalItems}</div>
+                    <div>lançamentos</div>
+                  </div>
                 </div>
               </div>
-            ))
+
+              {/* Por mês */}
+              {futureInstallments.map(group => (
+                <div key={`${group.year}-${group.month}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--accent)' }}>
+                      {t('months')[group.month - 1]} {group.year}
+                    </span>
+                    <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
+                      {privacy ? 'R$ ••••' : formatCurrency(group.total)}
+                    </span>
+                  </div>
+                  <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table className="tx-table">
+                      <tbody>
+                        {group.items.map(tx => {
+                          const card = cards.find(c => c.id === tx.cardId);
+                          const cat  = categories.find(c => c.id === tx.categoryId);
+                          const isInstallment = tx.installmentTotal > 1;
+                          const isLast = isInstallment && tx.installmentCurrent === tx.installmentTotal;
+                          return (
+                            <tr key={tx.id}>
+                              <td style={{ width: 36, paddingRight: 0 }}>
+                                <div className="tx-row-icon">
+                                  <span style={{ fontSize: 12 }}>{cat?.icon || card?.icon || '💳'}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 13, fontWeight: 500 }}>
+                                    {privacy ? '••••••' : tx.description}
+                                  </span>
+                                  {isInstallment && (
+                                    <span style={{
+                                      fontSize: 10.5, fontWeight: 600, padding: '1px 6px', borderRadius: 5,
+                                      background: isLast ? 'rgba(134,239,172,0.15)' : 'rgba(199,242,132,0.12)',
+                                      color: isLast ? 'var(--positive)' : 'var(--accent)',
+                                      border: `1px solid ${isLast ? 'rgba(134,239,172,0.3)' : 'rgba(199,242,132,0.25)'}`,
+                                    }}>
+                                      {tx.installmentCurrent}/{tx.installmentTotal}{isLast ? ' ✓' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>
+                                  {card?.icon} {card?.name} · {formatDate(tx.date)}
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <span className="t-num neg" style={{ fontSize: 13, fontWeight: 600 }}>
+                                  {privacy ? '••••' : formatCurrency(tx.amount)}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       ) : (
