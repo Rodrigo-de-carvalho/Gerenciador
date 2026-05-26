@@ -112,7 +112,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
             <div className="field">
               <label className="field-label">{t('transactionModal.description')}</label>
-              <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required />
+              <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required maxLength={120} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -176,7 +176,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
             <div className="field">
               <label className="field-label">{t('transactionModal.notes')}</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} placeholder={t('transactionModal.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} />
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} placeholder={t('transactionModal.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} maxLength={300} />
             </div>
 
             {/* Error message */}

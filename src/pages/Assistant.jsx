@@ -499,6 +499,7 @@ export default function Assistant() {
             onKeyDown={handleKeyDown}
             rows={1}
             disabled={loading}
+            maxLength={1000}
           />
           <button
             className="btn primary"

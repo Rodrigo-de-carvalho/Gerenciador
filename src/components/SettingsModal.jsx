@@ -322,6 +322,7 @@ export default function SettingsModal({ onClose }) {
                 value={clearAllText}
                 onChange={e => setClearAllText(e.target.value)}
                 disabled={clearingAll}
+                maxLength={9}
                 autoComplete="off"
                 style={{ fontFamily: 'monospace', letterSpacing: 1 }}
               />

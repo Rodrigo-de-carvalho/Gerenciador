@@ -40,11 +40,11 @@ function ProjectFormModal({ project, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('projects.name')}</label>
-              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Reforma da Casa" />
+              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Reforma da Casa" maxLength={60} />
             </div>
             <div className="field">
               <label className="field-label">{t('projects.description')}</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descreva o projeto..." />
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descreva o projeto..." maxLength={200} />
             </div>
             <div className="field">
               <label className="field-label">{t('projects.icon')}</label>
@@ -244,6 +244,7 @@ function ProjectDetail({ project, onBack }) {
                 placeholder="Número (ex: 5511999999999)"
                 value={whatsappPhone}
                 onChange={e => setWhatsappPhone(e.target.value)}
+                maxLength={20}
               />
               <button className="btn primary" style={{ justifyContent: 'center' }} onClick={handleWhatsAppDirect}>
                 <Share2 size={14} /> {t('projects.openWhatsApp')}
@@ -349,6 +350,7 @@ function ProjectDetail({ project, onBack }) {
                 onChange={e => setClearProjectText(e.target.value)}
                 disabled={clearingProject}
                 autoComplete="off"
+                maxLength={9}
                 style={{ fontFamily: 'monospace', letterSpacing: 1 }}
               />
               {clearProjectError && (

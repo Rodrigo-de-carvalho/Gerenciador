@@ -58,7 +58,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('investments.nameTicker')}</label>
-              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: PETR4, Tesouro Selic, Bitcoin" required />
+              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: PETR4, Tesouro Selic, Bitcoin" required maxLength={60} />
             </div>
 
             <div className="field">
@@ -94,7 +94,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
 
             <div className="field">
               <label className="field-label">{t('common.notes')}</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder={t('investments.notesPlaceholder')} />
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder={t('investments.notesPlaceholder')} maxLength={300} />
             </div>
           </div>
           <div className="modal-actions">

@@ -213,6 +213,7 @@ export default function Categories() {
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     required
                     placeholder={t('categories.namePlaceholder')}
+                    maxLength={40}
                   />
                 </div>
 

@@ -179,6 +179,7 @@ export default function RecurringModal({ onClose }) {
                   placeholder="Ex: Netflix, Salário, Aluguel..."
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  maxLength={120}
                 />
               </div>
 

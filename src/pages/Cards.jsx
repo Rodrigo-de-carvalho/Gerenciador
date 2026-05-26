@@ -59,7 +59,7 @@ function CardFormModal({ card, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('cards.cardName')}</label>
-              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" />
+              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" maxLength={60} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">

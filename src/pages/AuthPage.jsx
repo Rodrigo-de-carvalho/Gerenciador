@@ -182,6 +182,7 @@ export default function AuthPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  maxLength={128}
                   minLength={6}
                   maxLength={128}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}

@@ -55,12 +55,12 @@ function GoalModal({ goal, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('goals.goalName')}</label>
-              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('goals.goalNamePlaceholder')} required />
+              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('goals.goalNamePlaceholder')} required maxLength={60} />
             </div>
 
             <div className="field">
               <label className="field-label">{t('goals.description')}</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder={t('goals.descPlaceholder')} />
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder={t('goals.descPlaceholder')} maxLength={200} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
