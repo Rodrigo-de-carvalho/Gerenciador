@@ -8,26 +8,42 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let settled = false;
+    const finish = (session) => {
+      settled = true;
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
     // onAuthStateChange fires INITIAL_SESSION with the current auth state as soon
     // as you subscribe, then SIGNED_IN after OAuth code exchange completes —
     // this handles all cases without the getSession() race condition where a null
     // result could overwrite a user already set by SIGNED_IN
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      finish(session);
     });
+
+    // Rede de segurança: se em 7s o auth não resolveu (ex.: callback OAuth travado,
+    // Supabase sem resposta, sessão corrompida), tenta recuperar a sessão e libera
+    // a tela mesmo assim — o app nunca deve ficar preso para sempre no "carregando".
+    const safetyTimer = setTimeout(() => {
+      if (settled) return;
+      supabase.auth.getSession()
+        .then(({ data: { session } }) => finish(session))
+        .catch(() => { setLoading(false); });
+    }, 7000);
 
     // Fallback para WebView Android: quando o Chrome Custom Tab fecha sem deep link
     // (ex.: usuário voltou sem completar o OAuth), tenta recuperar sessão do localStorage
     const handleOAuthResume = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
+        finish(session);
       });
     };
     window.addEventListener('cifra-oauth-resume', handleOAuthResume);
 
     return () => {
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
       window.removeEventListener('cifra-oauth-resume', handleOAuthResume);
     };
