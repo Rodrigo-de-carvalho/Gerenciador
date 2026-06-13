@@ -97,6 +97,7 @@ const translations = {
       positive: 'Positivo', negative: 'Negativo',
       incomeStat: 'entradas', expenseStat: 'saídas', pctOfIncome: '% da receita',
       revenue: 'Receita', expenseLabel: 'Despesa', balanceSub: 'Saldo atual',
+      totalBalance: 'Saldo total', accumulated: 'acumulado', monthResult: 'Resultado do mês', upToMonth: 'até',
     },
     transactions: {
       all: 'Todos', incomes: 'Entradas', expenses: 'Saídas',
@@ -369,6 +370,7 @@ const translations = {
       positive: 'Positive', negative: 'Negative',
       incomeStat: 'entries', expenseStat: 'exits', pctOfIncome: '% of income',
       revenue: 'Revenue', expenseLabel: 'Expense', balanceSub: 'Current balance',
+      totalBalance: 'Total balance', accumulated: 'accumulated', monthResult: 'Month result', upToMonth: 'up to',
     },
     transactions: {
       all: 'All', incomes: 'Incomes', expenses: 'Expenses',
@@ -640,6 +642,7 @@ const translations = {
       positive: 'Positivo', negative: 'Negativo',
       incomeStat: 'entradas', expenseStat: 'salidas', pctOfIncome: '% del ingreso',
       revenue: 'Ingreso', expenseLabel: 'Gasto', balanceSub: 'Balance actual',
+      totalBalance: 'Saldo total', accumulated: 'acumulado', monthResult: 'Resultado del mes', upToMonth: 'hasta',
     },
     transactions: {
       all: 'Todos', incomes: 'Ingresos', expenses: 'Gastos',

@@ -110,7 +110,7 @@ function WelcomeCard({ onAddTransaction, onNavigate }) {
 export default function Dashboard({ onNavigate }) {
   const { t } = useI18n();
   const MONTH_NAMES = t('monthsShort');
-  const { transactions, categories, projects, budgets, getSummary } = useFinance();
+  const { transactions, categories, projects, budgets, getSummary, getCumulativeBalance } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -120,6 +120,12 @@ export default function Dashboard({ onNavigate }) {
   const { income, expense, balance, transactions: monthTxs } = useMemo(
     () => getSummary(month, year),
     [transactions, month, year]
+  );
+
+  // Saldo total acumulado: carrega de mês em mês em vez de zerar na virada.
+  const totalBalance = useMemo(
+    () => getCumulativeBalance(month, year).balance,
+    [transactions, projects, month, year]
   );
 
   const prevMonth = () => {
@@ -198,16 +204,20 @@ export default function Dashboard({ onNavigate }) {
       <div className="dash-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div className="t-eyebrow" style={{ marginBottom: 12 }}>
-            {t('dashboard.currentBalance') + ' · '}{t('months')[month - 1]} {year}
+            {t('dashboard.totalBalance') + ' · '}{t('dashboard.accumulated')} {t('dashboard.upToMonth')} {t('months')[month - 1]} {year}
           </div>
-          <HeroNumber value={balance} privacy={privacy} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--text-3)', fontSize: 12.5 }}>
+          <HeroNumber value={totalBalance} privacy={privacy} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--text-3)', fontSize: 12.5, flexWrap: 'wrap' }}>
+            <span style={{ color: balance >= 0 ? 'var(--positive)' : 'var(--negative)', fontFamily: 'Geist Mono, monospace' }}>
+              {balance >= 0 ? '▲' : '▼'} {privacy ? '••••' : formatCurrency(balance)} {t('dashboard.monthResult').toLowerCase()}
+            </span>
+            <span>·</span>
             <span className="pos" style={{ fontFamily: 'Geist Mono, monospace' }}>
-              ▲ {privacy ? '••••' : formatCurrency(income)} {t('dashboard.incomeStat')}
+              {privacy ? '••••' : formatCurrency(income)} {t('dashboard.incomeStat')}
             </span>
             <span>·</span>
             <span className="neg" style={{ fontFamily: 'Geist Mono, monospace' }}>
-              ▼ {privacy ? '••••' : formatCurrency(expense)} {t('dashboard.expenseStat')}
+              {privacy ? '••••' : formatCurrency(expense)} {t('dashboard.expenseStat')}
             </span>
           </div>
         </div>
@@ -227,7 +237,7 @@ export default function Dashboard({ onNavigate }) {
 
       {/* Stats */}
       <div className="grid-cifra g-4" style={{ marginBottom: 18 }}>
-        <StatCard label={t('dashboard.currentBalance')} value={balance} privacy={privacy} positive={balance >= 0} sub={balance >= 0 ? t('dashboard.positive') : t('dashboard.negative')} />
+        <StatCard label={t('dashboard.totalBalance')} value={totalBalance} privacy={privacy} positive={totalBalance >= 0} sub={t('dashboard.accumulated')} />
         <StatCard label={t('dashboard.income')} value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} ${t('dashboard.incomeStat')}`} />
         <StatCard label={t('dashboard.expense')} value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} ${t('dashboard.expenseStat')}`} />
         <StatCard label={t('dashboard.savingsRate')} value={0} privacy={privacy} sub={`${savingsRate}${t('dashboard.pctOfIncome')}`} />

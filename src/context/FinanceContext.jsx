@@ -628,6 +628,31 @@ export function FinanceProvider({ children }) {
   };
 
   /**
+   * Saldo acumulado: tudo que entrou menos tudo que saiu, contando todas as
+   * transações até o fim do mês selecionado. É o "quanto eu tenho de verdade",
+   * que carrega de um mês para o outro em vez de zerar na virada do mês.
+   * Segue as mesmas regras do getSummary: ignora projetos fora do geral e
+   * faturas de cartão ainda não pagas (obrigações futuras, não saída de caixa).
+   */
+  const getCumulativeBalance = (month, year) => {
+    const excludedProjectIds = new Set(
+      projects.filter(p => p.includeInOverview === false).map(p => p.id)
+    );
+    // dia 0 do mês seguinte = último dia do mês selecionado
+    const cutoff = new Date(year, month, 0, 23, 59, 59, 999);
+    let income = 0, expense = 0;
+    for (const t of transactions) {
+      if (t.projectId && excludedProjectIds.has(t.projectId)) continue;
+      if (t.cardId && !t.paid) continue;
+      const d = new Date(t.date + 'T00:00:00');
+      if (d > cutoff) continue;
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
+    }
+    return { income, expense, balance: income - expense };
+  };
+
+  /**
    * Retorna o total já comprometido (não pago) em um cartão,
    * considerando TODAS as transações em aberto — mês atual + parcelas futuras.
    * Usado para calcular o limite disponível real.
@@ -683,6 +708,7 @@ export function FinanceProvider({ children }) {
       deleteInvestment,
       exportAllData,
       getSummary,
+      getCumulativeBalance,
       getProjectSummary,
     }}>
       {children}
