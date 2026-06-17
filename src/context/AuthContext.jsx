@@ -1,13 +1,19 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Sem configuração do Supabase nenhuma chamada de auth funciona — não adianta
+  // esperar: já começamos sem "carregando" para cair direto na tela de login (o
+  // erro de config foi logado no console por lib/supabase.js) em vez de prender o
+  // usuário no spinner.
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     let settled = false;
     const finish = (session) => {
       settled = true;
@@ -23,14 +29,18 @@ export function AuthProvider({ children }) {
       finish(session);
     });
 
-    // Rede de segurança: se em 7s o auth não resolveu (ex.: callback OAuth travado,
-    // Supabase sem resposta, sessão corrompida), tenta recuperar a sessão e libera
-    // a tela mesmo assim — o app nunca deve ficar preso para sempre no "carregando".
+    // Rede de segurança: se em 7s o auth não resolveu (ex.: Supabase pausado/sem
+    // resposta, callback OAuth travado, deadlock do Web Locks no getSession), libera
+    // a tela INCONDICIONALMENTE — o app nunca deve ficar preso para sempre no
+    // "carregando". Não dependemos de getSession() aqui porque ele pode travar pelo
+    // mesmo motivo que travou o evento inicial; tentamos recuperar a sessão só como
+    // bônus, e se ela responder depois, atualizamos o usuário sem voltar ao spinner.
     const safetyTimer = setTimeout(() => {
       if (settled) return;
+      setLoading(false);
       supabase.auth.getSession()
-        .then(({ data: { session } }) => finish(session))
-        .catch(() => { setLoading(false); });
+        .then(({ data: { session } }) => { if (!settled && session) setUser(session.user); })
+        .catch(() => {});
     }, 7000);
 
     // Fallback para WebView Android: quando o Chrome Custom Tab fecha sem deep link
