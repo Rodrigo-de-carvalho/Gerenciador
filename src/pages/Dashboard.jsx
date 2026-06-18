@@ -119,13 +119,13 @@ export default function Dashboard({ onNavigate }) {
 
   const { income, expense, balance, transactions: monthTxs } = useMemo(
     () => getSummary(month, year),
-    [transactions, month, year]
+    [getSummary, month, year]
   );
 
   // Saldo total acumulado: carrega de mês em mês em vez de zerar na virada.
   const totalBalance = useMemo(
     () => getCumulativeBalance(month, year).balance,
-    [transactions, projects, month, year]
+    [getCumulativeBalance, month, year]
   );
 
   const prevMonth = () => {
@@ -149,7 +149,7 @@ export default function Dashboard({ onNavigate }) {
       data.push({ name: MONTH_NAMES[m - 1], income: sum.income, expense: sum.expense });
     }
     return data;
-  }, [transactions, month, year]);
+  }, [getSummary, MONTH_NAMES, month, year]);
 
   const catBreakdown = useMemo(() => {
     const map = {};

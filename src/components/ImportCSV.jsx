@@ -145,13 +145,14 @@ export default function ImportCSV({ onClose }) {
       setImportCount(imported.length);
       // Persist to localStorage so undo works even after closing the modal
       if (user && ids.length > 0) {
-        recordImport(user.id, {
+        const entryId = recordImport(user.id, {
           bank,
           bankLabel: BANK_LABELS[bank] || bank,
           count: ids.length,
           txIds: ids,
           cardId: resolvedCardId,
         });
+        setCurrentImportId(entryId); // bug fix: agora o "desfazer" inline marca o registro
       }
       setStep('done');
     } catch {

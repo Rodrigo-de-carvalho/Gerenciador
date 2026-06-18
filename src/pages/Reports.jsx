@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, PieChart, Pie, Cell, Legend, LineChart, Line, Area, AreaChart,
+  Tooltip, PieChart, Pie, Cell, Legend, Area, AreaChart,
 } from 'recharts';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
@@ -40,7 +40,7 @@ export default function Reports() {
   const nextMonth = () => { if (month === 12) { setMonth(1); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
   const { income, expense, balance, transactions: monthTxs } = useMemo(
-    () => getSummary(month, year), [transactions, month, year]
+    () => getSummary(month, year), [getSummary, month, year]
   );
 
   const catBreakdown = useMemo(() => {
@@ -64,7 +64,7 @@ export default function Reports() {
       data.push({ name: `${MONTHS[m - 1].slice(0, 3)}/${y.toString().slice(-2)}`, Entradas: sum.income, Saídas: sum.expense, Saldo: sum.balance });
     }
     return data;
-  }, [transactions, month, year]);
+  }, [getSummary, month, year]);
 
   const whatsappText = useMemo(() => generateWhatsAppText(monthTxs, categories, month, year), [monthTxs, categories, month, year]);
   const savingsRate = income > 0 ? ((income - expense) / income * 100).toFixed(1) : 0;
@@ -76,7 +76,7 @@ export default function Reports() {
   const handleExcelExport = () => {
     try {
       exportToExcel(monthTxs, categories, month, year);
-    } catch (e) {
+    } catch {
       setExportError('Não foi possível exportar o Excel. Tente pelo computador.');
       setTimeout(() => setExportError(''), 4000);
     }
@@ -91,7 +91,7 @@ export default function Reports() {
       } catch {
         window.open(doc.output('bloburl'), '_blank');
       }
-    } catch (e) {
+    } catch {
       setExportError('Não foi possível gerar o PDF. Tente pelo computador.');
       setTimeout(() => setExportError(''), 4000);
     }
@@ -357,7 +357,7 @@ export default function Reports() {
                     <td style={{ fontWeight: 500 }}>{row.name}</td>
                     <td style={{ textAlign: 'right' }} className="t-num pos">{privacy ? '••••' : formatCurrency(row.Entradas)}</td>
                     <td style={{ textAlign: 'right' }} className="t-num neg">{privacy ? '••••' : formatCurrency(row.Saídas)}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }} className={`t-num ${row.Saldo >= 0 ? '' : 'neg'}`} style={{ textAlign: 'right', fontWeight: 700, color: row.Saldo >= 0 ? 'var(--info)' : 'var(--negative)' }}>
+                    <td className={`t-num ${row.Saldo >= 0 ? '' : 'neg'}`} style={{ textAlign: 'right', fontWeight: 700, color: row.Saldo >= 0 ? 'var(--info)' : 'var(--negative)' }}>
                       {privacy ? '••••' : formatCurrency(row.Saldo)}
                     </td>
                   </tr>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   Plus, ArrowLeft, Pencil, Trash2, FolderOpen,
   FileSpreadsheet, FileText, MessageSquare, Copy, Check, Share2, X,
-  LayoutDashboard, Loader2,
+  Loader2,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';

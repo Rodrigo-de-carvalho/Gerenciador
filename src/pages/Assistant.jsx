@@ -153,7 +153,7 @@ export default function Assistant() {
       recentMonths,
       recentTransactions,
     });
-  }, [transactions, categories, projects, cards, now.month, now.year]);
+  }, [transactions, categories, projects, cards, now.month, now.year, getCardBill, getSummary]);
 
   if (!aiEnabled) {
     return (
@@ -197,7 +197,7 @@ export default function Assistant() {
           ? projects.find(p => p.name.toLowerCase() === args.project_name.toLowerCase())
           : null;
 
-        const result = await addTransaction({
+        await addTransaction({
           description: args.description,
           amount: Math.abs(Number(args.amount)),
           type: args.type,

@@ -37,7 +37,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
   const { privacy, setPrivacy } = usePrivacy();
   const { user, signOut } = useAuth();
   const { clearCache } = useFinance();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
 
   const PAGE_TITLES = {
     dashboard:    { title: t('nav.dashboard'),    sub: t('pageSub.dashboard') },

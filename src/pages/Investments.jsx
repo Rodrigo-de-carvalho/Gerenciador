@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, X, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { usePrivacy } from '../context/PrivacyContext';
 import { useFinance } from '../context/FinanceContext';
@@ -139,7 +139,7 @@ export default function Investments() {
       map[inv.type] += inv.currentValue;
     });
     return TYPES.filter(tp => map[tp.id] > 0).map(tp => ({ name: t('investments.' + tp.id), value: map[tp.id], color: tp.color, id: tp.id }));
-  }, [investments]);
+  }, [investments, t]);
 
   const filtered = filterType === 'all' ? investments : investments.filter(i => i.type === filterType);
 
