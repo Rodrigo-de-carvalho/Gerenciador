@@ -917,3 +917,56 @@ a:focus:not(:focus-visible) { outline: none; }
 }
 .cat-tile.sel { font-weight: 600; box-shadow: var(--shadow-sm); }
 .cat-tile.sel .cat-tile-name { color: var(--text); }
+
+/* ============================================================
+   TOAST — feedback de sucesso/erro
+   ============================================================ */
+.toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+  padding: 0 12px;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  animation: toastIn 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-width: 92vw;
+}
+.toast-ic {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: 7px; font-size: 12px; flex-shrink: 0;
+}
+.toast-success .toast-ic { background: color-mix(in oklab, var(--positive) 20%, transparent); color: var(--positive); }
+.toast-delete .toast-ic { background: var(--chip-strong); }
+.toast-error .toast-ic { background: color-mix(in oklab, var(--negative) 20%, transparent); color: var(--negative); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(16px) scale(0.96); } }
+
+/* ============================================================
+   ANIMAÇÕES DA LISTA DE LANÇAMENTOS
+   ============================================================ */
+.tx-table tbody tr.group { animation: txRowIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+@keyframes txRowIn { from { opacity: 0; transform: translateY(6px); } }
+.tx-table tbody tr.tx-removing {
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 230ms ease, transform 230ms ease;
+  pointer-events: none;
+}
