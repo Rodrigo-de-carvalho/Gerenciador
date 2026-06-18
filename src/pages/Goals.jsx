@@ -10,7 +10,7 @@ import Ring from '../components/Ring';
 import { useI18n } from '../i18n';
 
 const ICONS = ['🎯','🏠','✈️','📚','🚗','💻','🌱','🏋️','💰','🛹','🏖️','🎓','💍','🏗️','🎵','⚽','🎮','🏢','🔬','🛡️'];
-const COLORS = ['#C7F284','#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16'];
+const COLORS = ['#2DD4A7','#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16'];
 
 function GoalModal({ goal, onClose, onSave }) {
   const { t } = useI18n();
@@ -24,7 +24,7 @@ function GoalModal({ goal, onClose, onSave }) {
     targetAmount: goal.targetAmount ? String(goal.targetAmount) : '',
     deadline: goal.deadline || '',
   } : {
-    name: '', description: '', icon: '🎯', color: '#C7F284',
+    name: '', description: '', icon: '🎯', color: '#2DD4A7',
     includeInOverview: false, targetAmount: '', deadline: '',
   });
 

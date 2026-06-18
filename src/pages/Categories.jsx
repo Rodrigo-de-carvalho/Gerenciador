@@ -56,12 +56,15 @@ export default function Categories() {
     setBudgetInput('');
   };
 
-  const CatList = ({ cats, label, icon: Icon, positive }) => (
+  // Chamado como função (não como <CatList/>) de propósito: assim o React não
+  // trata isto como um novo tipo de componente a cada render, evitando o
+  // remount que fazia o input de orçamento perder o foco ao digitar.
+  const renderCatList = ({ cats, label, icon: Icon, positive }) => (
     <div className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <div style={{
           width: 28, height: 28, borderRadius: 8,
-          background: positive ? 'rgba(199,242,132,0.15)' : 'rgba(255,122,90,0.12)',
+          background: positive ? 'color-mix(in oklab, var(--positive) 16%, transparent)' : 'color-mix(in oklab, var(--negative) 14%, transparent)',
           display: 'grid', placeItems: 'center',
           color: positive ? 'var(--positive)' : 'var(--negative)',
         }}>
@@ -99,7 +102,7 @@ export default function Categories() {
               onMouseEnter={() => setHoveredCat(cat.id)}
               onMouseLeave={() => setHoveredCat(null)}
             >
-              <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0, background: cat.color + '22' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0, background: cat.color + '22', border: `1px solid ${cat.color}33` }}>
                 {cat.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -136,8 +139,8 @@ export default function Categories() {
                     onClick={() => startBudgetEdit(cat.id)}
                     style={{
                       fontSize: 11.5, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
-                      background: budget ? 'rgba(199,242,132,0.1)' : 'var(--chip)',
-                      border: `1px solid ${budget ? 'rgba(199,242,132,0.25)' : 'var(--line)'}`,
+                      background: budget ? 'color-mix(in oklab, var(--accent) 12%, transparent)' : 'var(--chip)',
+                      border: `1px solid ${budget ? 'color-mix(in oklab, var(--accent) 30%, transparent)' : 'var(--line)'}`,
                       color: budget ? 'var(--accent)' : 'var(--text-3)',
                       fontFamily: 'inherit', whiteSpace: 'nowrap',
                       transition: 'opacity 120ms', opacity: isHov || budget ? 1 : 0,
@@ -179,8 +182,8 @@ export default function Categories() {
       </div>
 
       <div className="grid-cifra g-2">
-        <CatList cats={incomeCategories}  label={t('categories.income')}  icon={TrendingUp}   positive={true} />
-        <CatList cats={expenseCategories} label={t('categories.expense')} icon={TrendingDown} positive={false} />
+        {renderCatList({ cats: incomeCategories,  label: t('categories.income'),  icon: TrendingUp,   positive: true })}
+        {renderCatList({ cats: expenseCategories, label: t('categories.expense'), icon: TrendingDown, positive: false })}
       </div>
 
       {showForm && (

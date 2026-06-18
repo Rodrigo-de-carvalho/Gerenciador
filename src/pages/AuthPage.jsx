@@ -99,22 +99,21 @@ export default function AuthPage() {
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
-            width: 48, height: 48,
-            background: 'var(--accent)',
-            borderRadius: '50%',
+            width: 52, height: 52,
+            background: 'linear-gradient(140deg, var(--accent), var(--accent-2))',
+            borderRadius: 15,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
-            fontFamily: "'Instrument Serif', serif",
-            fontStyle: 'italic',
-            fontSize: 38,
-            color: 'var(--accent-ink)',
-            lineHeight: 1,
-            paddingTop: 4,
+            color: '#fff',
+            boxShadow: '0 12px 26px -10px color-mix(in oklab, var(--accent) 70%, transparent)',
           }}>
-            c
+            <svg viewBox="0 0 24 24" fill="none" width="30" height="30" aria-hidden="true">
+              <path d="M16.8 7.4a6.6 6.6 0 1 0 .2 9.1" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+              <circle cx="17.4" cy="12" r="1.5" fill="currentColor" />
+            </svg>
           </div>
-          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, letterSpacing: '-0.01em', color: 'var(--text)' }}>
-            Cifra
+          <div style={{ fontFamily: "'Geist', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)' }}>
+            Cifra<span style={{ color: 'var(--accent)' }}>.</span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
             {t('auth.tagline')}
@@ -230,13 +229,13 @@ export default function AuthPage() {
 
             {/* Error / success */}
             {error && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--negative)', background: 'rgba(251,113,133,0.08)', borderRadius: 8, padding: '10px 12px' }}>
                 <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                 {error}
               </div>
             )}
             {success && (
-              <div style={{ fontSize: 12.5, color: 'var(--positive)', background: 'rgba(199,242,132,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 12.5, color: 'var(--positive)', background: 'rgba(45,212,167,0.08)', borderRadius: 8, padding: '10px 12px' }}>
                 {success}
               </div>
             )}

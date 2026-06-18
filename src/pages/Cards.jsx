@@ -226,7 +226,7 @@ export default function Cards() {
                 <div key={num} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <span style={{
                     flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
-                    background: 'rgba(199,242,132,0.15)', border: '1px solid rgba(199,242,132,0.3)',
+                    background: 'rgba(45,212,167,0.15)', border: '1px solid rgba(45,212,167,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700, color: 'var(--accent)',
                   }}>{num}</span>
@@ -302,9 +302,9 @@ export default function Cards() {
                                   {isInstallment && (
                                     <span style={{
                                       fontSize: 10.5, fontWeight: 600, padding: '1px 6px', borderRadius: 5,
-                                      background: isLast ? 'rgba(134,239,172,0.15)' : 'rgba(199,242,132,0.12)',
+                                      background: isLast ? 'rgba(134,239,172,0.15)' : 'rgba(45,212,167,0.12)',
                                       color: isLast ? 'var(--positive)' : 'var(--accent)',
-                                      border: `1px solid ${isLast ? 'rgba(134,239,172,0.3)' : 'rgba(199,242,132,0.25)'}`,
+                                      border: `1px solid ${isLast ? 'rgba(134,239,172,0.3)' : 'rgba(45,212,167,0.25)'}`,
                                     }}>
                                       {tx.installmentCurrent}/{tx.installmentTotal}{isLast ? ' ✓' : ''}
                                     </span>

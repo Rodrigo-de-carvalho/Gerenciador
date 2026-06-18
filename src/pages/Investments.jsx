@@ -8,10 +8,10 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 const TYPES = [
-  { id: 'acoes',      label: 'Ações',       color: '#C7F284' },
-  { id: 'fiis',       label: 'FIIs',        color: '#8FB7FF' },
+  { id: 'acoes',      label: 'Ações',       color: '#2DD4A7' },
+  { id: 'fiis',       label: 'FIIs',        color: '#60A5FA' },
   { id: 'renda_fixa', label: 'Renda Fixa',  color: '#FFC04A' },
-  { id: 'crypto',     label: 'Cripto',      color: '#FF7A5A' },
+  { id: 'crypto',     label: 'Cripto',      color: '#FB7185' },
   { id: 'outros',     label: 'Outros',      color: '#B4A0FF' },
 ];
 const typeLabel = (id) => TYPES.find(t => t.id === id)?.label || id;

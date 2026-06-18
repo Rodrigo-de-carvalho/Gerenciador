@@ -20,7 +20,7 @@ function ProjectFormModal({ project, onClose, onSave }) {
   const [form, setForm] = useState(
     project
       ? { name: project.name, description: project.description || '', icon: project.icon, color: project.color, includeInOverview: project.includeInOverview ?? true }
-      : { name: '', description: '', icon: '🏗️', color: '#C7F284', includeInOverview: true }
+      : { name: '', description: '', icon: '🏗️', color: '#2DD4A7', includeInOverview: true }
   );
 
   const handleSubmit = (e) => {
@@ -208,9 +208,9 @@ function ProjectDetail({ project, onBack }) {
 
       {/* WhatsApp panel */}
       {showExportPanel && (
-        <div className="card" style={{ marginBottom: 20, borderColor: 'rgba(199,242,132,0.2)' }}>
+        <div className="card" style={{ marginBottom: 20, borderColor: 'rgba(45,212,167,0.2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 32, height: 32, background: 'rgba(199,242,132,0.12)', borderRadius: 10, display: 'grid', placeItems: 'center', color: 'var(--positive)', flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, background: 'rgba(45,212,167,0.12)', borderRadius: 10, display: 'grid', placeItems: 'center', color: 'var(--positive)', flexShrink: 0 }}>
               <MessageSquare size={15} />
             </div>
             <span style={{ fontSize: 14, fontWeight: 600 }}>{t('projects.shareWhatsApp')}</span>
@@ -354,7 +354,7 @@ function ProjectDetail({ project, onBack }) {
                 style={{ fontFamily: 'monospace', letterSpacing: 1 }}
               />
               {clearProjectError && (
-                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(251,113,133,0.08)', borderRadius: 8, padding: '10px 12px' }}>
                   {clearProjectError}
                 </div>
               )}

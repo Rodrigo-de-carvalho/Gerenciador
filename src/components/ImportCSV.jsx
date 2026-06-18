@@ -208,7 +208,7 @@ export default function ImportCSV({ onClose }) {
                   padding: isTouch ? '44px 20px' : '36px 20px',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  background: dragging ? 'rgba(199,242,132,0.05)' : 'var(--chip)',
+                  background: dragging ? 'rgba(45,212,167,0.05)' : 'var(--chip)',
                   transition: 'border-color 120ms, background 120ms',
                 }}
               >
@@ -234,7 +234,7 @@ export default function ImportCSV({ onClose }) {
               </div>
 
               {error && (
-                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
                   <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                   {error}
                 </div>
@@ -288,7 +288,7 @@ export default function ImportCSV({ onClose }) {
               )}
 
               {error && (
-                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)' }}>
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)' }}>
                   <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                   {error}
                 </div>
@@ -332,7 +332,7 @@ export default function ImportCSV({ onClose }) {
           <>
             <div className="modal-form" style={{ gap: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ padding: '3px 10px', borderRadius: 6, background: 'rgba(199,242,132,0.12)', border: '1px solid rgba(199,242,132,0.25)', fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>
+                <span style={{ padding: '3px 10px', borderRadius: 6, background: 'rgba(45,212,167,0.12)', border: '1px solid rgba(45,212,167,0.25)', fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>
                   {BANK_LABELS[bank] || bank}
                 </span>
                 <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
@@ -368,7 +368,7 @@ export default function ImportCSV({ onClose }) {
                       ))}
                     </select>
                   ) : (
-                    <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
+                    <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
                       <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                       <span>Nenhum cartão cadastrado. Vá em <strong>Cartões → Novo Cartão</strong> e volte aqui.</span>
                     </div>
@@ -413,7 +413,7 @@ export default function ImportCSV({ onClose }) {
                             {row.type === 'income' ? '+' : '−'}{formatCurrency(row.amount)}
                           </td>
                           <td style={{ padding: '7px 8px' }}>
-                            <span style={{ fontSize: 11.5, padding: '2px 7px', borderRadius: 4, background: row.type === 'income' ? 'rgba(199,242,132,0.1)' : 'rgba(255,122,90,0.1)', color: row.type === 'income' ? 'var(--positive)' : 'var(--negative)' }}>
+                            <span style={{ fontSize: 11.5, padding: '2px 7px', borderRadius: 4, background: row.type === 'income' ? 'rgba(45,212,167,0.1)' : 'rgba(251,113,133,0.1)', color: row.type === 'income' ? 'var(--positive)' : 'var(--negative)' }}>
                               {row.type === 'income' ? t('importCSV.incomeType') : t('importCSV.expenseType')}
                             </span>
                           </td>
@@ -432,7 +432,7 @@ export default function ImportCSV({ onClose }) {
               </div>
 
               {error && (
-                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(255,122,90,0.08)', border: '1px solid rgba(255,122,90,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.2)', borderRadius: 8, fontSize: 12.5, color: 'var(--negative)', lineHeight: 1.5 }}>
                   <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                   {error}
                 </div>
@@ -473,7 +473,7 @@ export default function ImportCSV({ onClose }) {
                 </>
               ) : (
                 <>
-                  <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(199,242,132,0.1)', border: '1px solid rgba(199,242,132,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(45,212,167,0.1)', border: '1px solid rgba(45,212,167,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Check size={26} style={{ color: 'var(--positive)' }} />
                   </div>
                   <div>
@@ -485,7 +485,7 @@ export default function ImportCSV({ onClose }) {
                     </div>
                   </div>
                   {error && (
-                    <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px', width: '100%', textAlign: 'left' }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(251,113,133,0.08)', borderRadius: 8, padding: '10px 12px', width: '100%', textAlign: 'left' }}>
                       {error}
                     </div>
                   )}

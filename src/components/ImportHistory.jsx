@@ -73,8 +73,8 @@ export default function ImportHistory({ onClose }) {
                 {/* Icon */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                  background: entry.undone ? 'var(--chip)' : 'rgba(199,242,132,0.1)',
-                  border: `1px solid ${entry.undone ? 'var(--line)' : 'rgba(199,242,132,0.25)'}`,
+                  background: entry.undone ? 'var(--chip)' : 'rgba(45,212,167,0.1)',
+                  border: `1px solid ${entry.undone ? 'var(--line)' : 'rgba(45,212,167,0.25)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 16,
                 }}>

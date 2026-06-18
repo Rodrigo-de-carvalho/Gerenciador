@@ -72,7 +72,12 @@ export default function Layout({ currentPage, onNavigate, children }) {
       <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
         {/* Brand */}
         <div className="brand">
-          <div className="brand-mark">c</div>
+          <div className="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M16.8 7.4a6.6 6.6 0 1 0 .2 9.1" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+              <circle cx="17.4" cy="12" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
           <span className="brand-name">Cifra<em>.</em></span>
           <button
             className="icon-btn"

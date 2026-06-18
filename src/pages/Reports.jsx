@@ -97,7 +97,7 @@ export default function Reports() {
     }
   };
 
-  const CHART_COLORS = { income: '#C7F284', expense: '#FF7A5A', balance: '#8FB7FF' };
+  const CHART_COLORS = { income: '#2DD4A7', expense: '#FB7185', balance: '#60A5FA' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

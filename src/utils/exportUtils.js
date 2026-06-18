@@ -16,12 +16,12 @@ const C = {
   surface: [26,  24,  21],
   surface2:[33,  30,  26],
   line:    [41,  37,  31],
-  accent:  [199, 242, 132],
+  accent:  [45, 212, 167],
   text:    [239, 234, 224],
   text2:   [183, 175, 159],
   text3:   [124, 117, 103],
-  pos:     [199, 242, 132],
-  neg:     [255, 122,  90],
+  pos:     [45, 212, 167],
+  neg:     [251, 113, 133],
 };
 
 const TH = { fillColor: C.surface2, textColor: C.text3, fontStyle: 'bold', fontSize: 7.5, cellPadding: 4 };

@@ -95,17 +95,18 @@ function AppContent() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', gap: 20 }}>
         <div style={{
-          width: 52, height: 52,
-          background: 'var(--accent)',
-          borderRadius: '50%',
+          width: 56, height: 56,
+          background: 'linear-gradient(140deg, var(--accent), var(--accent-2))',
+          borderRadius: 16,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Instrument Serif', serif",
-          fontStyle: 'italic',
-          fontSize: 42,
-          color: 'var(--accent-ink)',
-          lineHeight: 1,
-          paddingTop: 4,
-        }}>c</div>
+          color: '#fff',
+          boxShadow: '0 12px 28px -10px color-mix(in oklab, var(--accent) 70%, transparent)',
+        }}>
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" aria-hidden="true">
+            <path d="M16.8 7.4a6.6 6.6 0 1 0 .2 9.1" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+            <circle cx="17.4" cy="12" r="1.5" fill="currentColor" />
+          </svg>
+        </div>
         <Loader2 size={16} style={{ color: 'var(--text-4)', animation: 'spin 1s linear infinite' }} />
       </div>
     );

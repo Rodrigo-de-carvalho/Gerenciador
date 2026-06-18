@@ -36,7 +36,7 @@ function SettingRow({ icon, title, subtitle, onClick, disabled, danger, right })
     >
       <div style={{
         width: 34, height: 34, borderRadius: 8, flexShrink: 0,
-        background: danger ? 'rgba(255,122,90,0.12)' : 'rgba(199,242,132,0.10)',
+        background: danger ? 'rgba(251,113,133,0.12)' : 'rgba(45,212,167,0.10)',
         display: 'grid', placeItems: 'center',
         color: danger ? 'var(--negative)' : 'var(--accent)',
       }}>
@@ -327,7 +327,7 @@ export default function SettingsModal({ onClose }) {
                 style={{ fontFamily: 'monospace', letterSpacing: 1 }}
               />
               {clearAllError && (
-                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(251,113,133,0.08)', borderRadius: 8, padding: '10px 12px' }}>
                   {clearAllError}
                 </div>
               )}
@@ -361,7 +361,7 @@ export default function SettingsModal({ onClose }) {
             <div className="modal-form" style={{ gap: 12 }}>
               <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.55 }}>{t('settings.deleteAccountDesc')}</p>
               {deleteError && (
-                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(255,122,90,0.08)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 12.5, color: 'var(--negative)', background: 'rgba(251,113,133,0.08)', borderRadius: 8, padding: '10px 12px' }}>
                   {deleteError}
                 </div>
               )}
