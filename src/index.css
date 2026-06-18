@@ -605,6 +605,14 @@
 .seg button.active { background: var(--surface-3); color: var(--text); }
 
 /* ============ responsive ============ */
+/* Tablet / notebook estreito: a sidebar fixa ainda ocupa espaço, então
+   afinamos a barra e reduzimos o respiro pra o conteúdo não ficar espremido. */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .app-shell { grid-template-columns: 200px 1fr; }
+  .scroll { padding: 22px 22px 60px; }
+  .g-4 { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 900px) {
   .g-4 { grid-template-columns: 1fr 1fr; }
   .g-dash { grid-template-columns: 1fr; }
@@ -627,6 +635,9 @@
   .hero-num { font-size: 52px; }
   /* Reports: stack category panels on mobile */
   .reports-cat-grid { grid-template-columns: 1fr !important; }
+  /* iOS Safari faz zoom automático em inputs com fonte < 16px ao focar.
+     Subimos para 16px só no toque para evitar o "pulo" da tela. */
+  .field-input, .input-field, .select-field { font-size: 16px; }
 }
 
 @media (max-width: 600px) {
@@ -643,10 +654,18 @@
   .g-4 { grid-template-columns: 1fr 1fr; }
   .tabs { overflow-x: auto; padding-bottom: 1px; }
   .tab { font-size: 12px; padding: 10px 10px; white-space: nowrap; }
+  /* Saldos grandes (6+ dígitos) não estouram a largura do card em telas pequenas. */
+  .hero-num { font-size: 42px; overflow-wrap: anywhere; max-width: 100%; }
 }
 
 @media (pointer: coarse) {
   .tx-actions { opacity: 1 !important; }
+}
+
+/* Telas muito largas (ultra-wide / 4K): limita a largura do conteúdo
+   pra cards e tabelas não esticarem desproporcionalmente. */
+@media (min-width: 1700px) {
+  .scroll > * { max-width: 1500px; margin-left: auto; margin-right: auto; }
 }
 
 /* ============ Cifra Modals ============ */
