@@ -143,8 +143,40 @@ CREATE POLICY "users can manage own recurring"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- ── CARTÕES ───────────────────────────────────────────────
+-- (Esta tabela existia em produção mas não estava no schema. Garanta que o RLS
+--  esteja ATIVO — sem ele, qualquer usuário autenticado lê/edita cartões alheios.)
+CREATE TABLE IF NOT EXISTS public.cards (
+  id           uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id      uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name         text          NOT NULL,
+  limit_amount numeric(15,2),
+  closing_day  int           NOT NULL DEFAULT 1 CHECK (closing_day BETWEEN 1 AND 28),
+  color        text          NOT NULL DEFAULT '#3b82f6',
+  icon         text          NOT NULL DEFAULT '💳',
+  created_at   timestamptz   DEFAULT now()
+);
+
+ALTER TABLE public.cards ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users can manage own cards" ON public.cards;
+CREATE POLICY "users can manage own cards"
+  ON public.cards FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- ── MIGRAÇÃO: colunas de cartão/parcelamento em transactions ──────────────────
+-- (Também já existiam em produção, mas faltavam no schema. Seguras de rodar.)
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS card_id              uuid REFERENCES public.cards(id) ON DELETE SET NULL;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS installment_total    int     NOT NULL DEFAULT 1;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS installment_current  int     NOT NULL DEFAULT 1;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS installment_group_id uuid;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS paid                 boolean NOT NULL DEFAULT true;
+
 -- ── ÍNDICES ───────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS transactions_user_date ON public.transactions(user_id, date DESC);
+CREATE INDEX IF NOT EXISTS cards_user_id ON public.cards(user_id);
+CREATE INDEX IF NOT EXISTS transactions_card_id ON public.transactions(card_id);
 CREATE INDEX IF NOT EXISTS categories_user_id ON public.categories(user_id);
 CREATE INDEX IF NOT EXISTS projects_user_id ON public.projects(user_id);
 CREATE INDEX IF NOT EXISTS goals_user_id ON public.goals(user_id);

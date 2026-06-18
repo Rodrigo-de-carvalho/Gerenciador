@@ -327,9 +327,14 @@ export default function Assistant() {
   // ── Chamada à API ────────────────────────────────────────────────────────────
 
   const callApi = async (history) => {
+    // Envia o token da sessão — a API /api/chat agora exige autenticação.
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
       body: JSON.stringify({ messages: history, systemPrompt }),
     });
     const data = await res.json();

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -16,6 +16,9 @@ const DEFAULT_CATEGORIES = [
   { name: 'Compras',          type: 'expense', color: '#d946ef', icon: '🛍️' },
   { name: 'Outros (Saída)',   type: 'expense', color: '#6b7280', icon: '📋' },
 ];
+
+// Arredonda para 2 casas decimais sem erros de ponto flutuante.
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 // Advances a date string by one month, clamping day to month length
 function advanceOneMonth(dateStr, dayOfMonth) {
@@ -128,6 +131,12 @@ function clearCache(userId) {
   try { localStorage.removeItem(cacheKey(userId)); } catch (_) {}
 }
 
+// Trava de sessão: evita que duas execuções concorrentes de loadData (ex.: re-mount
+// rápido, troca de sessão) materializem as MESMAS recorrências em duplicidade.
+// (A corrida entre dispositivos diferentes só é 100% resolvida no servidor —
+//  ver nota no README sobre constraint única / cron.)
+let recurringProcessing = false;
+
 // ── Context ─────────────────────────────────────────────────────────────────
 
 const FinanceContext = createContext(null);
@@ -153,6 +162,7 @@ export function FinanceProvider({ children }) {
       setCards([]);
       setBudgetsState([]);
       setRecurring([]);
+      setInvestments([]); // bug fix: investimentos não eram limpos no logout
       setLoading(false);
       return;
     }
@@ -185,7 +195,7 @@ export function FinanceProvider({ children }) {
       ]);
 
       let cats = catRes.data?.map(mapCat) || [];
-      if (cats.length === 0) {
+      if (cats.length === 0 && !catRes.error) {
         const { data: inserted } = await supabase
           .from('categories')
           .insert(DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id })))
@@ -193,48 +203,53 @@ export function FinanceProvider({ children }) {
         cats = inserted?.map(mapCat) || [];
       }
 
-      // Process overdue recurring transactions
+      // Process overdue recurring transactions (com trava anti-duplicação)
       const todayStr = new Date().toISOString().split('T')[0];
       const dueRecs  = (recurringRes.data || []).filter(r => r.active && r.next_date <= todayStr);
       let allTxs     = txRes.data?.map(mapTx) || [];
       const recurringData = recurringRes.data?.map(mapRecurring) || [];
 
-      if (dueRecs.length) {
-        const newTxRows  = [];
-        const nextDates  = {};
+      if (dueRecs.length && !recurringProcessing) {
+        recurringProcessing = true;
+        try {
+          const newTxRows  = [];
+          const nextDates  = {};
 
-        for (const rec of dueRecs) {
-          let nextStr = rec.next_date;
-          while (nextStr <= todayStr) {
-            newTxRows.push({
-              user_id:     user.id,
-              type:        rec.type,
-              description: rec.description,
-              amount:      rec.amount,
-              date:        nextStr,
-              category_id: rec.category_id,
-              notes:       null,
-              paid:        true,
-            });
-            nextStr = advanceOneMonth(nextStr, rec.day_of_month);
+          for (const rec of dueRecs) {
+            let nextStr = rec.next_date;
+            while (nextStr <= todayStr) {
+              newTxRows.push({
+                user_id:     user.id,
+                type:        rec.type,
+                description: rec.description,
+                amount:      rec.amount,
+                date:        nextStr,
+                category_id: rec.category_id,
+                notes:       null,
+                paid:        true,
+              });
+              nextStr = advanceOneMonth(nextStr, rec.day_of_month);
+            }
+            nextDates[rec.id] = nextStr;
           }
-          nextDates[rec.id] = nextStr;
+
+          if (newTxRows.length) {
+            const { data: inserted } = await supabase.from('transactions').insert(newTxRows).select();
+            if (inserted) allTxs = [...inserted.map(mapTx), ...allTxs];
+          }
+
+          await Promise.all(
+            Object.entries(nextDates).map(([id, next_date]) =>
+              supabase.from('recurring').update({ next_date }).eq('id', id)
+            )
+          );
+
+          recurringData.forEach(r => {
+            if (nextDates[r.id]) r.nextDate = nextDates[r.id];
+          });
+        } finally {
+          recurringProcessing = false;
         }
-
-        if (newTxRows.length) {
-          const { data: inserted } = await supabase.from('transactions').insert(newTxRows).select();
-          if (inserted) allTxs = [...inserted.map(mapTx), ...allTxs];
-        }
-
-        await Promise.all(
-          Object.entries(nextDates).map(([id, next_date]) =>
-            supabase.from('recurring').update({ next_date }).eq('id', id)
-          )
-        );
-
-        recurringData.forEach(r => {
-          if (nextDates[r.id]) r.nextDate = nextDates[r.id];
-        });
       }
 
       const freshProjects    = projRes.data?.map(mapProject)       || [];
@@ -261,6 +276,10 @@ export function FinanceProvider({ children }) {
         recurring:    recurringData,
         investments:  freshInvestments,
       });
+    } catch (e) {
+      // bug fix: loadData não tinha catch — uma falha de rede/token sumia em silêncio.
+      // Mantém o que já veio do cache e registra o erro para diagnóstico.
+      console.error('[Finance] Falha ao carregar dados:', e);
     } finally {
       setLoading(false);
     }
@@ -270,7 +289,7 @@ export function FinanceProvider({ children }) {
 
   // ── Transactions ──────────────────────────────────────────
 
-  const addTransaction = async (tx) => {
+  const addTransaction = useCallback(async (tx) => {
     const { data, error } = await supabase.from('transactions').insert({
       user_id:     user.id,
       type:        tx.type,
@@ -286,11 +305,14 @@ export function FinanceProvider({ children }) {
     if (error) throw new Error(error.message);
     if (data) setTransactions(prev => [mapTx(data), ...prev]);
     return mapTx(data);
-  };
+  }, [user]);
 
-  const addInstallmentTransaction = async (tx, installmentCount) => {
+  const addInstallmentTransaction = useCallback(async (tx, installmentCount) => {
     const groupId = crypto.randomUUID();
-    const perAmount = tx.amount / installmentCount;
+    // bug fix de dinheiro: arredonda cada parcela e joga a sobra de centavos na 1ª,
+    // garantindo que a soma das parcelas seja exatamente o valor digitado.
+    const perAmount   = round2(tx.amount / installmentCount);
+    const firstAmount = round2(tx.amount - perAmount * (installmentCount - 1));
     const originalDay = parseInt(tx.date.split('-')[2], 10);
     const rows = [];
     let installDate = tx.date;
@@ -300,7 +322,7 @@ export function FinanceProvider({ children }) {
         user_id:              user.id,
         type:                 tx.type,
         description:          `${tx.description} (${i + 1}/${installmentCount})`,
-        amount:               perAmount,
+        amount:               i === 0 ? firstAmount : perAmount,
         date:                 installDate,
         category_id:          tx.categoryId || null,
         project_id:           tx.projectId || null,
@@ -315,9 +337,9 @@ export function FinanceProvider({ children }) {
     const { data, error } = await supabase.from('transactions').insert(rows).select();
     if (error) throw new Error(error.message);
     if (data) setTransactions(prev => [...data.map(mapTx), ...prev]);
-  };
+  }, [user]);
 
-  const bulkAddTransactions = async (txArray) => {
+  const bulkAddTransactions = useCallback(async (txArray) => {
     if (!txArray.length) return [];
     const rows = txArray.map(tx => ({
       user_id:     user.id,
@@ -337,16 +359,16 @@ export function FinanceProvider({ children }) {
     const mapped = data?.map(mapTx) || [];
     if (mapped.length) setTransactions(prev => [...mapped, ...prev]);
     return mapped; // returns the full mapped array so callers can get IDs
-  };
+  }, [user]);
 
-  const bulkDeleteTransactions = async (ids) => {
+  const bulkDeleteTransactions = useCallback(async (ids) => {
     if (!ids?.length) return;
     const { error } = await supabase.from('transactions').delete().in('id', ids);
     if (error) throw new Error(error.message);
     setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
-  };
+  }, []);
 
-  const updateTransaction = async (tx) => {
+  const updateTransaction = useCallback(async (tx) => {
     const { data, error } = await supabase.from('transactions').update({
       type:        tx.type,
       description: tx.description,
@@ -360,17 +382,17 @@ export function FinanceProvider({ children }) {
     }).eq('id', tx.id).select().single();
     if (error) throw new Error(error.message);
     if (data) setTransactions(prev => prev.map(t => t.id === data.id ? mapTx(data) : t));
-  };
+  }, []);
 
-  const deleteTransaction = async (id) => {
+  const deleteTransaction = useCallback(async (id) => {
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) throw new Error(error.message);
     setTransactions(prev => prev.filter(t => t.id !== id));
-  };
+  }, []);
 
   // ── Categories ────────────────────────────────────────────
 
-  const addCategory = async (cat) => {
+  const addCategory = useCallback(async (cat) => {
     const { data, error } = await supabase.from('categories').insert({
       user_id: user.id,
       name:    cat.name,
@@ -381,17 +403,17 @@ export function FinanceProvider({ children }) {
     if (error) throw new Error(error.message);
     if (data) setCategories(prev => [...prev, mapCat(data)]);
     return mapCat(data);
-  };
+  }, [user]);
 
-  const deleteCategory = async (id) => {
+  const deleteCategory = useCallback(async (id) => {
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw new Error(error.message);
     setCategories(prev => prev.filter(c => c.id !== id));
-  };
+  }, []);
 
   // ── Budgets ───────────────────────────────────────────────
 
-  const setBudget = async (budget) => {
+  const setBudget = useCallback(async (budget) => {
     const { data, error } = await supabase.from('budgets').upsert(
       { user_id: user.id, category_id: budget.categoryId, amount: budget.amount },
       { onConflict: 'user_id,category_id' }
@@ -404,17 +426,17 @@ export function FinanceProvider({ children }) {
         return exists ? prev.map(b => b.categoryId === data.category_id ? mapped : b) : [...prev, mapped];
       });
     }
-  };
+  }, [user]);
 
-  const deleteBudget = async (categoryId) => {
+  const deleteBudget = useCallback(async (categoryId) => {
     const { error } = await supabase.from('budgets').delete().eq('user_id', user.id).eq('category_id', categoryId);
     if (error) throw new Error(error.message);
     setBudgetsState(prev => prev.filter(b => b.categoryId !== categoryId));
-  };
+  }, [user]);
 
   // ── Recurring ─────────────────────────────────────────────
 
-  const addRecurring = async (rec) => {
+  const addRecurring = useCallback(async (rec) => {
     const { data, error } = await supabase.from('recurring').insert({
       user_id:     user.id,
       type:        rec.type,
@@ -428,9 +450,9 @@ export function FinanceProvider({ children }) {
     if (error) throw new Error(error.message);
     if (data) setRecurring(prev => [...prev, mapRecurring(data)]);
     return mapRecurring(data);
-  };
+  }, [user]);
 
-  const updateRecurring = async (rec) => {
+  const updateRecurring = useCallback(async (rec) => {
     const { data, error } = await supabase.from('recurring').update({
       type:        rec.type,
       description: rec.description,
@@ -442,25 +464,25 @@ export function FinanceProvider({ children }) {
     }).eq('id', rec.id).select().single();
     if (error) throw new Error(error.message);
     if (data) setRecurring(prev => prev.map(r => r.id === data.id ? mapRecurring(data) : r));
-  };
+  }, []);
 
-  const deleteRecurring = async (id) => {
+  const deleteRecurring = useCallback(async (id) => {
     const { error } = await supabase.from('recurring').delete().eq('id', id);
     if (error) throw new Error(error.message);
     setRecurring(prev => prev.filter(r => r.id !== id));
-  };
+  }, []);
 
-  const toggleRecurring = async (id) => {
+  const toggleRecurring = useCallback(async (id) => {
     const rec = recurring.find(r => r.id === id);
     if (!rec) return;
     const { data, error } = await supabase.from('recurring').update({ active: !rec.active }).eq('id', id).select().single();
     if (error) throw new Error(error.message);
     if (data) setRecurring(prev => prev.map(r => r.id === data.id ? mapRecurring(data) : r));
-  };
+  }, [recurring]);
 
   // ── Projects ──────────────────────────────────────────────
 
-  const addProject = async (proj) => {
+  const addProject = useCallback(async (proj) => {
     const { data, error } = await supabase.from('projects').insert({
       user_id:             user.id,
       name:                proj.name,
@@ -473,9 +495,9 @@ export function FinanceProvider({ children }) {
     const mapped = mapProject(data);
     setProjects(prev => [...prev, mapped]);
     return mapped;
-  };
+  }, [user]);
 
-  const updateProject = async (proj) => {
+  const updateProject = useCallback(async (proj) => {
     const { data, error } = await supabase.from('projects').update({
       name:                proj.name,
       description:         proj.description || null,
@@ -485,18 +507,18 @@ export function FinanceProvider({ children }) {
     }).eq('id', proj.id).select().single();
     if (error) throw new Error(error.message);
     if (data) setProjects(prev => prev.map(p => p.id === data.id ? mapProject(data) : p));
-  };
+  }, []);
 
-  const deleteProject = async (id) => {
+  const deleteProject = useCallback(async (id) => {
     const { error } = await supabase.from('projects').delete().eq('id', id);
     if (error) throw new Error(error.message);
     setProjects(prev => prev.filter(p => p.id !== id));
     setTransactions(prev => prev.map(t => t.projectId === id ? { ...t, projectId: null } : t));
-  };
+  }, []);
 
   // ── Cards ─────────────────────────────────────────────────
 
-  const addCard = async (card) => {
+  const addCard = useCallback(async (card) => {
     const { data, error } = await supabase.from('cards').insert({
       user_id:      user.id,
       name:         card.name,
@@ -507,9 +529,9 @@ export function FinanceProvider({ children }) {
     }).select().single();
     if (error) throw new Error(error.message);
     if (data) setCards(prev => [...prev, mapCard(data)]);
-  };
+  }, [user]);
 
-  const updateCard = async (card) => {
+  const updateCard = useCallback(async (card) => {
     const { data, error } = await supabase.from('cards').update({
       name:         card.name,
       limit_amount: card.limitAmount || null,
@@ -519,38 +541,58 @@ export function FinanceProvider({ children }) {
     }).eq('id', card.id).select().single();
     if (error) throw new Error(error.message);
     if (data) setCards(prev => prev.map(c => c.id === data.id ? mapCard(data) : c));
-  };
+  }, []);
 
-  const deleteCard = async (id) => {
+  const deleteCard = useCallback(async (id) => {
     const { error } = await supabase.from('cards').delete().eq('id', id);
     if (error) throw new Error(error.message);
     setCards(prev => prev.filter(c => c.id !== id));
     setTransactions(prev => prev.map(t => t.cardId === id ? { ...t, cardId: null } : t));
-  };
+  }, []);
 
-  const getCardBill = (cardId, month, year) => {
-    const txs   = transactions.filter(t => {
-      if (t.cardId !== cardId) return false;
-      const d = new Date(t.date + 'T00:00:00');
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
-    });
+  // Fatura do cartão considerando o DIA DE FECHAMENTO (bug fix: antes usava só o
+  // mês-calendário e ignorava o closingDay, mesmo a UI mostrando "Fecha dia X").
+  // A fatura de (month/year) inclui as compras feitas DEPOIS do fechamento do mês
+  // anterior até o fechamento deste mês (inclusive).
+  const getCardBill = useCallback((cardId, month, year) => {
+    const card = cards.find(c => c.id === cardId);
+    const closingDay = card?.closingDay;
+    let txs;
+    if (closingDay && closingDay >= 1 && closingDay <= 28) {
+      const end   = new Date(year, month - 1, closingDay, 23, 59, 59, 999); // fechamento deste mês
+      const start = new Date(year, month - 2, closingDay, 23, 59, 59, 999); // fechamento do mês anterior
+      txs = transactions.filter(t => {
+        if (t.cardId !== cardId) return false;
+        const d = new Date(t.date + 'T00:00:00');
+        return d > start && d <= end;
+      });
+    } else {
+      // sem dia de fechamento válido: cai no comportamento por mês-calendário
+      txs = transactions.filter(t => {
+        if (t.cardId !== cardId) return false;
+        const d = new Date(t.date + 'T00:00:00');
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+      });
+    }
     const total = txs.reduce((s, t) => s + t.amount, 0);
     const paid  = txs.length > 0 && txs.every(t => t.paid);
     return { transactions: txs, total, paid };
-  };
+  }, [transactions, cards]);
 
-  const payCardBill = async (cardId, month, year) => {
+  const payCardBill = useCallback(async (cardId, month, year) => {
     const bill   = getCardBill(cardId, month, year);
     const unpaid = bill.transactions.filter(t => !t.paid);
     if (unpaid.length === 0) return;
     const ids = unpaid.map(t => t.id);
-    await supabase.from('transactions').update({ paid: true }).in('id', ids);
+    // bug fix: checa o erro do Supabase (antes era engolido e a UI mentia "pago").
+    const { error } = await supabase.from('transactions').update({ paid: true }).in('id', ids);
+    if (error) throw new Error(error.message);
     setTransactions(prev => prev.map(t => ids.includes(t.id) ? { ...t, paid: true } : t));
-  };
+  }, [getCardBill]);
 
   // ── Investimentos ─────────────────────────────────────────
 
-  const addInvestment = async (data) => {
+  const addInvestment = useCallback(async (data) => {
     const { data: row, error } = await supabase.from('investments').insert({
       user_id:       user.id,
       name:          data.name,
@@ -564,9 +606,9 @@ export function FinanceProvider({ children }) {
     const mapped = mapInvestment(row);
     setInvestments(prev => [mapped, ...prev]);
     return mapped;
-  };
+  }, [user]);
 
-  const updateInvestment = async (data) => {
+  const updateInvestment = useCallback(async (data) => {
     const { data: row, error } = await supabase.from('investments').update({
       name:          data.name,
       type:          data.type,
@@ -578,17 +620,17 @@ export function FinanceProvider({ children }) {
     const mapped = mapInvestment(row);
     setInvestments(prev => prev.map(i => i.id === data.id ? mapped : i));
     return mapped;
-  };
+  }, [user]);
 
-  const deleteInvestment = async (id) => {
+  const deleteInvestment = useCallback(async (id) => {
     const { error } = await supabase.from('investments').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     setInvestments(prev => prev.filter(i => i.id !== id));
-  };
+  }, [user]);
 
   // ── Exportação de dados (LGPD Art. 18 — Portabilidade) ────
 
-  const exportAllData = async () => {
+  const exportAllData = useCallback(async () => {
     const [txRes, catRes, projRes, cardRes, goalRes, invRes] = await Promise.all([
       supabase.from('transactions').select('*').eq('user_id', user.id),
       supabase.from('categories').select('*').eq('user_id', user.id),
@@ -597,8 +639,12 @@ export function FinanceProvider({ children }) {
       supabase.from('goals').select('*').eq('user_id', user.id),
       supabase.from('investments').select('*').eq('user_id', user.id),
     ]);
+    // Se alguma consulta falhar, sinaliza no export (evita exportar dados parciais
+    // rotulados como completos — questão de portabilidade da LGPD).
+    const anyError = [txRes, catRes, projRes, cardRes, goalRes, invRes].some(r => r.error);
     return {
       exportDate:   new Date().toISOString(),
+      complete:     !anyError,
       transactions: txRes.data  || [],
       categories:   catRes.data  || [],
       projects:     projRes.data || [],
@@ -606,11 +652,11 @@ export function FinanceProvider({ children }) {
       goals:        goalRes.data || [],
       investments:  invRes.data  || [],
     };
-  };
+  }, [user]);
 
   // ── Summaries ─────────────────────────────────────────────
 
-  const getSummary = (month, year) => {
+  const getSummary = useCallback((month, year) => {
     const excludedProjectIds = new Set(
       projects.filter(p => p.includeInOverview === false).map(p => p.id)
     );
@@ -625,7 +671,7 @@ export function FinanceProvider({ children }) {
     const income  = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, transactions: filtered };
-  };
+  }, [transactions, projects]);
 
   /**
    * Saldo acumulado: tudo que entrou menos tudo que saiu, contando todas as
@@ -634,7 +680,7 @@ export function FinanceProvider({ children }) {
    * Segue as mesmas regras do getSummary: ignora projetos fora do geral e
    * faturas de cartão ainda não pagas (obrigações futuras, não saída de caixa).
    */
-  const getCumulativeBalance = (month, year) => {
+  const getCumulativeBalance = useCallback((month, year) => {
     const excludedProjectIds = new Set(
       projects.filter(p => p.includeInOverview === false).map(p => p.id)
     );
@@ -650,67 +696,82 @@ export function FinanceProvider({ children }) {
       else expense += t.amount;
     }
     return { income, expense, balance: income - expense };
-  };
+  }, [transactions, projects]);
 
   /**
    * Retorna o total já comprometido (não pago) em um cartão,
    * considerando TODAS as transações em aberto — mês atual + parcelas futuras.
    * Usado para calcular o limite disponível real.
    */
-  const getCardUsedLimit = (cardId) =>
+  const getCardUsedLimit = useCallback((cardId) =>
     transactions
       .filter(t => t.cardId === cardId && !t.paid)
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + t.amount, 0)
+  , [transactions]);
 
-  const getProjectSummary = (projectId) => {
+  const getProjectSummary = useCallback((projectId) => {
     const txs     = transactions.filter(t => t.projectId === projectId);
     const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, transactions: txs };
-  };
+  }, [transactions]);
+
+  const clearUserCache = useCallback(() => { if (user) clearCache(user.id); }, [user]);
+
+  // Memoiza o objeto do contexto: evita recriar a "value" a cada render e, com os
+  // handlers em useCallback, impede re-renders em cascata de toda a árvore.
+  const value = useMemo(() => ({
+    transactions,
+    categories,
+    projects,
+    cards,
+    budgets,
+    recurring,
+    investments,
+    loading,
+    clearCache: clearUserCache,
+    addTransaction,
+    addInstallmentTransaction,
+    bulkAddTransactions,
+    bulkDeleteTransactions,
+    updateTransaction,
+    deleteTransaction,
+    addCategory,
+    deleteCategory,
+    setBudget,
+    deleteBudget,
+    addRecurring,
+    updateRecurring,
+    deleteRecurring,
+    toggleRecurring,
+    addProject,
+    updateProject,
+    deleteProject,
+    addCard,
+    updateCard,
+    deleteCard,
+    getCardBill,
+    getCardUsedLimit,
+    payCardBill,
+    addInvestment,
+    updateInvestment,
+    deleteInvestment,
+    exportAllData,
+    getSummary,
+    getCumulativeBalance,
+    getProjectSummary,
+  }), [
+    transactions, categories, projects, cards, budgets, recurring, investments, loading,
+    clearUserCache, addTransaction, addInstallmentTransaction, bulkAddTransactions,
+    bulkDeleteTransactions, updateTransaction, deleteTransaction, addCategory, deleteCategory,
+    setBudget, deleteBudget, addRecurring, updateRecurring, deleteRecurring, toggleRecurring,
+    addProject, updateProject, deleteProject, addCard, updateCard, deleteCard, getCardBill,
+    getCardUsedLimit, payCardBill, addInvestment, updateInvestment, deleteInvestment,
+    exportAllData, getSummary, getCumulativeBalance, getProjectSummary,
+  ]);
 
   return (
-    <FinanceContext.Provider value={{
-      transactions,
-      categories,
-      projects,
-      cards,
-      budgets,
-      recurring,
-      loading,
-      clearCache: () => user && clearCache(user.id),
-      addTransaction,
-      addInstallmentTransaction,
-      bulkAddTransactions,
-      bulkDeleteTransactions,
-      updateTransaction,
-      deleteTransaction,
-      addCategory,
-      deleteCategory,
-      setBudget,
-      deleteBudget,
-      addRecurring,
-      updateRecurring,
-      deleteRecurring,
-      toggleRecurring,
-      addProject,
-      updateProject,
-      deleteProject,
-      addCard,
-      updateCard,
-      deleteCard,
-      getCardBill,
-      getCardUsedLimit,
-      payCardBill,
-      investments,
-      addInvestment,
-      updateInvestment,
-      deleteInvestment,
-      exportAllData,
-      getSummary,
-      getCumulativeBalance,
-      getProjectSummary,
-    }}>
+    <FinanceContext.Provider value={value}>
       {children}
     </FinanceContext.Provider>
   );
