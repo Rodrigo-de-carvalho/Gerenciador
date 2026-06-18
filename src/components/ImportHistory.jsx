@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, RotateCcw, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
+import { useI18n } from '../i18n';
 import { getImportHistory, markUndone, removeFromHistory } from '../hooks/useImportHistory';
 
 function fmtDate(isoStr) {
@@ -11,6 +12,7 @@ function fmtDate(isoStr) {
 
 export default function ImportHistory({ onClose }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { bulkDeleteTransactions } = useFinance();
   const [entries, setEntries] = useState([]);
   const [undoingId, setUndoingId] = useState(null);
@@ -44,17 +46,17 @@ export default function ImportHistory({ onClose }) {
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: 520 }}>
         <div className="modal-head">
-          <h2>Histórico de importações</h2>
-          <button className="icon-btn" onClick={onClose}><X size={15} /></button>
+          <h2>{t('importHistory.title')}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}><X size={15} /></button>
         </div>
 
         <div className="modal-form" style={{ gap: 10, maxHeight: 480, overflowY: 'auto' }}>
           {entries.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-3)' }}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>📂</div>
-              <div style={{ fontSize: 13 }}>Nenhuma importação registrada ainda.</div>
+              <div style={{ fontSize: 13 }}>{t('importHistory.empty')}</div>
               <div style={{ fontSize: 12, marginTop: 6 }}>
-                Importações futuras aparecerão aqui.
+                {t('importHistory.emptyHint')}
               </div>
             </div>
           ) : (
@@ -73,8 +75,8 @@ export default function ImportHistory({ onClose }) {
                 {/* Icon */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                  background: entry.undone ? 'var(--chip)' : 'rgba(199,242,132,0.1)',
-                  border: `1px solid ${entry.undone ? 'var(--line)' : 'rgba(199,242,132,0.25)'}`,
+                  background: entry.undone ? 'var(--chip)' : 'rgba(45,212,167,0.1)',
+                  border: `1px solid ${entry.undone ? 'var(--line)' : 'rgba(45,212,167,0.25)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 16,
                 }}>
@@ -87,16 +89,16 @@ export default function ImportHistory({ onClose }) {
                     {entry.bankLabel}
                     {entry.undone && (
                       <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: 'var(--text-3)', background: 'var(--chip)', padding: '1px 6px', borderRadius: 4 }}>
-                        desfeito
+                        {t('importHistory.undone')}
                       </span>
                     )}
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-                    {entry.count} transações · {fmtDate(entry.timestamp)}
+                    {entry.count} {t('importHistory.transactions')} · {fmtDate(entry.timestamp)}
                   </div>
                   {errorId === entry.id && (
                     <div style={{ fontSize: 11.5, color: 'var(--negative)', marginTop: 4 }}>
-                      Erro ao desfazer. Tente novamente.
+                      {t('importHistory.errUndo')}
                     </div>
                   )}
                 </div>
@@ -107,7 +109,8 @@ export default function ImportHistory({ onClose }) {
                     className="icon-btn"
                     style={{ width: 28, height: 28, color: 'var(--text-3)' }}
                     onClick={() => handleRemove(entry)}
-                    title="Remover do histórico"
+                    title={t('importHistory.removeFromHistory')}
+                    aria-label={t('importHistory.removeFromHistory')}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -120,13 +123,13 @@ export default function ImportHistory({ onClose }) {
                     }}
                     onClick={() => handleUndo(entry)}
                     disabled={!!undoingId}
-                    title={`Desfaz as ${entry.count} transações desta importação`}
+                    title={t('importHistory.undoHintFn')(entry.count)}
                   >
                     {undoingId === entry.id
                       ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
                       : <RotateCcw size={13} />
                     }
-                    Desfazer
+                    {t('importHistory.undo')}
                   </button>
                 ) : (
                   <CheckCircle2 size={15} style={{ color: 'var(--positive)', flexShrink: 0 }} />
@@ -138,7 +141,7 @@ export default function ImportHistory({ onClose }) {
 
         <div className="modal-actions">
           <button className="btn primary" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
-            Fechar
+            {t('common.close')}
           </button>
         </div>
       </div>

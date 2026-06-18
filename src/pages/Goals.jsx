@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Target, X, Edit2, Trash2, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { Plus, Target, X, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useGoals } from '../context/GoalContext';
 import { usePrivacy } from '../context/PrivacyContext';
@@ -10,7 +10,7 @@ import Ring from '../components/Ring';
 import { useI18n } from '../i18n';
 
 const ICONS = ['🎯','🏠','✈️','📚','🚗','💻','🌱','🏋️','💰','🛹','🏖️','🎓','💍','🏗️','🎵','⚽','🎮','🏢','🔬','🛡️'];
-const COLORS = ['#C7F284','#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16'];
+const COLORS = ['#2DD4A7','#3b82f6','#22c55e','#f97316','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981','#6366f1','#84cc16'];
 
 function GoalModal({ goal, onClose, onSave }) {
   const { t } = useI18n();
@@ -24,7 +24,7 @@ function GoalModal({ goal, onClose, onSave }) {
     targetAmount: goal.targetAmount ? String(goal.targetAmount) : '',
     deadline: goal.deadline || '',
   } : {
-    name: '', description: '', icon: '🎯', color: '#C7F284',
+    name: '', description: '', icon: '🎯', color: '#2DD4A7',
     includeInOverview: false, targetAmount: '', deadline: '',
   });
 
@@ -128,14 +128,16 @@ function GoalCard({ goal, onEdit, onDelete }) {
   const ptxs = transactions.filter(t => t.projectId === goal.id);
   const income = ptxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = ptxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const net = income - expense;
 
   const target = meta?.targetAmount;
   const deadline = meta?.deadline;
   const pct = target ? Math.min((income / target) * 100, 100) : (ptxs.length > 0 ? 50 : 0);
 
   const remaining = target ? Math.max(target - income, 0) : null;
-  const daysLeft = deadline ? Math.ceil((new Date(deadline) - new Date()) / 86400000) : null;
+  // dias restantes comparando meia-noite local com meia-noite local (sem erro de fuso)
+  const daysLeft = deadline
+    ? Math.round((new Date(deadline + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000)
+    : null;
 
   return (
     <div className="card" style={{ padding: '18px 20px' }}>
@@ -352,7 +354,7 @@ export default function Goals() {
 
       {deleteConfirm && (
         <ConfirmModal
-          title={`${t('common.delete')} ${t('goals.goal') || 'meta'}`}
+          title={`${t('common.delete')} ${t('goals.goal')}`}
           message={t('goals.deleteGoalConfirm')}
           confirmLabel={t('common.delete')}
           onConfirm={() => handleDelete(deleteConfirm)}

@@ -59,12 +59,12 @@ function CardFormModal({ card, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('cards.cardName')}</label>
-              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Nubank Ultraviolet" maxLength={60} />
+              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder={t('cards.cardNamePlaceholder')} maxLength={60} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('cards.limit')}</label>
-                <input type="number" className="field-input" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder="Ex: 5000" min="0" step="0.01" />
+                <input type="number" className="field-input" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder={t('cards.limitPlaceholder')} min="0" step="0.01" />
               </div>
               <div className="field">
                 <label className="field-label">{t('cards.closingDay')}</label>
@@ -226,7 +226,7 @@ export default function Cards() {
                 <div key={num} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <span style={{
                     flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
-                    background: 'rgba(199,242,132,0.15)', border: '1px solid rgba(199,242,132,0.3)',
+                    background: 'rgba(45,212,167,0.15)', border: '1px solid rgba(45,212,167,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700, color: 'var(--accent)',
                   }}>{num}</span>
@@ -302,9 +302,9 @@ export default function Cards() {
                                   {isInstallment && (
                                     <span style={{
                                       fontSize: 10.5, fontWeight: 600, padding: '1px 6px', borderRadius: 5,
-                                      background: isLast ? 'rgba(134,239,172,0.15)' : 'rgba(199,242,132,0.12)',
+                                      background: isLast ? 'rgba(134,239,172,0.15)' : 'rgba(45,212,167,0.12)',
                                       color: isLast ? 'var(--positive)' : 'var(--accent)',
-                                      border: `1px solid ${isLast ? 'rgba(134,239,172,0.3)' : 'rgba(199,242,132,0.25)'}`,
+                                      border: `1px solid ${isLast ? 'rgba(134,239,172,0.3)' : 'rgba(45,212,167,0.25)'}`,
                                     }}>
                                       {tx.installmentCurrent}/{tx.installmentTotal}{isLast ? ' ✓' : ''}
                                     </span>
@@ -412,8 +412,8 @@ export default function Cards() {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => { setEditCard(card); setShowForm(true); }} title="Editar"><Pencil size={12} /></button>
-                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--negative)' }} onClick={() => setShowDeleteConfirm(card.id)} title="Excluir"><Trash2 size={12} /></button>
+                      <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => { setEditCard(card); setShowForm(true); }} title={t('common.edit')} aria-label={t('common.edit')}><Pencil size={12} /></button>
+                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--negative)' }} onClick={() => setShowDeleteConfirm(card.id)} title={t('common.delete')} aria-label={t('common.delete')}><Trash2 size={12} /></button>
                     </div>
                   </div>
                 </div>

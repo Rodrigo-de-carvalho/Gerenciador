@@ -37,23 +37,23 @@
   .btn-success {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 8px 16px; border-radius: 8px;
-    background: rgba(199, 242, 132, 0.12); color: var(--positive);
-    border: 1px solid rgba(199, 242, 132, 0.2);
+    background: rgba(45, 212, 167, 0.12); color: var(--positive);
+    border: 1px solid rgba(45, 212, 167, 0.2);
     font-weight: 500; font-size: 13.5px; font-family: inherit;
     cursor: pointer; transition: background 120ms; line-height: 1;
   }
-  .btn-success:hover:not(:disabled) { background: rgba(199, 242, 132, 0.2); }
+  .btn-success:hover:not(:disabled) { background: rgba(45, 212, 167, 0.2); }
   .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-danger {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 8px 16px; border-radius: 8px;
-    background: rgba(255, 122, 90, 0.10); color: var(--negative);
-    border: 1px solid rgba(255, 122, 90, 0.18);
+    background: rgba(251, 113, 133, 0.10); color: var(--negative);
+    border: 1px solid rgba(251, 113, 133, 0.18);
     font-weight: 500; font-size: 13.5px; font-family: inherit;
     cursor: pointer; transition: background 120ms; line-height: 1;
   }
-  .btn-danger:hover:not(:disabled) { background: rgba(255, 122, 90, 0.18); }
+  .btn-danger:hover:not(:disabled) { background: rgba(251, 113, 133, 0.18); }
   .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-icon {
@@ -105,51 +105,53 @@
 
 :root,
 [data-theme="dark"] {
-  --bg: #0E0D0B;
-  --bg-2: #131210;
-  --surface: #1A1815;
-  --surface-2: #211E1A;
-  --surface-3: #2A2622;
-  --line: #29251F;
-  --line-2: #36312A;
-  --text: #EFEAE0;
-  --text-2: #B7AF9F;
-  --text-3: #7C7567;
-  --text-4: #4A4438;
-  --accent: #C7F284;
-  --accent-ink: #0E0D0B;
-  --positive: #C7F284;
-  --negative: #FF7A5A;
-  --warn: #FFC04A;
-  --info: #8FB7FF;
-  --chip: rgba(255, 248, 230, 0.06);
-  --chip-strong: rgba(255, 248, 230, 0.10);
-  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 30px -10px rgba(0,0,0,0.55);
-  --grain-opacity: 0.06;
+  --bg: #0A0E14;
+  --bg-2: #0E131B;
+  --surface: #141B25;
+  --surface-2: #1A2330;
+  --surface-3: #232E3D;
+  --line: #1E2733;
+  --line-2: #2E3A49;
+  --text: #F1F6FC;
+  --text-2: #AAB7C8;
+  --text-3: #6B7889;
+  --text-4: #454F5E;
+  --accent: #2DD4A7;
+  --accent-2: #14B88E;
+  --accent-ink: #052017;
+  --positive: #34D399;
+  --negative: #FB7185;
+  --warn: #FBBF24;
+  --info: #60A5FA;
+  --chip: rgba(150, 200, 255, 0.06);
+  --chip-strong: rgba(150, 200, 255, 0.11);
+  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -16px rgba(0,0,0,0.7);
+  --grain-opacity: 0.04;
 }
 
 [data-theme="light"] {
-  --bg: #F4F0E6;
-  --bg-2: #EDE7D8;
-  --surface: #FBF8F0;
-  --surface-2: #F4EFE2;
-  --surface-3: #EAE3D0;
-  --line: #DDD5BF;
-  --line-2: #CFC6AC;
-  --text: #15130E;
-  --text-2: #5E5849;
-  --text-3: #908872;
-  --text-4: #B7AF94;
-  --accent: #2D5C3E;
-  --accent-ink: #F4F0E6;
-  --positive: #2D5C3E;
-  --negative: #B8431F;
-  --warn: #B57B17;
-  --info: #2D4A8C;
-  --chip: rgba(20,18,14,0.05);
-  --chip-strong: rgba(20,18,14,0.09);
-  --shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 12px 30px -12px rgba(60,50,30,0.18);
-  --grain-opacity: 0.04;
+  --bg: #F4F7FB;
+  --bg-2: #EDF1F7;
+  --surface: #FFFFFF;
+  --surface-2: #F4F7FB;
+  --surface-3: #E8EEF6;
+  --line: #E2E8F1;
+  --line-2: #CFD8E5;
+  --text: #0C121C;
+  --text-2: #475264;
+  --text-3: #76829A;
+  --text-4: #A6B0C0;
+  --accent: #0E9F77;
+  --accent-2: #0B7E5F;
+  --accent-ink: #FFFFFF;
+  --positive: #0E9F77;
+  --negative: #E11D48;
+  --warn: #B7791F;
+  --info: #2563EB;
+  --chip: rgba(15,30,55,0.05);
+  --chip-strong: rgba(15,30,55,0.09);
+  --shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 14px 34px -14px rgba(30,50,90,0.18);
+  --grain-opacity: 0.03;
 }
 
 /* film grain */
@@ -229,25 +231,24 @@
   padding: 6px 8px 22px;
 }
 .brand-mark {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  color: #fff;
   display: grid;
   place-items: center;
-  font-family: 'Instrument Serif', serif;
-  font-style: italic;
-  font-size: 22px;
   line-height: 1;
-  padding-top: 2px;
   flex-shrink: 0;
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--accent) 65%, transparent);
 }
+.brand-mark svg { width: 19px; height: 19px; }
 .brand-name {
-  font-family: 'Instrument Serif', serif;
-  font-size: 22px;
-  letter-spacing: -0.01em;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
-.brand-name em { font-style: italic; color: var(--text-2); font-weight: 400; }
+.brand-name em { font-style: normal; color: var(--accent); font-weight: 800; }
 
 .nav-section-label {
   font-size: 10px;
@@ -514,17 +515,17 @@
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  color: #F2EFE6;
+  color: #EAF2FF;
   box-shadow: var(--shadow);
 }
-.cc.cc-1 { background: radial-gradient(120% 100% at 0% 0%, #2D2A24 0%, #0E0D0B 65%); }
-.cc.cc-2 { background: radial-gradient(120% 100% at 100% 0%, #4D3F22 0%, #1B1812 70%); color: #F4ECD2; }
-.cc.cc-3 { background: radial-gradient(120% 100% at 0% 100%, #2A4234 0%, #0F1410 70%); color: #DDE9DC; }
-.cc.cc-4 { background: radial-gradient(120% 100% at 50% 0%, #3D2A5C 0%, #150E22 65%); color: #EAD9FF; }
+.cc.cc-1 { background: radial-gradient(130% 110% at 0% 0%, #0F3D33 0%, #0A1722 70%); color: #DBF7EE; }
+.cc.cc-2 { background: radial-gradient(130% 110% at 100% 0%, #1E3A5F 0%, #0B1422 72%); color: #DCE9FB; }
+.cc.cc-3 { background: radial-gradient(130% 110% at 0% 100%, #3A2A5E 0%, #120E22 72%); color: #E7DCFB; }
+.cc.cc-4 { background: radial-gradient(130% 110% at 50% 0%, #163A4C 0%, #0A1620 70%); color: #D7EEF6; }
 .cc-num { font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.16em; }
 .cc-name { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; opacity: 0.7; }
-.cc-brand { font-family: 'Instrument Serif', serif; font-size: 20px; font-style: italic; }
-.cc-bal { font-family: 'Instrument Serif', serif; font-size: 28px; letter-spacing: -0.02em; }
+.cc-brand { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+.cc-bal { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
 
 /* ============ utility grid ============ */
 .grid-cifra { display: grid; gap: 16px; }
@@ -701,7 +702,7 @@
   transition: background 120ms;
 }
 .icon-pick:hover { background: var(--chip-strong); }
-.icon-pick.sel { background: rgba(199,242,132,0.12); border-color: var(--accent); }
+.icon-pick.sel { background: rgba(45,212,167,0.12); border-color: var(--accent); }
 
 .color-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .color-pick {
@@ -814,4 +815,55 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+/* ============================================================
+   FLUIDEZ — transições suaves, feedback de toque e entrada do conteúdo
+   ============================================================ */
+
+/* Troca de tema (claro/escuro) sem "piscar": anima cor/fundo/borda. */
+.app-shell, .sidebar, .topbar, .main, .card, .proj-card, .cc,
+.btn, .btn-primary, .btn-secondary, .nav-item, .chip, .modal-box,
+.field-input, .input-field, .select-field {
+  transition: background-color 200ms ease, border-color 200ms ease,
+              color 200ms ease, box-shadow 200ms ease, transform 140ms ease;
+}
+
+/* Feedback de toque nos botões (pequeno "press"). */
+.btn:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.icon-btn:active,
+.chip:active { transform: scale(0.96); }
+
+/* Cartões clicáveis sobem levemente no hover. */
+.proj-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px rgba(0,0,0,0.5); }
+
+/* Itens de navegação deslizam suavemente. */
+.nav-item:hover { transform: translateX(2px); }
+
+/* Entrada suave do conteúdo da página ao trocar de aba. */
+.scroll > * { animation: cifra-fade-up 320ms cubic-bezier(0.22, 0.8, 0.2, 1) both; }
+@keyframes cifra-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Acessibilidade: foco de teclado visível (não aparece em clique de mouse). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) { outline: none; }
+
+/* Acessibilidade: respeita quem prefere menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

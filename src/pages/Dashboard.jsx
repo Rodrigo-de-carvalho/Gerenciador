@@ -60,14 +60,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 function WelcomeCard({ onAddTransaction, onNavigate }) {
+  const { t } = useI18n();
   return (
     <div className="welcome-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
         <div style={{ fontSize: 28 }}>👋</div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Bem-vindo ao Cifra!</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{t('dashboard.welcomeTitle')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>
-            Veja por onde começar:
+            {t('dashboard.welcomeSubtitle')}
           </div>
         </div>
       </div>
@@ -75,9 +76,9 @@ function WelcomeCard({ onAddTransaction, onNavigate }) {
         <button className="welcome-step" onClick={onAddTransaction}>
           <div className="welcome-step-num">1</div>
           <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Registre seu primeiro gasto ou receita</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t('dashboard.welcomeStep1Title')}</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              Clique aqui para adicionar uma transação agora
+              {t('dashboard.welcomeStep1Desc')}
             </div>
           </div>
           <ChevronRight size={14} style={{ color: 'var(--text-4)', marginLeft: 'auto', flexShrink: 0 }} />
@@ -85,9 +86,9 @@ function WelcomeCard({ onAddTransaction, onNavigate }) {
         <button className="welcome-step" onClick={() => onNavigate('categories')}>
           <div className="welcome-step-num" style={{ background: 'var(--chip-strong)', color: 'var(--text-2)' }}>2</div>
           <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Personalize suas categorias</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t('dashboard.welcomeStep2Title')}</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              Crie categorias para organizar seus gastos (Mercado, Farmácia, etc.)
+              {t('dashboard.welcomeStep2Desc')}
             </div>
           </div>
           <ChevronRight size={14} style={{ color: 'var(--text-4)', marginLeft: 'auto', flexShrink: 0 }} />
@@ -95,9 +96,9 @@ function WelcomeCard({ onAddTransaction, onNavigate }) {
         <button className="welcome-step" onClick={() => onNavigate('transactions')}>
           <div className="welcome-step-num" style={{ background: 'var(--chip-strong)', color: 'var(--text-2)' }}>3</div>
           <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Importe do seu banco (opcional)</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t('dashboard.welcomeStep3Title')}</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              Importa CSV do Nubank, Inter, Itaú e mais — tudo de uma vez
+              {t('dashboard.welcomeStep3Desc')}
             </div>
           </div>
           <ChevronRight size={14} style={{ color: 'var(--text-4)', marginLeft: 'auto', flexShrink: 0 }} />
@@ -119,13 +120,13 @@ export default function Dashboard({ onNavigate }) {
 
   const { income, expense, balance, transactions: monthTxs } = useMemo(
     () => getSummary(month, year),
-    [transactions, month, year]
+    [getSummary, month, year]
   );
 
   // Saldo total acumulado: carrega de mês em mês em vez de zerar na virada.
   const totalBalance = useMemo(
     () => getCumulativeBalance(month, year).balance,
-    [transactions, projects, month, year]
+    [getCumulativeBalance, month, year]
   );
 
   const prevMonth = () => {
@@ -149,21 +150,22 @@ export default function Dashboard({ onNavigate }) {
       data.push({ name: MONTH_NAMES[m - 1], income: sum.income, expense: sum.expense });
     }
     return data;
-  }, [transactions, month, year]);
+  }, [getSummary, MONTH_NAMES, month, year]);
 
   const catBreakdown = useMemo(() => {
+    const othersLabel = t('common.others');
     const map = {};
-    monthTxs.filter(t => t.type === 'expense').forEach(t => {
-      const cat = categories.find(c => c.id === t.categoryId);
-      const name = cat?.name || 'Outros';
+    monthTxs.filter(tx => tx.type === 'expense').forEach(tx => {
+      const cat = categories.find(c => c.id === tx.categoryId);
+      const name = cat?.name || othersLabel;
       const color = cat?.color || '#6b7280';
       if (!map[name]) map[name] = { name, color, value: 0 };
-      map[name].value += t.amount;
+      map[name].value += tx.amount;
     });
     const arr = Object.values(map).sort((a, b) => b.value - a.value).slice(0, 6);
     const total = arr.reduce((s, c) => s + c.value, 0);
     return arr.map(c => ({ ...c, pct: total > 0 ? Math.round(c.value / total * 100) : 0 }));
-  }, [monthTxs, categories]);
+  }, [monthTxs, categories, t]);
 
   const recentTxs = useMemo(
     () => [...monthTxs].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),

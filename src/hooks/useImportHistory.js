@@ -32,11 +32,13 @@ function save(userId, list) {
   } catch { /* quota exceeded — ignore */ }
 }
 
-/** Add a new import batch entry. Called right after bulkAddTransactions succeeds. */
+/** Add a new import batch entry. Called right after bulkAddTransactions succeeds.
+ *  Returns the new entry id (para o "desfazer" inline saber qual marcar). */
 export function recordImport(userId, { bank, bankLabel, count, txIds, cardId }) {
   const list = load(userId);
+  const id = `imp_${Date.now()}`;
   list.unshift({
-    id:        `imp_${Date.now()}`,
+    id,
     timestamp: new Date().toISOString(),
     bank,
     bankLabel,
@@ -46,6 +48,7 @@ export function recordImport(userId, { bank, bankLabel, count, txIds, cardId }) 
     cardId:    cardId || null,
   });
   save(userId, list);
+  return id;
 }
 
 /** Mark an import as undone (called after bulkDeleteTransactions succeeds). */

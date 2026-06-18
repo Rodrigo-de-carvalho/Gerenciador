@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Trash2, Loader2, AlertCircle } from 'lucide-react';
 
 /**
@@ -26,6 +26,15 @@ export default function ConfirmModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const cancelRef = useRef(null);
+
+  // Acessibilidade: fecha com Esc e foca o botão Cancelar ao abrir.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape' && !loading) onClose(); };
+    document.addEventListener('keydown', onKey);
+    cancelRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [loading, onClose]);
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -41,11 +50,16 @@ export default function ConfirmModal({
   };
 
   return (
-    <div className="modal-overlay">
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
+    >
       <div className="modal-box" style={{ maxWidth: 380 }}>
         <div className="modal-head">
           <h2 style={danger ? { color: 'var(--negative)' } : undefined}>{title}</h2>
-          <button className="icon-btn" onClick={onClose} disabled={loading}>
+          <button className="icon-btn" onClick={onClose} disabled={loading} aria-label="Fechar">
             <X size={15} />
           </button>
         </div>
@@ -71,6 +85,7 @@ export default function ConfirmModal({
 
         <div className="modal-actions">
           <button
+            ref={cancelRef}
             className="btn"
             style={{ flex: 1, justifyContent: 'center' }}
             onClick={onClose}

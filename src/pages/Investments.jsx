@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, X, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { usePrivacy } from '../context/PrivacyContext';
 import { useFinance } from '../context/FinanceContext';
@@ -8,13 +8,12 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useI18n } from '../i18n';
 
 const TYPES = [
-  { id: 'acoes',      label: 'Ações',       color: '#C7F284' },
-  { id: 'fiis',       label: 'FIIs',        color: '#8FB7FF' },
+  { id: 'acoes',      label: 'Ações',       color: '#2DD4A7' },
+  { id: 'fiis',       label: 'FIIs',        color: '#60A5FA' },
   { id: 'renda_fixa', label: 'Renda Fixa',  color: '#FFC04A' },
-  { id: 'crypto',     label: 'Cripto',      color: '#FF7A5A' },
+  { id: 'crypto',     label: 'Cripto',      color: '#FB7185' },
   { id: 'outros',     label: 'Outros',      color: '#B4A0FF' },
 ];
-const typeLabel = (id) => TYPES.find(t => t.id === id)?.label || id;
 const typeColor = (id) => TYPES.find(t => t.id === id)?.color || '#888';
 
 const emptyForm = { name: '', type: 'acoes', invested: '', currentValue: '', notes: '' };
@@ -58,7 +57,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('investments.nameTicker')}</label>
-              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: PETR4, Tesouro Selic, Bitcoin" required maxLength={60} />
+              <input className="field-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('investments.nameTickerPlaceholder')} required maxLength={60} />
             </div>
 
             <div className="field">
@@ -139,7 +138,7 @@ export default function Investments() {
       map[inv.type] += inv.currentValue;
     });
     return TYPES.filter(tp => map[tp.id] > 0).map(tp => ({ name: t('investments.' + tp.id), value: map[tp.id], color: tp.color, id: tp.id }));
-  }, [investments]);
+  }, [investments, t]);
 
   const filtered = filterType === 'all' ? investments : investments.filter(i => i.type === filterType);
 
@@ -162,10 +161,10 @@ export default function Investments() {
           {/* Summary KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             {[
-              { label: 'Total Investido', value: totals.invested, color: 'var(--text)' },
-              { label: 'Valor Atual', value: totals.current, color: 'var(--info)' },
-              { label: 'Retorno (R$)', value: returnAbs, color: returnAbs >= 0 ? 'var(--positive)' : 'var(--negative)' },
-              { label: 'Rentabilidade', raw: `${returnAbs >= 0 ? '+' : ''}${returnPct}%`, color: returnAbs >= 0 ? 'var(--positive)' : 'var(--negative)' },
+              { label: t('investments.totalInvested'), value: totals.invested, color: 'var(--text)' },
+              { label: t('investments.currentValue'), value: totals.current, color: 'var(--info)' },
+              { label: t('investments.returnBRL'), value: returnAbs, color: returnAbs >= 0 ? 'var(--positive)' : 'var(--negative)' },
+              { label: t('investments.profitability'), raw: `${returnAbs >= 0 ? '+' : ''}${returnPct}%`, color: returnAbs >= 0 ? 'var(--positive)' : 'var(--negative)' },
             ].map((kpi, i) => (
               <div key={i} className="card" style={{ padding: '16px 18px' }}>
                 <div className="t-label" style={{ marginBottom: 8 }}>{kpi.label}</div>
@@ -180,7 +179,7 @@ export default function Investments() {
           {allocation.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="card">
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 12 }}>Alocação por tipo</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 12 }}>{t('investments.allocationByType')}</div>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie data={allocation} cx="50%" cy="50%" outerRadius={80} innerRadius={46} dataKey="value" paddingAngle={3}>
@@ -191,7 +190,7 @@ export default function Investments() {
                 </ResponsiveContainer>
               </div>
               <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Distribuição</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>{t('investments.distribution')}</div>
                 {allocation.map((a) => {
                   const pct = totals.current > 0 ? (a.value / totals.current * 100).toFixed(1) : 0;
                   return (
@@ -219,12 +218,12 @@ export default function Investments() {
       {investments.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button className={`chip${filterType === 'all' ? ' active' : ''}`} onClick={() => setFilterType('all')}>
-            Todos ({investments.length})
+            {t('investments.allFilter')} ({investments.length})
           </button>
-          {TYPES.filter(t => investments.some(i => i.type === t.id)).map(t => (
-            <button key={t.id} className={`chip${filterType === t.id ? ' active' : ''}`} onClick={() => setFilterType(t.id)}>
-              <span style={{ width: 6, height: 6, borderRadius: 50, background: t.color, display: 'inline-block' }} />
-              {t.label}
+          {TYPES.filter(tp => investments.some(i => i.type === tp.id)).map(tp => (
+            <button key={tp.id} className={`chip${filterType === tp.id ? ' active' : ''}`} onClick={() => setFilterType(tp.id)}>
+              <span style={{ width: 6, height: 6, borderRadius: 50, background: tp.color, display: 'inline-block' }} />
+              {t('investments.' + tp.id)}
             </button>
           ))}
         </div>
@@ -236,28 +235,28 @@ export default function Investments() {
           <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <TrendingUp size={24} style={{ color: 'var(--text-3)' }} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhum ativo cadastrado</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('investments.noAssetsFound')}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24, maxWidth: 320, margin: '0 auto 24px' }}>
-            Acompanhe sua carteira: ações, FIIs, renda fixa, cripto e mais.
+            {t('investments.noAssetsDesc')}
           </p>
           <button className="btn primary" onClick={() => setShowModal(true)}>
-            <Plus size={14} /> Adicionar primeiro ativo
+            <Plus size={14} /> {t('investments.addFirstAsset')}
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)', fontSize: 13 }}>
-          Nenhum ativo nesta categoria.
+          {t('investments.noCategoryAssets')}
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="tx-table">
             <thead>
               <tr>
-                <th>Ativo</th>
-                <th>Tipo</th>
-                <th style={{ textAlign: 'right' }}>Investido</th>
-                <th style={{ textAlign: 'right' }}>Atual</th>
-                <th style={{ textAlign: 'right' }}>Retorno</th>
+                <th>{t('investments.assetHeader')}</th>
+                <th>{t('investments.typeHeader')}</th>
+                <th style={{ textAlign: 'right' }}>{t('investments.investedHeader')}</th>
+                <th style={{ textAlign: 'right' }}>{t('investments.currentHeader')}</th>
+                <th style={{ textAlign: 'right' }}>{t('investments.returnHeader')}</th>
                 <th style={{ textAlign: 'right' }}>%</th>
                 <th />
               </tr>
@@ -275,7 +274,7 @@ export default function Investments() {
                     </td>
                     <td>
                       <span style={{ fontSize: 11.5, padding: '2px 8px', borderRadius: 999, background: typeColor(inv.type) + '18', color: typeColor(inv.type) }}>
-                        {typeLabel(inv.type)}
+                        {t('investments.' + inv.type)}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }} className="t-num">{privacy ? '••••' : formatCurrency(inv.invested)}</td>
@@ -288,8 +287,8 @@ export default function Investments() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                        <button className="icon-btn" onClick={() => { setEditInv(inv); }} title="Editar"><Edit2 size={13} /></button>
-                        <button className="icon-btn" onClick={() => setDeleteConfirm(inv.id)} title="Excluir" style={{ color: 'var(--negative)' }}><Trash2 size={13} /></button>
+                        <button className="icon-btn" onClick={() => { setEditInv(inv); }} title={t('common.edit')} aria-label={t('common.edit')}><Edit2 size={13} /></button>
+                        <button className="icon-btn" onClick={() => setDeleteConfirm(inv.id)} title={t('common.delete')} aria-label={t('common.delete')} style={{ color: 'var(--negative)' }}><Trash2 size={13} /></button>
                       </div>
                     </td>
                   </tr>
@@ -306,7 +305,7 @@ export default function Investments() {
       {deleteConfirm && (
         <ConfirmModal
           title={t('investments.deleteInvestment')}
-          message="Essa ação não pode ser desfeita."
+          message={t('investments.deleteNotReversible')}
           confirmLabel={t('common.delete')}
           onConfirm={() => deleteInvestment(deleteConfirm)}
           onClose={() => setDeleteConfirm(null)}

@@ -37,7 +37,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
   const { privacy, setPrivacy } = usePrivacy();
   const { user, signOut } = useAuth();
   const { clearCache } = useFinance();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
 
   const PAGE_TITLES = {
     dashboard:    { title: t('nav.dashboard'),    sub: t('pageSub.dashboard') },
@@ -72,7 +72,12 @@ export default function Layout({ currentPage, onNavigate, children }) {
       <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
         {/* Brand */}
         <div className="brand">
-          <div className="brand-mark">c</div>
+          <div className="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M16.8 7.4a6.6 6.6 0 1 0 .2 9.1" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+              <circle cx="17.4" cy="12" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
           <span className="brand-name">Cifra<em>.</em></span>
           <button
             className="icon-btn"
@@ -136,7 +141,14 @@ export default function Layout({ currentPage, onNavigate, children }) {
         </a>
 
         {/* User card */}
-        <div className="user-card" onClick={() => setShowSettings(true)} title="Configurações">
+        <button
+          type="button"
+          className="user-card"
+          onClick={() => setShowSettings(true)}
+          title="Configurações"
+          aria-label={t('settings.configSettings')}
+          style={{ width: '100%', border: 'none', background: 'none', font: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+        >
           <div className="avatar">{userInitial}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -145,7 +157,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
             <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('settings.configSettings')}</div>
           </div>
           <Settings size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
-        </div>
+        </button>
       </aside>
 
       {/* Main */}

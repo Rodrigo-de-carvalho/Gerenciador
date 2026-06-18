@@ -153,7 +153,7 @@ export default function Assistant() {
       recentMonths,
       recentTransactions,
     });
-  }, [transactions, categories, projects, cards, now.month, now.year]);
+  }, [transactions, categories, projects, cards, now.month, now.year, getCardBill, getSummary]);
 
   if (!aiEnabled) {
     return (
@@ -197,7 +197,7 @@ export default function Assistant() {
           ? projects.find(p => p.name.toLowerCase() === args.project_name.toLowerCase())
           : null;
 
-        const result = await addTransaction({
+        await addTransaction({
           description: args.description,
           amount: Math.abs(Number(args.amount)),
           type: args.type,
@@ -327,9 +327,14 @@ export default function Assistant() {
   // ── Chamada à API ────────────────────────────────────────────────────────────
 
   const callApi = async (history) => {
+    // Envia o token da sessão — a API /api/chat agora exige autenticação.
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
       body: JSON.stringify({ messages: history, systemPrompt }),
     });
     const data = await res.json();
