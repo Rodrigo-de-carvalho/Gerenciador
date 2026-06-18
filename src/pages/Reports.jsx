@@ -11,6 +11,7 @@ import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import { exportToExcel, generatePDFReport, generateWhatsAppText } from '../utils/exportUtils';
+import { useI18n } from '../i18n';
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -25,6 +26,7 @@ const ChartTooltip = ({ active, payload, label }) => {
 };
 
 export default function Reports() {
+  const { t } = useI18n();
   const { transactions, categories, getSummary } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
@@ -45,15 +47,15 @@ export default function Reports() {
 
   const catBreakdown = useMemo(() => {
     const map = {};
-    monthTxs.filter(t => t.type === 'expense').forEach(t => {
-      const cat = categories.find(c => c.id === t.categoryId);
-      const name = cat?.name || 'Outros';
+    monthTxs.filter(tx => tx.type === 'expense').forEach(tx => {
+      const cat = categories.find(c => c.id === tx.categoryId);
+      const name = cat?.name || t('common.others');
       const color = cat?.color || '#6b7280';
       if (!map[name]) map[name] = { name, value: 0, color };
-      map[name].value += t.amount;
+      map[name].value += tx.amount;
     });
     return Object.values(map).sort((a, b) => b.value - a.value);
-  }, [monthTxs, categories]);
+  }, [monthTxs, categories, t]);
 
   const monthlyData = useMemo(() => {
     const data = [];
@@ -77,7 +79,7 @@ export default function Reports() {
     try {
       exportToExcel(monthTxs, categories, month, year);
     } catch {
-      setExportError('Não foi possível exportar o Excel. Tente pelo computador.');
+      setExportError(t('reports.errExcel'));
       setTimeout(() => setExportError(''), 4000);
     }
   };
@@ -92,7 +94,7 @@ export default function Reports() {
         window.open(doc.output('bloburl'), '_blank');
       }
     } catch {
-      setExportError('Não foi possível gerar o PDF. Tente pelo computador.');
+      setExportError(t('reports.errPdf'));
       setTimeout(() => setExportError(''), 4000);
     }
   };
@@ -115,10 +117,10 @@ export default function Reports() {
           {exportError && (
             <span style={{ fontSize: 12, color: 'var(--negative)', alignSelf: 'center', maxWidth: 220 }}>{exportError}</span>
           )}
-          <button className="btn" onClick={handleExcelExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? 'Nenhum lançamento neste mês' : ''}>
+          <button className="btn" onClick={handleExcelExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? t('reports.noEntriesThisMonth') : ''}>
             <FileSpreadsheet size={14} style={{ color: 'var(--positive)' }} /> Excel
           </button>
-          <button className="btn" onClick={handlePDFExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? 'Nenhum lançamento neste mês' : ''}>
+          <button className="btn" onClick={handlePDFExport} disabled={monthTxs.length === 0} title={monthTxs.length === 0 ? t('reports.noEntriesThisMonth') : ''}>
             <FileText size={14} style={{ color: 'var(--negative)' }} /> PDF
           </button>
           <button className="btn" onClick={() => setShowWhatsapp(p => !p)}>
@@ -134,26 +136,26 @@ export default function Reports() {
             <div style={{ width: 32, height: 32, background: '#25D366', borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
               <MessageSquare size={15} style={{ color: '#fff' }} />
             </div>
-            <span style={{ fontWeight: 600 }}>Compartilhar via WhatsApp</span>
+            <span style={{ fontWeight: 600 }}>{t('reports.shareWhatsApp')}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <div className="field-label" style={{ marginBottom: 6 }}>Prévia</div>
-              <textarea readOnly value={privacy ? '[modo privado ativo]' : whatsappText} rows={8}
+              <div className="field-label" style={{ marginBottom: 6 }}>{t('reports.preview')}</div>
+              <textarea readOnly value={privacy ? t('reports.privacyMode') : whatsappText} rows={8}
                 style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', fontSize: 11.5, color: 'var(--text-3)', fontFamily: 'Geist Mono, monospace', resize: 'none' }} />
               <button className="btn" style={{ marginTop: 8, width: '100%', justifyContent: 'center' }} onClick={handleCopy}>
                 {copied ? <Check size={14} style={{ color: 'var(--positive)' }} /> : <Copy size={14} />}
-                {copied ? 'Copiado!' : 'Copiar texto'}
+                {copied ? t('reports.copied') : t('reports.copyText')}
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input className="field-input" type="tel" placeholder="Número (ex: 5511999999999)" value={whatsappPhone} onChange={e => setWhatsappPhone(e.target.value)} />
+              <input className="field-input" type="tel" placeholder={t('reports.phonePlaceholder')} value={whatsappPhone} onChange={e => setWhatsappPhone(e.target.value)} />
               <button className="btn primary" style={{ justifyContent: 'center' }} onClick={() => {
                 const text = encodeURIComponent(whatsappText);
                 const phone = whatsappPhone.replace(/\D/g, '');
                 window.open(phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`, '_blank');
               }}>
-                <Share2 size={14} /> Abrir WhatsApp
+                <Share2 size={14} /> {t('reports.openWhatsApp')}
               </button>
             </div>
           </div>
@@ -163,10 +165,10 @@ export default function Reports() {
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {[
-          { label: 'Entradas', value: income, color: 'var(--positive)', Icon: TrendingUp },
-          { label: 'Saídas', value: expense, color: 'var(--negative)', Icon: TrendingDown },
-          { label: 'Saldo Líquido', value: balance, color: balance >= 0 ? 'var(--info)' : 'var(--negative)', Icon: Wallet },
-          { label: 'Taxa de Poupança', value: null, raw: `${savingsRate}%`, color: 'var(--accent)', Icon: TrendingUp },
+          { label: t('reports.income'), value: income, color: 'var(--positive)', Icon: TrendingUp },
+          { label: t('reports.expense'), value: expense, color: 'var(--negative)', Icon: TrendingDown },
+          { label: t('reports.netBalance'), value: balance, color: balance >= 0 ? 'var(--info)' : 'var(--negative)', Icon: Wallet },
+          { label: t('reports.savingsRate'), value: null, raw: `${savingsRate}%`, color: 'var(--accent)', Icon: TrendingUp },
         ].map((kpi, i) => (
           <div key={i} className="card" style={{ padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -183,11 +185,11 @@ export default function Reports() {
       {/* Tabs */}
       <div className="tabs">
         {[
-          { id: 'overview', label: 'Visão Geral' },
-          { id: 'categories', label: 'Categorias' },
-          { id: 'evolution', label: 'Evolução Anual' },
-        ].map(t => (
-          <button key={t.id} className={`tab${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>{t.label}</button>
+          { id: 'overview', label: t('reports.tabOverview') },
+          { id: 'categories', label: t('reports.tabCategories') },
+          { id: 'evolution', label: t('reports.tabEvolution') },
+        ].map(tab => (
+          <button key={tab.id} className={`tab${activeTab === tab.id ? ' active' : ''}`} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>
         ))}
       </div>
 
@@ -195,7 +197,7 @@ export default function Reports() {
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card">
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>Entradas vs Saídas — últimos 6 meses</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.last6months')}</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData.slice(-6)} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
@@ -212,21 +214,21 @@ export default function Reports() {
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
-                Lançamentos — {MONTHS[month - 1]} {year}
+                {t('reports.transactionsOf')} {MONTHS[month - 1]} {year}
               </span>
-              <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{monthTxs.length} registros</span>
+              <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{monthTxs.length} {t('reports.records')}</span>
             </div>
             {monthTxs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>Nenhum lançamento neste período.</div>
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>{t('reports.noTransactionsThisPeriod')}</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="tx-table" style={{ minWidth: 400 }}>
                   <thead>
                     <tr>
-                      <th>Data</th>
-                      <th>Descrição</th>
-                      <th>Categoria</th>
-                      <th style={{ textAlign: 'right' }}>Valor</th>
+                      <th>{t('reports.dateHeader')}</th>
+                      <th>{t('reports.descriptionHeader')}</th>
+                      <th>{t('reports.categoryHeader')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.valueHeader')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,7 +265,7 @@ export default function Reports() {
       {activeTab === 'categories' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           <div className="card">
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>Distribuição das Saídas</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.expenseDistribution')}</div>
             {catBreakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
@@ -276,16 +278,16 @@ export default function Reports() {
               </ResponsiveContainer>
             ) : (
               <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: 13 }}>
-                Sem saídas este mês
+                {t('reports.noExpensesThisMonth')}
               </div>
             )}
           </div>
 
           <div className="card">
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>Ranking de Gastos</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.expenseRanking')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {catBreakdown.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>Sem dados</div>
+                <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>{t('reports.noData')}</div>
               ) : catBreakdown.map((cat, i) => {
                 const pct = expense > 0 ? (cat.value / expense * 100).toFixed(1) : 0;
                 return (
@@ -316,7 +318,7 @@ export default function Reports() {
       {activeTab === 'evolution' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card">
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>Evolução do Saldo (12 meses)</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.balanceEvolution')}</div>
             <ResponsiveContainer width="100%" height={230}>
               <AreaChart data={monthlyData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <defs>
@@ -341,14 +343,14 @@ export default function Reports() {
           </div>
 
           <div className="card" style={{ overflowX: 'auto' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>Tabela Anual</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.annualTable')}</div>
             <table className="tx-table" style={{ minWidth: 380 }}>
               <thead>
                 <tr>
-                  <th>Mês</th>
-                  <th style={{ textAlign: 'right', color: 'var(--positive)' }}>Entradas</th>
-                  <th style={{ textAlign: 'right', color: 'var(--negative)' }}>Saídas</th>
-                  <th style={{ textAlign: 'right', color: 'var(--info)' }}>Saldo</th>
+                  <th>{t('reports.monthHeader')}</th>
+                  <th style={{ textAlign: 'right', color: 'var(--positive)' }}>{t('reports.income')}</th>
+                  <th style={{ textAlign: 'right', color: 'var(--negative)' }}>{t('reports.expense')}</th>
+                  <th style={{ textAlign: 'right', color: 'var(--info)' }}>{t('common.balance')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -365,7 +367,7 @@ export default function Reports() {
               </tbody>
               <tfoot>
                 <tr style={{ background: 'var(--chip)' }}>
-                  <td style={{ fontWeight: 700 }}>TOTAL</td>
+                  <td style={{ fontWeight: 700 }}>{t('reports.total')}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700 }} className="t-num pos">{privacy ? '••••' : formatCurrency(monthlyData.reduce((s, r) => s + r.Entradas, 0))}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700 }} className="t-num neg">{privacy ? '••••' : formatCurrency(monthlyData.reduce((s, r) => s + r.Saídas, 0))}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700, color: monthlyData.reduce((s, r) => s + r.Saldo, 0) >= 0 ? 'var(--info)' : 'var(--negative)' }} className="t-num">

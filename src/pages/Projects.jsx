@@ -40,11 +40,11 @@ function ProjectFormModal({ project, onClose, onSave }) {
           <div className="modal-form">
             <div className="field">
               <label className="field-label">{t('projects.name')}</label>
-              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Ex: Reforma da Casa" maxLength={60} />
+              <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder={t('projects.namePlaceholder')} maxLength={60} />
             </div>
             <div className="field">
               <label className="field-label">{t('projects.description')}</label>
-              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descreva o projeto..." maxLength={200} />
+              <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t('projects.descPlaceholder')} maxLength={200} />
             </div>
             <div className="field">
               <label className="field-label">{t('projects.icon')}</label>
@@ -123,7 +123,7 @@ function ProjectDetail({ project, onBack }) {
       setShowClearProjectConfirm(false);
       setClearProjectText('');
     } catch (e) {
-      setClearProjectError(e.message || 'Erro ao apagar. Tente novamente.');
+      setClearProjectError(e.message || t('common.errDeleteRetry'));
     } finally {
       setClearingProject(false);
     }
@@ -160,8 +160,8 @@ function ProjectDetail({ project, onBack }) {
           {project.description && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{project.description}</p>}
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button className="icon-btn" onClick={() => setShowEditProject(true)} title="Editar projeto"><Pencil size={13} /></button>
-          <button className="icon-btn" style={{ color: 'var(--negative)' }} onClick={() => setShowDeleteConfirm(true)} title="Excluir projeto"><Trash2 size={13} /></button>
+          <button className="icon-btn" onClick={() => setShowEditProject(true)} title={t('projects.editProjectTitle')}><Pencil size={13} /></button>
+          <button className="icon-btn" style={{ color: 'var(--negative)' }} onClick={() => setShowDeleteConfirm(true)} title={t('projects.deleteProjectTitle')}><Trash2 size={13} /></button>
         </div>
       </div>
 
@@ -197,9 +197,9 @@ function ProjectDetail({ project, onBack }) {
           style={{ color: 'var(--negative)', borderColor: 'color-mix(in oklab, var(--negative) 30%, transparent)' }}
           onClick={() => { setShowClearProjectConfirm(true); setClearProjectText(''); setClearProjectError(''); }}
           disabled={projectTxs.length === 0}
-          title="Apagar todos os lançamentos deste projeto"
+          title={t('projects.deleteAllTitle')}
         >
-          <Trash2 size={14} /> Apagar lançamentos
+          <Trash2 size={14} /> {t('projects.deleteAll')}
         </button>
         <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => { setEditTx(null); setShowTxModal(true); }}>
           <Plus size={14} /> {t('projects.newEntry')}
@@ -237,11 +237,11 @@ function ProjectDetail({ project, onBack }) {
                 <Share2 size={13} style={{ color: 'var(--positive)' }} />
                 <span style={{ fontSize: 13, fontWeight: 600 }}>{t('projects.openWhatsApp')}</span>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>Opcional: número para abrir direto.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>{t('projects.whatsappOptionalHint')}</p>
               <input
                 type="tel"
                 className="field-input"
-                placeholder="Número (ex: 5511999999999)"
+                placeholder={t('reports.phonePlaceholder')}
                 value={whatsappPhone}
                 onChange={e => setWhatsappPhone(e.target.value)}
                 maxLength={20}
@@ -257,12 +257,12 @@ function ProjectDetail({ project, onBack }) {
       {/* Transactions */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 12px', borderBottom: '1px solid var(--line)' }}>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>Lançamentos ({projectTxs.length})</span>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{t('projects.transactionsTitle')} ({projectTxs.length})</span>
         </div>
         {projectTxs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-3)' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>💭</div>
-            <div style={{ fontSize: 13 }}>Nenhum lançamento neste projeto</div>
+            <div style={{ fontSize: 13 }}>{t('projects.noTransactions')}</div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -304,15 +304,15 @@ function ProjectDetail({ project, onBack }) {
 
       {showDeleteConfirm && (
         <ConfirmModal
-          title="Excluir projeto?"
+          title={t('projects.deleteProject')}
           message={
             <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
-              O projeto será excluído. Os{' '}
-              <strong style={{ color: 'var(--text)' }}>{projectTxs.length} lançamentos</strong>{' '}
-              vinculados serão mantidos sem projeto.
+              {t('projects.deleteProjectMsg1')}{' '}
+              <strong style={{ color: 'var(--text)' }}>{projectTxs.length} {projectTxs.length !== 1 ? t('projects.transactionPlural') : t('projects.transaction')}</strong>{' '}
+              {t('projects.deleteProjectMsg2')}
             </p>
           }
-          confirmLabel="Excluir"
+          confirmLabel={t('common.delete')}
           onConfirm={async () => { await deleteProject(project.id); onBack(); }}
           onClose={() => setShowDeleteConfirm(false)}
         />
@@ -320,9 +320,9 @@ function ProjectDetail({ project, onBack }) {
 
       {deleteTxConfirm && (
         <ConfirmModal
-          title="Excluir lançamento?"
-          message="Esta ação não pode ser desfeita."
-          confirmLabel="Excluir"
+          title={t('projects.deleteTransaction')}
+          message={t('projects.notReversible')}
+          confirmLabel={t('common.delete')}
           onConfirm={() => deleteTransaction(deleteTxConfirm)}
           onClose={() => setDeleteTxConfirm(null)}
         />
@@ -332,20 +332,20 @@ function ProjectDetail({ project, onBack }) {
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth: 400 }}>
             <div className="modal-head">
-              <h2 style={{ color: 'var(--negative)' }}>⚠️ Apagar lançamentos do projeto?</h2>
+              <h2 style={{ color: 'var(--negative)' }}>{t('projects.clearTitle')}</h2>
               <button className="icon-btn" onClick={() => setShowClearProjectConfirm(false)} disabled={clearingProject}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 14 }}>
               <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-                Isso irá apagar <strong style={{ color: 'var(--negative)' }}>todos os {projectTxs.length} lançamentos</strong> do projeto <strong style={{ color: 'var(--text)' }}>{project.name}</strong> permanentemente. O projeto em si <strong style={{ color: 'var(--text)' }}>não será excluído</strong>.
+                {t('projects.clearMsg1')} <strong style={{ color: 'var(--negative)' }}>{t('projects.clearMsgAll')} {projectTxs.length} {projectTxs.length !== 1 ? t('projects.transactionPlural') : t('projects.transaction')}</strong> {t('projects.clearMsg2')} <strong style={{ color: 'var(--text)' }}>{project.name}</strong> {t('projects.clearMsg3')} <strong style={{ color: 'var(--text)' }}>{t('projects.clearMsgNotDeleted')}</strong>.
               </p>
               <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-                Para confirmar, digite <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: 1 }}>CONFIRMAR</strong> abaixo:
+                {t('common.confirmInstruction')} <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: 1 }}>{t('common.confirmWord')}</strong>:
               </p>
               <input
                 type="text"
                 className="field-input"
-                placeholder="Digite CONFIRMAR"
+                placeholder={t('common.typeConfirm')}
                 value={clearProjectText}
                 onChange={e => setClearProjectText(e.target.value)}
                 disabled={clearingProject}
@@ -360,16 +360,16 @@ function ProjectDetail({ project, onBack }) {
               )}
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearProjectConfirm(false); setClearProjectText(''); }} disabled={clearingProject}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearProjectConfirm(false); setClearProjectText(''); }} disabled={clearingProject}>{t('common.cancel')}</button>
               <button
                 className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearProjectText !== 'CONFIRMAR' || clearingProject) ? 0.4 : 1 }}
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearProjectText !== t('common.confirmWord') || clearingProject) ? 0.4 : 1 }}
                 onClick={handleClearProject}
-                disabled={clearProjectText !== 'CONFIRMAR' || clearingProject}
+                disabled={clearProjectText !== t('common.confirmWord') || clearingProject}
               >
                 {clearingProject
-                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Apagando…</>
-                  : <><Trash2 size={14} /> Apagar lançamentos</>
+                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.clearingEllipsis')}</>
+                  : <><Trash2 size={14} /> {t('projects.deleteAll')}</>
                 }
               </button>
             </div>
