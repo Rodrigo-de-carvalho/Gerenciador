@@ -53,6 +53,8 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // categoria agora é escolhida por tiles (sem o required do select)
+    if (!form.categoryId) { setError(t('transactionModal.categoryPlaceholder')); return; }
     setSaving(true);
     setError('');
     try {
@@ -153,10 +155,31 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
 
             <div className="field">
               <label className="field-label">{t('transactionModal.category')}</label>
-              <select className="field-input" value={form.categoryId} onChange={e => set('categoryId', e.target.value)} required>
-                <option value="">{t('transactionModal.categoryPlaceholder')}</option>
-                {filteredCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
+              {filteredCats.length === 0 ? (
+                <div style={{ fontSize: 12.5, color: 'var(--text-3)', padding: '10px 12px', background: 'var(--chip)', borderRadius: 10 }}>
+                  {t('transactionModal.categoryPlaceholder')}
+                </div>
+              ) : (
+                <div className="cat-picker">
+                  {filteredCats.map(c => {
+                    const sel = form.categoryId === c.id;
+                    return (
+                      <button
+                        type="button"
+                        key={c.id}
+                        className={`cat-tile${sel ? ' sel' : ''}`}
+                        onClick={() => set('categoryId', c.id)}
+                        title={c.name}
+                        aria-pressed={sel}
+                        style={sel ? { borderColor: c.color, background: `color-mix(in oklab, ${c.color} 14%, transparent)` } : undefined}
+                      >
+                        <span className="cat-tile-ic" style={{ background: c.color + '22', border: `1px solid ${c.color}40` }}>{c.icon}</span>
+                        <span className="cat-tile-name">{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {projects.length > 0 && (
