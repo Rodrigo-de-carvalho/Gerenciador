@@ -202,6 +202,7 @@ const translations = {
     },
     cards: {
       editCard: 'Editar Cartão', newCard: 'Novo Cartão', cardName: 'Nome do cartão *',
+      cardNamePlaceholder: 'Ex: Nubank Ultraviolet', limitPlaceholder: 'Ex: 5000',
       limit: 'Limite (opcional)', closingDay: 'Dia de fechamento', icon: 'Ícone',
       invoices: 'Faturas', futureInstallments: 'Parcelas Futuras',
       invoice: 'Fatura', used: 'Utilizado', closesDay: 'Fecha dia',
@@ -536,6 +537,7 @@ const translations = {
     },
     cards: {
       editCard: 'Edit Card', newCard: 'New Card', cardName: 'Card name *',
+      cardNamePlaceholder: 'E.g.: Nubank Ultraviolet', limitPlaceholder: 'E.g.: 5000',
       limit: 'Limit (optional)', closingDay: 'Closing day', icon: 'Icon',
       invoices: 'Invoices', futureInstallments: 'Future Installments',
       invoice: 'Invoice', used: 'Used', closesDay: 'Closes on day',
@@ -871,6 +873,7 @@ const translations = {
     },
     cards: {
       editCard: 'Editar Tarjeta', newCard: 'Nueva Tarjeta', cardName: 'Nombre de la tarjeta *',
+      cardNamePlaceholder: 'Ej: Nubank Ultraviolet', limitPlaceholder: 'Ej: 5000',
       limit: 'Límite (opcional)', closingDay: 'Día de cierre', icon: 'Ícono',
       invoices: 'Facturas', futureInstallments: 'Cuotas Futuras',
       invoice: 'Factura', used: 'Utilizado', closesDay: 'Cierra el día',

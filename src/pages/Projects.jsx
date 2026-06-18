@@ -383,6 +383,7 @@ function ProjectDetail({ project, onBack }) {
 }
 
 export default function Projects() {
+  const { t } = useI18n();
   const { projects, transactions, addProject, updateProject } = useFinance();
   const { privacy } = usePrivacy();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -406,13 +407,13 @@ export default function Projects() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Seus projetos</div>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>{t('projects.yourProjects')}</div>
           <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0, fontFamily: 'Instrument Serif, serif', fontStyle: 'italic' }}>
-            {projects.length} projeto{projects.length !== 1 ? 's' : ''} ativo{projects.length !== 1 ? 's' : ''}
+            {projects.length} {t('projects.activeProjects')}
           </h2>
         </div>
         <button className="btn primary" onClick={() => { setEditProject(null); setShowForm(true); }}>
-          <Plus size={14} /> Novo Projeto
+          <Plus size={14} /> {t('projects.newProjectBtn')}
         </button>
       </div>
 
@@ -421,12 +422,12 @@ export default function Projects() {
           <div style={{ width: 56, height: 56, background: 'var(--chip)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>
             <FolderOpen size={24} style={{ color: 'var(--text-3)' }} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhum projeto ainda</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('projects.noProjectsYet')}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24, maxWidth: 300, margin: '0 auto 24px' }}>
-            Crie projetos para organizar lançamentos por objetivo, obra, viagem, etc.
+            {t('projects.noProjectsDesc')}
           </p>
           <button className="btn primary" onClick={() => setShowForm(true)}>
-            <Plus size={14} /> Criar primeiro projeto
+            <Plus size={14} /> {t('projects.createFirstProject')}
           </button>
         </div>
       ) : (
@@ -474,7 +475,8 @@ export default function Projects() {
                     className="icon-btn"
                     style={{ flexShrink: 0 }}
                     onClick={e => { e.stopPropagation(); setEditProject(project); setShowForm(true); }}
-                    title="Editar"
+                    title={t('common.edit')}
+                    aria-label={t('common.edit')}
                   >
                     <Pencil size={13} />
                   </button>

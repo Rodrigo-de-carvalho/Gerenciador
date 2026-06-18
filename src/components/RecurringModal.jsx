@@ -125,7 +125,8 @@ export default function RecurringModal({ onClose }) {
                       className="icon-btn"
                       style={{ color: 'var(--negative)', flexShrink: 0, width: 30, height: 30 }}
                       onClick={() => deleteRecurring(rec.id)}
-                      title="Excluir"
+                      title={t('common.delete')}
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 size={13} />
                     </button>
@@ -173,10 +174,10 @@ export default function RecurringModal({ onClose }) {
               </div>
 
               <div className="field">
-                <label className="field-label">Descrição *</label>
+                <label className="field-label">{t('recurring.description')}</label>
                 <input
                   className="field-input" type="text" required
-                  placeholder="Ex: Netflix, Salário, Aluguel..."
+                  placeholder={t('recurring.descPlaceholder')}
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   maxLength={120}
@@ -185,7 +186,7 @@ export default function RecurringModal({ onClose }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div className="field">
-                  <label className="field-label">Valor (R$) *</label>
+                  <label className="field-label">{t('recurring.amount')}</label>
                   <input
                     className="field-input" type="number" required min="0.01" step="0.01"
                     placeholder="0,00"
@@ -194,7 +195,7 @@ export default function RecurringModal({ onClose }) {
                   />
                 </div>
                 <div className="field">
-                  <label className="field-label">Dia do mês (1–28)</label>
+                  <label className="field-label">{t('recurring.dayOfMonth')}</label>
                   <input
                     className="field-input" type="number" min="1" max="28"
                     value={form.dayOfMonth}
@@ -205,20 +206,20 @@ export default function RecurringModal({ onClose }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div className="field">
-                  <label className="field-label">Categoria</label>
+                  <label className="field-label">{t('recurring.category')}</label>
                   <select
                     className="field-input"
                     value={form.categoryId}
                     onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
                   >
-                    <option value="">Sem categoria</option>
+                    <option value="">{t('recurring.noCategory')}</option>
                     {catOptions.map(c => (
                       <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="field-label">Próxima ocorrência</label>
+                  <label className="field-label">{t('recurring.nextOccurrence')}</label>
                   <input
                     className="field-input" type="date"
                     value={form.nextDate}
@@ -229,14 +230,14 @@ export default function RecurringModal({ onClose }) {
 
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={cancelForm}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit" className="btn primary"
                   style={{ flex: 1, justifyContent: 'center', opacity: saving ? 0.6 : 1 }}
                   disabled={saving}
                 >
-                  {saving ? 'Salvando...' : editingId ? 'Salvar alterações' : <><Plus size={14} /> Adicionar</>}
+                  {saving ? t('common.savingEllipsis') : editingId ? t('recurring.saveChanges') : <><Plus size={14} /> {t('common.add')}</>}
                 </button>
               </div>
             </form>

@@ -465,9 +465,9 @@ export default function ImportCSV({ onClose }) {
                     <RotateCcw size={24} style={{ color: 'var(--text-3)' }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Importação desfeita</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('importCSV.undoTitle')}</div>
                     <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                      As {importCount} transações foram removidas.
+                      {t('importCSV.undoneCount1')} {importCount} {t('importCSV.undoneCount2')}
                     </div>
                   </div>
                 </>
@@ -499,7 +499,7 @@ export default function ImportCSV({ onClose }) {
                   style={{ justifyContent: 'center', opacity: undoing ? 0.6 : 1 }}
                   onClick={handleUndo}
                   disabled={undoing}
-                  title="Remove todas as transações desta importação"
+                  title={t('importCSV.undoHint')}
                 >
                   {undoing
                     ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
