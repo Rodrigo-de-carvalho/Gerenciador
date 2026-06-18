@@ -141,7 +141,14 @@ export default function Layout({ currentPage, onNavigate, children }) {
         </a>
 
         {/* User card */}
-        <div className="user-card" onClick={() => setShowSettings(true)} title="Configurações">
+        <button
+          type="button"
+          className="user-card"
+          onClick={() => setShowSettings(true)}
+          title="Configurações"
+          aria-label={t('settings.configSettings')}
+          style={{ width: '100%', border: 'none', background: 'none', font: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+        >
           <div className="avatar">{userInitial}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -150,7 +157,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
             <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('settings.configSettings')}</div>
           </div>
           <Settings size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
-        </div>
+        </button>
       </aside>
 
       {/* Main */}

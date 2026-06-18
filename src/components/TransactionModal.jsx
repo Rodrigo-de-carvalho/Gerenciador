@@ -42,6 +42,13 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     }
   }, [transaction, defaultProjectId, defaultCardId]);
 
+  // Acessibilidade: fecha o modal com a tecla Esc.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape' && !saving) onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [saving, onClose]);
+
   const filteredCats = categories.filter(c => c.type === form.type);
 
   const handleSubmit = async (e) => {
@@ -77,11 +84,16 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
   }));
 
   return (
-    <div className="modal-overlay">
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+    >
       <div className="modal-box">
         <div className="modal-head">
           <h2>{isEdit ? t('transactionModal.edit') : t('transactionModal.new')}</h2>
-          <button className="icon-btn" onClick={onClose} disabled={saving}>
+          <button className="icon-btn" onClick={onClose} disabled={saving} aria-label="Fechar">
             <X size={15} />
           </button>
         </div>
