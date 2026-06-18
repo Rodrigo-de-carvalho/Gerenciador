@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X, Upload, RefreshCw, History } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
+import { useToast } from '../context/ToastContext';
 import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 import { useI18n } from '../i18n';
@@ -30,8 +31,10 @@ function groupByDate(txs) {
 
 export default function Transactions() {
   const { t } = useI18n();
+  const { showToast } = useToast();
   const { transactions, categories, deleteTransaction } = useFinance();
   const { privacy } = usePrivacy();
+  const [removingIds, setRemovingIds] = useState([]);
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
   const [year, setYear] = useState(now.year);
@@ -44,6 +47,22 @@ export default function Transactions() {
   const [showImportHistory, setShowImportHistory] = useState(false);
   const [showRecurring, setShowRecurring]   = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Exclusão com fade: marca a linha como saindo, espera a animação e então remove.
+  const confirmDelete = (id) => {
+    setDeleteConfirm(null);
+    setRemovingIds(prev => [...prev, id]);
+    setTimeout(async () => {
+      try {
+        await deleteTransaction(id);
+        showToast(t('common.deletedToast'), 'delete');
+      } catch {
+        showToast('Erro', 'error');
+      } finally {
+        setRemovingIds(prev => prev.filter(x => x !== id));
+      }
+    }, 240);
+  };
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -211,17 +230,17 @@ export default function Transactions() {
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <table className="tx-table">
                 <tbody>
-                  {group.txs.map(t => {
-                    const cat = categories.find(c => c.id === t.categoryId);
+                  {group.txs.map(tx => {
+                    const cat = categories.find(c => c.id === tx.categoryId);
                     return (
-                      <tr key={t.id} className="group">
+                      <tr key={tx.id} className={`group${removingIds.includes(tx.id) ? ' tx-removing' : ''}`}>
                         <td style={{ width: 40, paddingRight: 0 }}>
                           <div className="tx-row-icon">
                             <span style={{ fontSize: 13 }}>{cat?.icon || '📋'}</span>
                           </div>
                         </td>
                         <td>
-                          <div style={{ fontWeight: 500, fontSize: 13.5 }}>{t.description}</div>
+                          <div style={{ fontWeight: 500, fontSize: 13.5 }}>{tx.description}</div>
                           {cat && (
                             <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
                               <span style={{
@@ -235,8 +254,8 @@ export default function Transactions() {
                           )}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <div className={`t-num ${t.type === 'income' ? 'pos' : 'neg'}`} style={{ fontSize: 13.5, fontWeight: 600 }}>
-                            {privacy ? 'R$ ••••' : `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
+                          <div className={`t-num ${tx.type === 'income' ? 'pos' : 'neg'}`} style={{ fontSize: 13.5, fontWeight: 600 }}>
+                            {privacy ? 'R$ ••••' : `${tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}`}
                           </div>
                         </td>
                         <td style={{ width: 72, paddingLeft: 0 }}>
@@ -245,16 +264,18 @@ export default function Transactions() {
                             <button
                               className="icon-btn"
                               style={{ width: 28, height: 28 }}
-                              onClick={() => { setEditTx(t); setShowModal(true); }}
-                              title="Editar"
+                              onClick={() => { setEditTx(tx); setShowModal(true); }}
+                              title={t('common.edit')}
+                              aria-label={t('common.edit')}
                             >
                               <Pencil size={12} />
                             </button>
                             <button
                               className="icon-btn"
                               style={{ width: 28, height: 28, color: 'var(--negative)' }}
-                              onClick={() => setDeleteConfirm(t.id)}
-                              title="Excluir"
+                              onClick={() => setDeleteConfirm(tx.id)}
+                              title={t('common.delete')}
+                              aria-label={t('common.delete')}
                             >
                               <Trash2 size={12} />
                             </button>
@@ -282,7 +303,7 @@ export default function Transactions() {
           title={t('transactions.deleteTransaction')}
           message={t('transactions.deleteNotReversible')}
           confirmLabel={t('common.delete')}
-          onConfirm={() => deleteTransaction(deleteConfirm)}
+          onConfirm={() => confirmDelete(deleteConfirm)}
           onClose={() => setDeleteConfirm(null)}
         />
       )}

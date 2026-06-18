@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useToast } from '../context/ToastContext';
 import { useI18n } from '../i18n';
 
 const emptyForm = {
@@ -17,6 +18,7 @@ const emptyForm = {
 
 export default function TransactionModal({ transaction, onClose, defaultProjectId, defaultCardId }) {
   const { t } = useI18n();
+  const { showToast } = useToast();
   const { categories, projects, cards, addTransaction, updateTransaction, addInstallmentTransaction } = useFinance();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -71,6 +73,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
       } else {
         await addTransaction(payload);
       }
+      showToast(t('common.savedToast'));
       onClose();
     } catch (err) {
       setError(err.message || 'Erro ao salvar. Tente novamente.');
@@ -185,20 +188,44 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
             {projects.length > 0 && (
               <div className="field">
                 <label className="field-label">{t('transactionModal.project')}</label>
-                <select className="field-input" value={form.projectId} onChange={e => set('projectId', e.target.value)}>
-                  <option value="">{t('transactionModal.noProject')}</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.icon} {p.name}</option>)}
-                </select>
+                <div className="cat-picker">
+                  <button type="button" className={`cat-tile${!form.projectId ? ' sel' : ''}`} onClick={() => set('projectId', '')} aria-pressed={!form.projectId}>
+                    <span className="cat-tile-ic" style={{ background: 'var(--chip)' }}>—</span>
+                    <span className="cat-tile-name">{t('transactionModal.noProject')}</span>
+                  </button>
+                  {projects.map(p => {
+                    const sel = form.projectId === p.id;
+                    return (
+                      <button type="button" key={p.id} className={`cat-tile${sel ? ' sel' : ''}`} onClick={() => set('projectId', p.id)} title={p.name} aria-pressed={sel}
+                        style={sel ? { borderColor: p.color, background: `color-mix(in oklab, ${p.color} 14%, transparent)` } : undefined}>
+                        <span className="cat-tile-ic" style={{ background: p.color + '22', border: `1px solid ${p.color}40` }}>{p.icon}</span>
+                        <span className="cat-tile-name">{p.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {form.type === 'expense' && cards.length > 0 && (
               <div className="field">
                 <label className="field-label">{t('transactionModal.card')}</label>
-                <select className="field-input" value={form.cardId} onChange={e => set('cardId', e.target.value)}>
-                  <option value="">{t('transactionModal.noCard')}</option>
-                  {cards.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </select>
+                <div className="cat-picker">
+                  <button type="button" className={`cat-tile${!form.cardId ? ' sel' : ''}`} onClick={() => set('cardId', '')} aria-pressed={!form.cardId}>
+                    <span className="cat-tile-ic" style={{ background: 'var(--chip)' }}>💵</span>
+                    <span className="cat-tile-name">{t('transactionModal.noCard')}</span>
+                  </button>
+                  {cards.map(c => {
+                    const sel = form.cardId === c.id;
+                    return (
+                      <button type="button" key={c.id} className={`cat-tile${sel ? ' sel' : ''}`} onClick={() => set('cardId', c.id)} title={c.name} aria-pressed={sel}
+                        style={sel ? { borderColor: c.color, background: `color-mix(in oklab, ${c.color} 14%, transparent)` } : undefined}>
+                        <span className="cat-tile-ic" style={{ background: c.color + '22', border: `1px solid ${c.color}40` }}>{c.icon}</span>
+                        <span className="cat-tile-name">{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

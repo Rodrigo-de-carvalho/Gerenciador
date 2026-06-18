@@ -5,6 +5,7 @@ import { FinanceProvider } from './context/FinanceContext';
 import { GoalProvider } from './context/GoalContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PrivacyProvider } from './context/PrivacyContext';
+import { ToastProvider } from './context/ToastContext';
 import { I18nProvider, useI18n } from './i18n';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
@@ -151,7 +152,9 @@ export default function App() {
     <I18nProvider>
       <ThemeProvider>
         <AuthProvider>
-          <AppContent />
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </I18nProvider>
