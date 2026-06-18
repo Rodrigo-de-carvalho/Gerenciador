@@ -311,7 +311,7 @@ class MainActivity : AppCompatActivity() {
                                 .setColorSchemeParams(
                                     CustomTabsIntent.COLOR_SCHEME_DARK,
                                     CustomTabColorSchemeParams.Builder()
-                                        .setToolbarColor(0xFF0E0D0B.toInt())
+                                        .setToolbarColor(0xFF0A0E14.toInt())
                                         .build()
                                 )
                                 .build()
@@ -360,7 +360,7 @@ class MainActivity : AppCompatActivity() {
                         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Sem conexão</div>
                         <div style="font-size:14px;color:#aaa;margin-bottom:24px;">Verifique sua internet e tente novamente.</div>
                         <button onclick="location.reload()" style="padding:12px 24px;border-radius:8px;
-                        border:none;background:#c7f284;color:#111;font-size:15px;font-weight:600;
+                        border:none;background:#2DD4A7;color:#052017;font-size:15px;font-weight:600;
                         cursor:pointer;">Tentar novamente</button></body></html>""",
                         "text/html", "UTF-8"
                     )
@@ -408,7 +408,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.apply {
-            setColorSchemeColors(0xFFC7F284.toInt())
+            setColorSchemeColors(0xFF2DD4A7.toInt())
             setProgressBackgroundColorSchemeColor(0xFF1A1A1A.toInt())
             setOnRefreshListener {
                 binding.webView.reload()
