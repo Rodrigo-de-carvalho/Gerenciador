@@ -245,8 +245,8 @@ export default function SettingsModal({ onClose }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <SettingRow
                 icon={<Trash2 size={16} />}
-                title="Apagar todos os lançamentos"
-                subtitle={`Zera o histórico financeiro (${transactions.length} lançamento${transactions.length !== 1 ? 's' : ''}). Categorias e projetos são mantidos.`}
+                title={t('settings.clearAll')}
+                subtitle={`${t('settings.clearAllSub1')} (${transactions.length} ${transactions.length !== 1 ? t('settings.transactionPlural') : t('settings.transaction')}). ${t('settings.clearAllSub2')}`}
                 onClick={() => { setShowClearAllConfirm(true); setClearAllText(''); setClearAllError(''); }}
                 danger
               />
@@ -305,24 +305,24 @@ export default function SettingsModal({ onClose }) {
         <div className="modal-overlay" style={{ zIndex: 60 }}>
           <div className="modal-box" style={{ maxWidth: 400 }}>
             <div className="modal-head">
-              <h2 style={{ color: 'var(--negative)' }}>⚠️ Apagar todos os lançamentos?</h2>
-              <button className="icon-btn" onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll}><X size={15} /></button>
+              <h2 style={{ color: 'var(--negative)' }}>{t('settings.clearAllTitle')}</h2>
+              <button className="icon-btn" onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll} aria-label={t('common.close')}><X size={15} /></button>
             </div>
             <div className="modal-form" style={{ gap: 14 }}>
               <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-                Essa ação irá apagar <strong style={{ color: 'var(--negative)' }}>todos os {transactions.length} lançamentos</strong> da sua conta permanentemente. Categorias, cartões, projetos, metas e investimentos <strong style={{ color: 'var(--text)' }}>não serão afetados</strong>.
+                {t('settings.clearAllMsg1')} <strong style={{ color: 'var(--negative)' }}>{t('settings.clearAllMsgAll')} {transactions.length} {t('settings.transactionPlural')}</strong> {t('settings.clearAllMsg2')} <strong style={{ color: 'var(--text)' }}>{t('settings.clearAllMsgNotAffected')}</strong>.
               </p>
               <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-                Para confirmar, digite <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: 1 }}>CONFIRMAR</strong> abaixo:
+                {t('common.typeConfirm')}:
               </p>
               <input
                 type="text"
                 className="field-input"
-                placeholder="Digite CONFIRMAR"
+                placeholder={t('common.confirmWord')}
                 value={clearAllText}
                 onChange={e => setClearAllText(e.target.value)}
                 disabled={clearingAll}
-                maxLength={9}
+                maxLength={t('common.confirmWord').length}
                 autoComplete="off"
                 style={{ fontFamily: 'monospace', letterSpacing: 1 }}
               />
@@ -333,16 +333,16 @@ export default function SettingsModal({ onClose }) {
               )}
             </div>
             <div className="modal-actions">
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll}>Cancelar</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowClearAllConfirm(false); setClearAllText(''); }} disabled={clearingAll}>{t('common.cancel')}</button>
               <button
                 className="btn"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearAllText !== 'CONFIRMAR' || clearingAll) ? 0.4 : 1 }}
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--negative)', color: '#fff', borderColor: 'transparent', opacity: (clearAllText !== t('common.confirmWord') || clearingAll) ? 0.4 : 1 }}
                 onClick={handleClearAll}
-                disabled={clearAllText !== 'CONFIRMAR' || clearingAll}
+                disabled={clearAllText !== t('common.confirmWord') || clearingAll}
               >
                 {clearingAll
-                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Apagando…</>
-                  : <><Trash2 size={14} /> Apagar tudo</>
+                  ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.clearingEllipsis')}</>
+                  : <><Trash2 size={14} /> {t('settings.clearAllConfirmBtn')}</>
                 }
               </button>
             </div>
