@@ -21,8 +21,8 @@
             android:layout_height="3dp"
             android:layout_alignParentTop="true"
             android:max="100"
-            android:progressTint="#C7F284"
-            android:progressBackgroundTint="#1A1A1A"
+            android:progressTint="#2DD4A7"
+            android:progressBackgroundTint="#141B25"
             android:visibility="gone" />
 
     </RelativeLayout>
