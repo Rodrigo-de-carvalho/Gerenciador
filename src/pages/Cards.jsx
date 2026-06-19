@@ -247,7 +247,7 @@ export default function Cards() {
           ) : (
             <>
               {/* Resumo geral */}
-              <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div className="card commit-summary" style={{ padding: '14px 18px' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
                     Total comprometido
@@ -256,7 +256,7 @@ export default function Cards() {
                     {privacy ? 'R$ ••••' : formatCurrency(futureTotalAmount)}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-3)' }}>
+                <div className="commit-summary-stats" style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-3)' }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 16 }}>{futureInstallments.length}</div>
                     <div>meses</div>

@@ -165,7 +165,7 @@ export default function Reports() {
       )}
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="kpi-grid-4">
         {[
           { label: t('reports.income'), value: income, color: 'var(--positive)', Icon: TrendingUp },
           { label: t('reports.expense'), value: expense, color: 'var(--negative)', Icon: TrendingDown },
@@ -224,7 +224,7 @@ export default function Reports() {
               <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>{t('reports.noTransactionsThisPeriod')}</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table className="tx-table" style={{ minWidth: 400 }}>
+                <table className="tx-table" style={{ minWidth: 'min(100%, 400px)' }}>
                   <thead>
                     <tr>
                       <th>{t('reports.dateHeader')}</th>
@@ -265,7 +265,7 @@ export default function Reports() {
 
       {/* Tab: Categories */}
       {activeTab === 'categories' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="reports-cat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           <div className="card">
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.expenseDistribution')}</div>
             {catBreakdown.length > 0 ? (
@@ -338,7 +338,7 @@ export default function Reports() {
 
           <div className="card" style={{ overflowX: 'auto' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.annualTable')}</div>
-            <table className="tx-table" style={{ minWidth: 380 }}>
+            <table className="tx-table" style={{ minWidth: 'min(100%, 380px)' }}>
               <thead>
                 <tr>
                   <th>{t('reports.monthHeader')}</th>

@@ -558,6 +558,13 @@
 .g-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 .g-dash { grid-template-columns: 1.5fr 1fr; }
 
+/* KPI row (Reports/Investments) and allocation chart+legend grid */
+.kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.alloc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Cards: "total comprometido" summary row */
+.commit-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
 /* ============ tabs ============ */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
 .tab {
@@ -658,6 +665,8 @@
   .hero-num { font-size: 52px; }
   /* Reports: stack category panels on mobile */
   .reports-cat-grid { grid-template-columns: 1fr !important; }
+  .kpi-grid-4 { grid-template-columns: 1fr 1fr; }
+  .alloc-grid { grid-template-columns: 1fr; }
   /* iOS Safari faz zoom automático em inputs com fonte < 16px ao focar.
      Subimos para 16px só no toque para evitar o "pulo" da tela. */
   .field-input, .input-field, .select-field { font-size: 16px; }
@@ -675,10 +684,17 @@
 @media (max-width: 480px) {
   .g-3 { grid-template-columns: 1fr; }
   .g-4 { grid-template-columns: 1fr 1fr; }
+  .kpi-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
   .tabs { overflow-x: auto; padding-bottom: 1px; }
   .tab { font-size: 12px; padding: 10px 10px; white-space: nowrap; }
   /* Saldos grandes (6+ dígitos) não estouram a largura do card em telas pequenas. */
   .hero-num { font-size: 42px; overflow-wrap: anywhere; max-width: 100%; }
+  /* Donut + legend: empilha verticalmente quando não há espaço lateral */
+  .donut-wrap { flex-direction: column; gap: 14px; }
+  .legend { min-width: 0; width: 100%; }
+  /* Cards: resumo "total comprometido" empilha em telas estreitas */
+  .commit-summary { flex-direction: column; align-items: flex-start; }
+  .commit-summary-stats { gap: 16px !important; }
 }
 
 @media (pointer: coarse) {
