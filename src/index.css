@@ -461,6 +461,29 @@
 .bar-track { height: 4px; background: var(--chip); border-radius: 2px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
 
+/* ============ donut chart ============ */
+.donut-wrap { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.donut { position: relative; flex-shrink: 0; border-radius: 50%; }
+.donut .donut-center {
+  position: absolute; inset: 26px; background: var(--surface);
+  border-radius: 50%; display: grid; place-items: center; text-align: center;
+}
+.donut .donut-center span { font-size: 11px; color: var(--text-3); display: block; }
+.donut .donut-center b { font-size: 17px; font-weight: 700; display: block; margin-top: 2px; }
+.legend { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 180px; }
+.legend-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.legend-item .lg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-item .lg-name { flex: 1; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-item .lg-val { font-weight: 600; font-family: 'Geist Mono', monospace; }
+.legend-item .lg-pct { color: var(--text-3); font-size: 11.5px; min-width: 36px; text-align: right; }
+
+/* ============ ring gauge ============ */
+.ring { position: relative; display: grid; place-items: center; }
+.ring svg { transform: rotate(-90deg); }
+.ring .ring-bg { stroke: var(--surface-3); }
+.ring .ring-fg { transition: stroke-dashoffset 700ms cubic-bezier(.2,.8,.2,1); }
+.ring .ring-label { position: absolute; font-weight: 800; color: var(--text); }
+
 /* ============ tables ============ */
 .tx-table { width: 100%; border-collapse: collapse; }
 .tx-table th {

@@ -71,7 +71,10 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
       } else if (!isEdit && form.cardId && Number(form.installments) > 1) {
         await addInstallmentTransaction(payload, Number(form.installments));
       } else {
-        await addTransaction(payload);
+        // Otimista: a transação já aparece na lista, então fechamos na hora
+        // e só ficamos de olho no resultado real em segundo plano.
+        const { persist } = addTransaction(payload);
+        persist.catch(() => showToast(t('common.saveFailedToast'), 'error'));
       }
       showToast(t('common.savedToast'));
       onClose();
