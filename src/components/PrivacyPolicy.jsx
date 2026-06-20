@@ -15,7 +15,7 @@ export default function PrivacyPolicy({ onClose }) {
         </div>
 
         <div style={{ overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 20, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65 }}>
-          <p style={{ fontSize: 11.5, color: 'var(--text-4)', margin: 0 }}>Última atualização: maio de 2026</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-4)', margin: 0 }}>Última atualização: junho de 2026</p>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>1. Dados que coletamos</h3>
@@ -48,6 +48,11 @@ export default function PrivacyPolicy({ onClose }) {
               <strong style={{ color: 'var(--text)' }}>Exceção — Assistente de IA (opcional):</strong> se você utilizar o assistente financeiro, os dados dos seus lançamentos dos últimos 3 meses (descrição, valor, data e categoria de cada transação, além dos totais mensais) são enviados à <strong style={{ color: 'var(--text)' }}>Groq</strong> para processamento pelo modelo Llama 3.3. Esses dados são usados exclusivamente para gerar as respostas do assistente e não são associados à sua identidade pessoal (nome, CPF, e-mail). Para saber como a Groq trata esses dados, consulte a{' '}
               <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Política de Privacidade da Groq</a>.
             </p>
+          </section>
+
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', margin: 0 }}>4.1 Transferência internacional de dados (Art. 33)</h3>
+            <p style={{ margin: 0 }}>O Supabase e a Groq são empresas com infraestrutura nos Estados Unidos, podendo processar seus dados em servidores fora do Brasil. Esse tratamento ocorre com base nas garantias contratuais adotadas por esses provedores (cláusulas-padrão de proteção de dados), em conformidade com o Art. 33 da LGPD.</p>
           </section>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
