@@ -98,7 +98,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
       aria-modal="true"
       onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
     >
-      <div className="modal-box">
+      <div className="modal-box modal-box-tall">
         <div className="modal-head">
           <h2>{isEdit ? t('transactionModal.edit') : t('transactionModal.new')}</h2>
           <button className="icon-btn" onClick={onClose} disabled={saving} aria-label="Fechar">

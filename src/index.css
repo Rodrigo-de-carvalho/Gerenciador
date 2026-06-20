@@ -749,6 +749,26 @@
 }
 @media (min-width: 600px) { .modal-box { border-radius: 16px; max-width: 480px; } }
 
+/* No celular, formulários compridos (ex.: Novo Lançamento) abrem ocupando
+   quase a tela toda em vez de uma faixinha colada no rodapé. Cabeçalho fixo
+   no topo, campos roláveis no meio e botões de ação fixos embaixo — tudo
+   visível de cara, sem precisar rolar pra achar o formulário ou o botão. */
+@media (max-width: 599px) {
+  .modal-box-tall {
+    height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-box-tall .modal-head { flex-shrink: 0; }
+  .modal-box-tall > form {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+  }
+  .modal-box-tall .modal-form { flex: 1; overflow-y: auto; }
+  .modal-box-tall .modal-actions { flex-shrink: 0; }
+}
+
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 22px 16px;
