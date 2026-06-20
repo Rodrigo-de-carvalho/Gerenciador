@@ -187,7 +187,7 @@ export default function ImportCSV({ onClose }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-box" style={{ maxWidth: step === 'preview' ? 700 : 480, transition: 'max-width 200ms' }}>
+      <div className="modal-box" style={{ maxWidth: step === 'preview' ? 'min(94vw, 700px)' : 480, transition: 'max-width 200ms' }}>
         <div className="modal-head">
           <h2>{step === 'done' ? t('importCSV.done') : step === 'select-bank' ? 'Selecionar banco' : t('importCSV.title')}</h2>
           <button className="icon-btn" onClick={onClose}><X size={15} /></button>

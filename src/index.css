@@ -709,6 +709,14 @@
   .modal-form-row-2 { grid-template-columns: 1fr; }
   /* Projects: estatísticas do card em 2 colunas em vez de 3 */
   .proj-card-stats { grid-template-columns: 1fr 1fr; }
+  /* Chat do assistente: balões usam mais largura em telas pequenas */
+  .bubble { max-width: 85%; }
+}
+
+/* Telas muito estreitas (≤360px): cards de KPI do dashboard empilham
+   pra valores monetários longos não ficarem espremidos em 2 colunas. */
+@media (max-width: 360px) {
+  .g-4 { grid-template-columns: 1fr; }
 }
 
 @media (pointer: coarse) {
