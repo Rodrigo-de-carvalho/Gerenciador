@@ -135,7 +135,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
               <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required maxLength={120} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('transactionModal.amount')}</label>
                 <input

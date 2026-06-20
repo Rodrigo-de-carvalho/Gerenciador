@@ -188,7 +188,7 @@ export default function RecurringModal({ onClose }) {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="modal-form-row-2" style={{ gap: 10 }}>
                 <div className="field">
                   <label className="field-label">{t('recurring.amount')}</label>
                   <input
@@ -208,7 +208,7 @@ export default function RecurringModal({ onClose }) {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="modal-form-row-2" style={{ gap: 10 }}>
                 <div className="field">
                   <label className="field-label">{t('recurring.category')}</label>
                   <select

@@ -140,7 +140,7 @@ export default function Reports() {
             </div>
             <span style={{ fontWeight: 600 }}>{t('reports.shareWhatsApp')}</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="whatsapp-grid">
             <div>
               <div className="field-label" style={{ marginBottom: 6 }}>{t('reports.preview')}</div>
               <textarea readOnly value={privacy ? t('reports.privacyMode') : whatsappText} rows={8}

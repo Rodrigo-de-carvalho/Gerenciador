@@ -80,7 +80,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('investments.investedAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.invested} onChange={e => set('invested', e.target.value)} placeholder="0,00" required />

@@ -377,7 +377,7 @@ export default function ImportCSV({ onClose }) {
               )}
 
               <div style={{ maxHeight: 360, overflow: 'auto', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)' }}>
-                <table style={{ width: '100%', minWidth: 460, borderCollapse: 'collapse', fontSize: 13 }}>
+                <table style={{ width: '100%', minWidth: 'min(100%, 460px)', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--chip)', position: 'sticky', top: 0, zIndex: 1 }}>
                       <th style={{ padding: '8px 10px', width: 32, textAlign: 'center' }}>

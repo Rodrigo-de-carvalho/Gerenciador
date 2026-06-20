@@ -63,7 +63,7 @@ function GoalModal({ goal, onClose, onSave }) {
               <textarea className="field-input" style={{ resize: 'none' }} rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder={t('goals.descPlaceholder')} maxLength={200} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('goals.targetAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.targetAmount} onChange={e => set('targetAmount', e.target.value)} placeholder="0,00" />

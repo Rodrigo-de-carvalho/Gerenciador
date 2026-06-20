@@ -496,7 +496,7 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
 }
-.tx-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.tx-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; overflow-wrap: anywhere; }
 .tx-table tr:last-child td { border-bottom: 0; }
 .tx-table tbody tr:hover td { background: var(--chip); }
 .tx-row-icon {
@@ -564,6 +564,15 @@
 
 /* Cards: "total comprometido" summary row */
 .commit-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* Forms: par de campos lado a lado (valor/data, limite/dia, etc.) */
+.modal-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; }
+
+/* Projects: estatísticas (entradas/saídas/saldo) no rodapé do card */
+.proj-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+/* Reports: painel de compartilhar via WhatsApp (preview + telefone) */
+.whatsapp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* ============ tabs ============ */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
@@ -667,6 +676,7 @@
   .reports-cat-grid { grid-template-columns: 1fr !important; }
   .kpi-grid-4 { grid-template-columns: 1fr 1fr; }
   .alloc-grid { grid-template-columns: 1fr; }
+  .whatsapp-grid { grid-template-columns: 1fr; }
   /* iOS Safari faz zoom automático em inputs com fonte < 16px ao focar.
      Subimos para 16px só no toque para evitar o "pulo" da tela. */
   .field-input, .input-field, .select-field { font-size: 16px; }
@@ -695,6 +705,10 @@
   /* Cards: resumo "total comprometido" empilha em telas estreitas */
   .commit-summary { flex-direction: column; align-items: flex-start; }
   .commit-summary-stats { gap: 16px !important; }
+  /* Pares de campo (valor/data, limite/dia, meta/prazo) empilham em telas bem estreitas */
+  .modal-form-row-2 { grid-template-columns: 1fr; }
+  /* Projects: estatísticas do card em 2 colunas em vez de 3 */
+  .proj-card-stats { grid-template-columns: 1fr 1fr; }
 }
 
 @media (pointer: coarse) {

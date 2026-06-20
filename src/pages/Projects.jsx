@@ -482,7 +482,7 @@ export default function Projects() {
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                <div className="proj-card-stats">
                   {[
                     { label: 'Entradas', value: stats.income, cls: 'pos' },
                     { label: 'Saídas', value: stats.expense, cls: 'neg' },
