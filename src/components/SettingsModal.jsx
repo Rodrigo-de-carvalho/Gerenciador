@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
+import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useI18n } from '../i18n';
 import PrivacyPolicy from './PrivacyPolicy';
 
@@ -126,7 +127,7 @@ export default function SettingsModal({ onClose }) {
       setShowClearAllConfirm(false);
       setClearAllText('');
     } catch (e) {
-      setClearAllError(e.message || 'Erro ao apagar. Tente novamente.');
+      setClearAllError(friendlyErrorMessage(e, t));
     } finally {
       setClearingAll(false);
     }

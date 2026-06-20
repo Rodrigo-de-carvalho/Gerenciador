@@ -5,6 +5,7 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 const TYPES = [
@@ -111,7 +112,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
 export default function Investments() {
   const { t } = useI18n();
   const { privacy } = usePrivacy();
-  const { investments, addInvestment, updateInvestment, deleteInvestment } = useFinance();
+  const { investments, addInvestment, updateInvestment, deleteInvestment, loading } = useFinance();
   const [showModal, setShowModal] = useState(false);
   const [editInv, setEditInv] = useState(null);
   const [filterType, setFilterType] = useState('all');
@@ -141,6 +142,9 @@ export default function Investments() {
   }, [investments, t]);
 
   const filtered = filterType === 'all' ? investments : investments.filter(i => i.type === filterType);
+
+  // 1ª carga sem cache: evita mostrar "nenhum ativo" antes dos dados chegarem.
+  if (loading && investments.length === 0) return <PageLoader />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { friendlyErrorMessage } from '../utils/errorMessages';
+import { useI18n } from '../i18n';
 
 /**
  * Modal de confirmação reutilizável para ações destrutivas.
@@ -25,6 +27,7 @@ export default function ConfirmModal({
   onClose,
   danger = true,
 }) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
   const cancelRef = useRef(null);
@@ -44,7 +47,7 @@ export default function ConfirmModal({
       await onConfirm();
       onClose();
     } catch (e) {
-      setError(e.message || 'Erro inesperado. Tente novamente.');
+      setError(friendlyErrorMessage(e, t));
     } finally {
       setLoading(false);
     }

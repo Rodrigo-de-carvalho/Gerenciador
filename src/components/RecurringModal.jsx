@@ -4,6 +4,7 @@ import { X, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-reac
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
 import { formatCurrency } from '../utils/formatters';
+import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useI18n } from '../i18n';
 
 export default function RecurringModal({ onClose }) {
@@ -62,7 +63,7 @@ export default function RecurringModal({ onClose }) {
       }
       cancelForm();
     } catch (err) {
-      showToast(err.message || t('common.saveFailedToast'), 'error');
+      showToast(friendlyErrorMessage(err, t), 'error');
     } finally {
       setSaving(false);
     }

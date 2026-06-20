@@ -10,6 +10,7 @@ import ImportCSV from '../components/ImportCSV';
 import ImportHistory from '../components/ImportHistory';
 import RecurringModal from '../components/RecurringModal';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 
 function groupByDate(txs) {
   const groups = {};
@@ -32,7 +33,7 @@ function groupByDate(txs) {
 export default function Transactions() {
   const { t } = useI18n();
   const { showToast } = useToast();
-  const { transactions, categories, deleteTransaction } = useFinance();
+  const { transactions, categories, deleteTransaction, loading } = useFinance();
   const { privacy } = usePrivacy();
   const [removingIds, setRemovingIds] = useState([]);
   const now = getCurrentMonthYear();
@@ -96,6 +97,9 @@ export default function Transactions() {
 
   // True when no filters are active (empty state = no transactions this month)
   const hasActiveFilters = typeFilter !== 'all' || catFilter !== '' || search !== '';
+
+  // 1ª carga sem cache: evita mostrar "nenhuma transação" antes dos dados chegarem.
+  if (loading && transactions.length === 0) return <PageLoader />;
 
   return (
     <div>

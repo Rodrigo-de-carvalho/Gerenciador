@@ -9,6 +9,7 @@ import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 import CategoryDonut from '../components/CategoryDonut';
 import SavingsRing from '../components/SavingsRing';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 function splitBRL(n) {
@@ -113,7 +114,7 @@ function WelcomeCard({ onAddTransaction, onNavigate }) {
 export default function Dashboard({ onNavigate }) {
   const { t } = useI18n();
   const MONTH_NAMES = t('monthsShort');
-  const { transactions, categories, projects, budgets, getSummary, getCumulativeBalance } = useFinance();
+  const { transactions, categories, projects, budgets, getSummary, getCumulativeBalance, loading } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -194,6 +195,10 @@ export default function Dashboard({ onNavigate }) {
       return { ...b, cat, spent, pct };
     }).filter(b => b.cat);
   }, [budgets, monthTxs, categories]);
+
+  // 1ª carga sem cache: mostra spinner em vez do WelcomeCard/estado vazio
+  // (senão um usuário com histórico veria "Adicione sua primeira transação").
+  if (loading && transactions.length === 0) return <PageLoader />;
 
   return (
     <div>

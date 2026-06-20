@@ -10,6 +10,8 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 import { exportProjectToExcel, downloadProjectPDF, generateProjectWhatsAppText } from '../utils/exportUtils';
 import TransactionModal from '../components/TransactionModal';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
+import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useI18n } from '../i18n';
 
 const PROJECT_ICONS = ['🏗️','🏠','💻','📱','🚗','🎯','💼','🌱','🎨','🏋️','📚','🎵','✈️','🍕','🎮','🛍️','💡','🔧','🎓','⚽','🎪','🏖️','🏢','🔬','🛡️'];
@@ -123,7 +125,7 @@ function ProjectDetail({ project, onBack }) {
       setShowClearProjectConfirm(false);
       setClearProjectText('');
     } catch (e) {
-      setClearProjectError(e.message || t('common.errDeleteRetry'));
+      setClearProjectError(friendlyErrorMessage(e, t));
     } finally {
       setClearingProject(false);
     }
@@ -384,7 +386,7 @@ function ProjectDetail({ project, onBack }) {
 
 export default function Projects() {
   const { t } = useI18n();
-  const { projects, transactions, addProject, updateProject } = useFinance();
+  const { projects, transactions, addProject, updateProject, loading } = useFinance();
   const { privacy } = usePrivacy();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -402,6 +404,9 @@ export default function Projects() {
     const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     return { income, expense, balance: income - expense, count: txs.length };
   };
+
+  // 1ª carga sem cache: evita mostrar "nenhum projeto" antes dos dados chegarem.
+  if (loading && projects.length === 0) return <PageLoader />;
 
   return (
     <div>

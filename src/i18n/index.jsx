@@ -163,6 +163,13 @@ const translations = {
       tip5Title: 'Cuidado com o rotativo', tip5Text: 'O crédito rotativo do cartão tem os juros mais altos do mercado. Evite.',
       tip6Title: 'Querer x precisar', tip6Text: 'Antes de comprar, pergunte se é uma necessidade real ou um desejo passageiro.',
     },
+    errors: {
+      generic: 'Algo deu errado. Tente novamente em alguns instantes.',
+      network: 'Falha de conexão. Verifique sua internet e tente novamente.',
+      duplicateEntry: 'Este registro já existe.',
+      sessionExpired: 'Sua sessão expirou. Entre novamente para continuar.',
+      permission: 'Você não tem permissão para fazer isso.',
+    },
     categories: {
       income: 'Entradas', expense: 'Saídas', noCategory: 'Nenhuma categoria',
       transaction: 'lançamento', transactionPlural: 'lançamentos',
@@ -523,6 +530,13 @@ const translations = {
       tip5Title: 'Beware of revolving credit', tip5Text: 'Credit card revolving interest is the highest on the market. Avoid it.',
       tip6Title: 'Want vs. need', tip6Text: 'Before buying, ask whether it is a real need or a passing want.',
     },
+    errors: {
+      generic: 'Something went wrong. Please try again in a moment.',
+      network: 'Connection failed. Check your internet and try again.',
+      duplicateEntry: 'This entry already exists.',
+      sessionExpired: 'Your session has expired. Please sign in again to continue.',
+      permission: "You don't have permission to do that.",
+    },
     categories: {
       income: 'Incomes', expense: 'Expenses', noCategory: 'No categories',
       transaction: 'transaction', transactionPlural: 'transactions',
@@ -880,6 +894,13 @@ const translations = {
       tip4Title: 'Fondo de emergencia', tip4Text: 'Junta de 3 a 6 meses de gastos para imprevistos.',
       tip5Title: 'Cuidado con el rotativo', tip5Text: 'El crédito rotativo de la tarjeta tiene los intereses más altos del mercado. Evítalo.',
       tip6Title: 'Querer vs. necesitar', tip6Text: 'Antes de comprar, pregúntate si es una necesidad real o un deseo pasajero.',
+    },
+    errors: {
+      generic: 'Algo salió mal. Inténtalo de nuevo en unos instantes.',
+      network: 'Error de conexión. Verifica tu internet e inténtalo de nuevo.',
+      duplicateEntry: 'Este registro ya existe.',
+      sessionExpired: 'Tu sesión expiró. Inicia sesión de nuevo para continuar.',
+      permission: 'No tienes permiso para hacer eso.',
     },
     categories: {
       income: 'Ingresos', expense: 'Gastos', noCategory: 'Sin categorías',

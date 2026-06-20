@@ -12,6 +12,7 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import { exportToExcel, generatePDFReport, generateWhatsAppText } from '../utils/exportUtils';
 import CategoryDonut from '../components/CategoryDonut';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 const ChartTooltip = ({ active, payload, label }) => {
@@ -28,7 +29,7 @@ const ChartTooltip = ({ active, payload, label }) => {
 
 export default function Reports() {
   const { t } = useI18n();
-  const { transactions, categories, getSummary } = useFinance();
+  const { transactions, categories, getSummary, loading } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -102,6 +103,9 @@ export default function Reports() {
   };
 
   const CHART_COLORS = { income: '#2DD4A7', expense: '#FB7185', balance: '#60A5FA' };
+
+  // 1ª carga sem cache: evita mostrar relatório vazio antes dos dados chegarem.
+  if (loading && transactions.length === 0) return <PageLoader />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

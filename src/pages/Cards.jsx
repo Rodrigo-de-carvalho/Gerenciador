@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, getCurrentMonthYear } from '../utils/format
 import TransactionModal from '../components/TransactionModal';
 import ImportCSV from '../components/ImportCSV';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 class ImportBoundary extends Component {
@@ -94,7 +95,7 @@ function CardFormModal({ card, onClose, onSave }) {
 
 export default function Cards() {
   const { t } = useI18n();
-  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill, getCardUsedLimit } = useFinance();
+  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill, getCardUsedLimit, loading } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -159,6 +160,9 @@ export default function Cards() {
   };
 
   const getCardStyle = (card, index) => CARD_STYLES[index % CARD_STYLES.length];
+
+  // 1ª carga sem cache: evita mostrar "nenhum cartão" antes dos dados chegarem.
+  if (loading && cards.length === 0) return <PageLoader />;
 
   return (
     <div>

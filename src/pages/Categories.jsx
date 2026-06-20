@@ -3,6 +3,7 @@ import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react'
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 const ICONS = ['💼','💻','📈','💰','🏦','💳','🎁','🍽️','🚗','🏠','❤️','📚','🎮','🛍️','✈️','🎵','🏋️','💡','🛒','📱','🔧','🎓','👕','🐾','🌱','💊','🚌','⛽'];
@@ -10,7 +11,7 @@ const DEFAULT_COLORS = ['#22c55e','#10b981','#3b82f6','#8b5cf6','#f97316','#f59e
 
 export default function Categories() {
   const { t } = useI18n();
-  const { categories, transactions, addCategory, deleteCategory, budgets, setBudget, deleteBudget } = useFinance();
+  const { categories, transactions, addCategory, deleteCategory, budgets, setBudget, deleteBudget, loading } = useFinance();
   const [showForm, setShowForm]           = useState(false);
   const [form, setForm]                   = useState({ name: '', type: 'expense', color: '#6b7280', icon: '📋' });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -172,6 +173,9 @@ export default function Categories() {
       </div>
     </div>
   );
+
+  // 1ª carga sem cache: evita mostrar "nenhuma categoria" antes dos dados chegarem.
+  if (loading && categories.length === 0) return <PageLoader />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

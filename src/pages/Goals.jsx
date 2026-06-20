@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
 import ConfirmModal from '../components/ConfirmModal';
 import Ring from '../components/Ring';
+import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
 
 const ICONS = ['🎯','🏠','✈️','📚','🚗','💻','🌱','🏋️','💰','🛹','🏖️','🎓','💍','🏗️','🎵','⚽','🎮','🏢','🔬','🛡️'];
@@ -237,7 +238,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
 
 export default function Goals() {
   const { t } = useI18n();
-  const { projects, addProject, updateProject, deleteProject } = useFinance();
+  const { projects, addProject, updateProject, deleteProject, loading } = useFinance();
   const { goals, goalProjectIds, addGoal, updateGoal, removeGoal } = useGoals();
   const { transactions } = useFinance();
   const { privacy } = usePrivacy();
@@ -280,6 +281,9 @@ export default function Goals() {
     const meta = goals.find(g => g.projectId === p.id);
     setEditGoal({ ...p, targetAmount: meta?.targetAmount || null, deadline: meta?.deadline || null });
   };
+
+  // 1ª carga sem cache: evita mostrar "nenhuma meta" antes dos dados chegarem.
+  if (loading && projects.length === 0) return <PageLoader />;
 
   return (
     <div>

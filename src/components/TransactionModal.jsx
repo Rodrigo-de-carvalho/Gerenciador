@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Plus, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
+import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useI18n } from '../i18n';
 
 const emptyForm = {
@@ -84,7 +85,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
       showToast(t('common.savedToast'));
       onClose();
     } catch (err) {
-      setError(err.message || 'Erro ao salvar. Tente novamente.');
+      setError(friendlyErrorMessage(err, t));
     } finally {
       setSaving(false);
     }
