@@ -23,6 +23,8 @@ import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import com.gerenciadorfinanceiro.app.BuildConfig
 import com.gerenciadorfinanceiro.app.databinding.ActivityMainBinding
 import java.io.File
@@ -266,6 +268,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView() {
         val webView = binding.webView
 
+        // Fundo escuro explícito do próprio WebView: evita o "flash" branco/preto
+        // antes do CSS da página carregar (a view nasce com a cor de fundo do app).
+        webView.setBackgroundColor(0xFF0A0E14.toInt())
+
         webView.settings.apply {
             javaScriptEnabled = true
             javaScriptCanOpenWindowsAutomatically = true
@@ -280,6 +286,17 @@ class MainActivity : AppCompatActivity() {
             cacheMode = WebSettings.LOAD_DEFAULT
             mediaPlaybackRequiresUserGesture = false
             defaultFontSize = 16
+
+            // Desliga o escurecimento automático do Android (force dark): sem ele,
+            // uma página ainda sem estilo era tratada como "clara" e pintada de
+            // preto por um instante. Usa a API nova quando disponível e cai pra
+            // setForceDark em WebViews mais antigas; ambas guardadas por feature.
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, false)
+            } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                @Suppress("DEPRECATION")
+                WebSettingsCompat.setForceDark(this, WebSettingsCompat.FORCE_DARK_OFF)
+            }
         }
 
         CookieManager.getInstance().apply {
