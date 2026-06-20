@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, FolderOpen, CreditCard, Target,
   Bot, Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
-  Plus, Menu, X, TrendingUp, Smartphone,
+  Plus, Menu, X, TrendingUp, Smartphone, GraduationCap,
 } from 'lucide-react';
 import TransactionModal from './TransactionModal';
 import SettingsModal from './SettingsModal';
@@ -24,8 +24,9 @@ const NAV_MAIN = [
 ];
 
 const NAV_TOOLS = [
-  { id: 'categories',   label: 'Categorias',  Icon: Tags },
-  { id: 'reports',      label: 'Relatórios',  Icon: PieChart },
+  { id: 'categories',       label: 'Categorias',          Icon: Tags },
+  { id: 'reports',          label: 'Relatórios',          Icon: PieChart },
+  { id: 'financeEducation', label: 'Educação Financeira', Icon: GraduationCap },
 ];
 
 
@@ -50,6 +51,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
     assistant:    { title: t('nav.assistant'),    sub: t('pageSub.assistant') },
     categories:   { title: t('nav.categories'),   sub: t('pageSub.categories') },
     reports:      { title: t('nav.reports'),      sub: t('pageSub.reports') },
+    financeEducation: { title: t('nav.financeEducation'), sub: t('pageSub.financeEducation') },
   };
 
   const userInitial = user?.email?.[0]?.toUpperCase() || '?';
