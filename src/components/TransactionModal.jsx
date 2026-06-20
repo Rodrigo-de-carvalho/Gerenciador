@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
@@ -57,12 +58,16 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     e.preventDefault();
     // categoria agora é escolhida por tiles (sem o required do select)
     if (!form.categoryId) { setError(t('transactionModal.categoryPlaceholder')); return; }
+    // Valida o valor antes de tentar salvar: evita parseFloat de texto/vírgula solta
+    // e bloqueia zero/negativo, mostrando o erro na hora em vez de só após o submit.
+    const amount = parseFloat(String(form.amount).replace(',', '.'));
+    if (isNaN(amount) || amount <= 0) { setError(t('transactionModal.invalidAmount')); return; }
     setSaving(true);
     setError('');
     try {
       const payload = {
         ...form,
-        amount: parseFloat(String(form.amount).replace(',', '.')),
+        amount,
         projectId: form.projectId || null,
         cardId: form.cardId || null,
       };
@@ -91,7 +96,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     ...(field === 'type' ? { categoryId: '' } : {}),
   }));
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       role="dialog"
@@ -282,6 +287,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
         </form>
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

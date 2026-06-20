@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
@@ -70,7 +71,7 @@ export default function RecurringModal({ onClose }) {
   const catOptions = categories.filter(c => c.type === form.type);
   const hasList    = recurring.length > 0;
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: 520 }}>
         <div className="modal-head">
@@ -259,6 +260,7 @@ export default function RecurringModal({ onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

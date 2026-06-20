@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Trash2, Loader2, AlertCircle } from 'lucide-react';
 
 /**
@@ -49,7 +50,7 @@ export default function ConfirmModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       role="dialog"
@@ -114,6 +115,7 @@ export default function ConfirmModal({
         </div>
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

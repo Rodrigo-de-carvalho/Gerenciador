@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, X, Check, AlertCircle, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
 import { parseCSVFile, detectBank, parseRows, BANK_LABELS } from '../utils/csvParsers';
 import { useFinance } from '../context/FinanceContext';
@@ -185,7 +186,7 @@ export default function ImportCSV({ onClose }) {
   const canImport = selCount > 0 && !importing &&
     (!isCreditCardBank(bank) || (cards.length > 0 && !!cardId));
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: step === 'preview' ? 'min(94vw, 700px)' : 480, transition: 'max-width 200ms' }}>
         <div className="modal-head">
@@ -516,6 +517,7 @@ export default function ImportCSV({ onClose }) {
         )}
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

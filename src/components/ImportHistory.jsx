@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, RotateCcw, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
@@ -42,7 +43,7 @@ export default function ImportHistory({ onClose }) {
     setEntries(getImportHistory(user.id));
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: 520 }}>
         <div className="modal-head">
@@ -146,6 +147,7 @@ export default function ImportHistory({ onClose }) {
         </div>
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

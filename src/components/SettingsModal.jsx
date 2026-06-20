@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Settings, X, Shield, Download, Bot as BotIcon,
   ShieldAlert, Trash2, Loader2,
@@ -142,7 +143,7 @@ export default function SettingsModal({ onClose }) {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: 460 }}>
         <div className="modal-head">
@@ -382,6 +383,7 @@ export default function SettingsModal({ onClose }) {
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

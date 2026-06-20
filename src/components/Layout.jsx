@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import TransactionModal from './TransactionModal';
 import SettingsModal from './SettingsModal';
+import BottomNav from './BottomNav';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { usePrivacy } from '../context/PrivacyContext';
@@ -261,6 +262,9 @@ export default function Layout({ currentPage, onNavigate, children }) {
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showFabModal && <TransactionModal onClose={() => setShowFabModal(false)} />}
+
+      {/* Bottom tab bar — navegação rápida no mobile (complementa a sidebar) */}
+      <BottomNav currentPage={currentPage} onNavigate={navigate} />
 
       {/* FAB — botão flutuante de adicionar transação (só no mobile) */}
       <button
