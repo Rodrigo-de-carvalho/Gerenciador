@@ -4,9 +4,14 @@
 
 @layer base {
   * { box-sizing: border-box; }
+  /* Desativa o gesto nativo de pull-to-refresh do navegador/WebView, deixando
+     só o gesto customizado do app (SwipeRefreshLayout, no Kotlin) responder ao
+     puxar a tela — sem o ícone/cor padrão do sistema aparecendo por cima. */
+  html { overscroll-behavior-y: contain; }
   body {
     min-height: 100vh;
     margin: 0;
+    overscroll-behavior-y: contain;
     -webkit-font-smoothing: antialiased;
   }
   #root { width: 100%; max-width: 100%; text-align: left; border: none; min-height: 100vh; display: block; }
@@ -399,6 +404,7 @@
 .scroll {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 28px 30px 60px;
   scrollbar-width: thin;
   scrollbar-color: var(--line-2) transparent;

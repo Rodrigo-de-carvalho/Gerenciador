@@ -272,6 +272,11 @@ class MainActivity : AppCompatActivity() {
         // antes do CSS da página carregar (a view nasce com a cor de fundo do app).
         webView.setBackgroundColor(0xFF0A0E14.toInt())
 
+        // Desativa o overscroll/glow nativo da View: assim só o SwipeRefreshLayout
+        // (já estilizado com o teal do app) responde ao puxar a tela pra baixo,
+        // sem o ícone padrão do sistema aparecer por cima do gesto customizado.
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+
         webView.settings.apply {
             javaScriptEnabled = true
             javaScriptCanOpenWindowsAutomatically = true
