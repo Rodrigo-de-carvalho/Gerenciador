@@ -7,6 +7,8 @@ import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, getCurrentMonthYear } from '../utils/formatters';
 import TransactionModal from '../components/TransactionModal';
+import CategoryDonut from '../components/CategoryDonut';
+import SavingsRing from '../components/SavingsRing';
 import { useI18n } from '../i18n';
 
 function splitBRL(n) {
@@ -27,7 +29,7 @@ function HeroNumber({ value, privacy }) {
 }
 
 
-function StatCard({ label, value, sub, privacy, positive }) {
+function StatCard({ label, value, sub, privacy, positive, percent }) {
   return (
     <div className="card" style={{ padding: '16px 18px' }}>
       <div className="t-label" style={{ marginBottom: 8 }}>{label}</div>
@@ -35,7 +37,7 @@ function StatCard({ label, value, sub, privacy, positive }) {
         fontSize: 20, fontWeight: 600,
         color: positive === true ? 'var(--positive)' : positive === false ? 'var(--negative)' : 'var(--text)',
       }}>
-        {privacy ? 'R$ ••••' : formatCurrency(value)}
+        {percent != null ? `${value}%` : privacy ? 'R$ ••••' : formatCurrency(value)}
       </div>
       {sub && <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4 }}>{sub}</div>}
     </div>
@@ -159,10 +161,11 @@ export default function Dashboard({ onNavigate }) {
       const cat = categories.find(c => c.id === tx.categoryId);
       const name = cat?.name || othersLabel;
       const color = cat?.color || '#6b7280';
-      if (!map[name]) map[name] = { name, color, value: 0 };
+      const icon = cat?.icon || '📋';
+      if (!map[name]) map[name] = { name, color, icon, value: 0 };
       map[name].value += tx.amount;
     });
-    const arr = Object.values(map).sort((a, b) => b.value - a.value).slice(0, 6);
+    const arr = Object.values(map).sort((a, b) => b.value - a.value);
     const total = arr.reduce((s, c) => s + c.value, 0);
     return arr.map(c => ({ ...c, pct: total > 0 ? Math.round(c.value / total * 100) : 0 }));
   }, [monthTxs, categories, t]);
@@ -242,7 +245,10 @@ export default function Dashboard({ onNavigate }) {
         <StatCard label={t('dashboard.totalBalance')} value={totalBalance} privacy={privacy} positive={totalBalance >= 0} sub={t('dashboard.accumulated')} />
         <StatCard label={t('dashboard.income')} value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} ${t('dashboard.incomeStat')}`} />
         <StatCard label={t('dashboard.expense')} value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} ${t('dashboard.expenseStat')}`} />
-        <StatCard label={t('dashboard.savingsRate')} value={0} privacy={privacy} sub={`${savingsRate}${t('dashboard.pctOfIncome')}`} />
+        <StatCard
+          label={t('dashboard.savingsRate')} value={savingsRate} percent
+          positive={savingsRate >= 20 ? true : savingsRate < 0 ? false : undefined}
+        />
       </div>
 
       {/* Main grid */}
@@ -291,6 +297,19 @@ export default function Dashboard({ onNavigate }) {
 
         {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Savings ring */}
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div className="t-eyebrow" style={{ marginBottom: 14, alignSelf: 'flex-start' }}>{t('dashboard.savingsRate')}</div>
+            <SavingsRing
+              pct={savingsRate}
+              message={
+                savingsRate >= 20 ? t('dashboard.savingsGreat') :
+                savingsRate >= 0 ? t('dashboard.savingsOk') :
+                t('dashboard.savingsBad')
+              }
+            />
+          </div>
+
           {/* Category breakdown */}
           <div className="card">
             <div className="t-eyebrow" style={{ marginBottom: 14 }}>{t('dashboard.whereMoneyWent')}</div>
@@ -299,23 +318,7 @@ export default function Dashboard({ onNavigate }) {
                 {t('dashboard.noExpensesThisMonth')}
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {catBreakdown.map(c => (
-                  <div key={c.name}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <div className="cat-dot" style={{ background: c.color }} />
-                      <span style={{ flex: 1, fontSize: 12.5 }}>{c.name}</span>
-                      <span className="t-num" style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                        {privacy ? '••••' : formatCurrency(c.value)}
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-3)', minWidth: 28, textAlign: 'right' }}>{c.pct}%</span>
-                    </div>
-                    <div className="bar-track">
-                      <div className="bar-fill" style={{ width: `${c.pct}%`, background: c.color }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CategoryDonut data={catBreakdown} total={expense} privacy={privacy} totalLabel={t('common.total')} />
             )}
           </div>
 

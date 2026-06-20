@@ -61,7 +61,7 @@ function CardFormModal({ card, onClose, onSave }) {
               <label className="field-label">{t('cards.cardName')}</label>
               <input type="text" className="field-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder={t('cards.cardNamePlaceholder')} maxLength={60} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('cards.limit')}</label>
                 <input type="number" className="field-input" value={form.limitAmount} onChange={e => setForm(f => ({ ...f, limitAmount: e.target.value }))} placeholder={t('cards.limitPlaceholder')} min="0" step="0.01" />
@@ -247,7 +247,7 @@ export default function Cards() {
           ) : (
             <>
               {/* Resumo geral */}
-              <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div className="card commit-summary" style={{ padding: '14px 18px' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
                     Total comprometido
@@ -256,7 +256,7 @@ export default function Cards() {
                     {privacy ? 'R$ ••••' : formatCurrency(futureTotalAmount)}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-3)' }}>
+                <div className="commit-summary-stats" style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-3)' }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 16 }}>{futureInstallments.length}</div>
                     <div>meses</div>

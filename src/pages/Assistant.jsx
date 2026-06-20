@@ -197,7 +197,7 @@ export default function Assistant() {
           ? projects.find(p => p.name.toLowerCase() === args.project_name.toLowerCase())
           : null;
 
-        await addTransaction({
+        const { persist } = addTransaction({
           description: args.description,
           amount: Math.abs(Number(args.amount)),
           type: args.type,
@@ -206,6 +206,7 @@ export default function Assistant() {
           projectId: proj?.id || null,
           notes: args.notes || null,
         });
+        await persist;
 
         return {
           success: true,

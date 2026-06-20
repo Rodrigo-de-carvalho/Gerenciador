@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useToast } from '../context/ToastContext';
 import { formatCurrency } from '../utils/formatters';
 import { useI18n } from '../i18n';
 
 export default function RecurringModal({ onClose }) {
   const { t } = useI18n();
+  const { showToast } = useToast();
   const { recurring, categories, addRecurring, updateRecurring, deleteRecurring, toggleRecurring } = useFinance();
 
   const emptyForm = () => ({
@@ -58,6 +60,8 @@ export default function RecurringModal({ onClose }) {
         await addRecurring(payload);
       }
       cancelForm();
+    } catch (err) {
+      showToast(err.message || t('common.saveFailedToast'), 'error');
     } finally {
       setSaving(false);
     }
@@ -184,7 +188,7 @@ export default function RecurringModal({ onClose }) {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="modal-form-row-2" style={{ gap: 10 }}>
                 <div className="field">
                   <label className="field-label">{t('recurring.amount')}</label>
                   <input
@@ -204,7 +208,7 @@ export default function RecurringModal({ onClose }) {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="modal-form-row-2" style={{ gap: 10 }}>
                 <div className="field">
                   <label className="field-label">{t('recurring.category')}</label>
                   <select

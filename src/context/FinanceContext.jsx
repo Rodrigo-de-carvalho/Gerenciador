@@ -289,22 +289,48 @@ export function FinanceProvider({ children }) {
 
   // ── Transactions ──────────────────────────────────────────
 
-  const addTransaction = useCallback(async (tx) => {
-    const { data, error } = await supabase.from('transactions').insert({
-      user_id:     user.id,
-      type:        tx.type,
+  // Otimista: a transação aparece na lista na hora (sem esperar o servidor) e só
+  // é desfeita se o insert falhar — isso é o que faz "registrar" parecer instantâneo.
+  const addTransaction = useCallback((tx) => {
+    const tempId = `tmp-${crypto.randomUUID()}`;
+    const optimistic = mapTx({
+      id: tempId,
+      type: tx.type,
       description: tx.description,
-      amount:      tx.amount,
-      date:        tx.date,
+      amount: tx.amount,
+      date: tx.date,
       category_id: tx.categoryId || null,
-      project_id:  tx.projectId || null,
-      notes:       tx.notes || null,
-      card_id:     tx.cardId || null,
-      paid:        tx.cardId ? false : true,
-    }).select().single();
-    if (error) throw new Error(error.message);
-    if (data) setTransactions(prev => [mapTx(data), ...prev]);
-    return mapTx(data);
+      project_id: tx.projectId || null,
+      notes: tx.notes || null,
+      card_id: tx.cardId || null,
+      paid: tx.cardId ? false : true,
+      created_at: new Date().toISOString(),
+    });
+    setTransactions(prev => [optimistic, ...prev]);
+
+    const persist = async () => {
+      const { data, error } = await supabase.from('transactions').insert({
+        user_id:     user.id,
+        type:        tx.type,
+        description: tx.description,
+        amount:      tx.amount,
+        date:        tx.date,
+        category_id: tx.categoryId || null,
+        project_id:  tx.projectId || null,
+        notes:       tx.notes || null,
+        card_id:     tx.cardId || null,
+        paid:        tx.cardId ? false : true,
+      }).select().single();
+      if (error) {
+        setTransactions(prev => prev.filter(t => t.id !== tempId));
+        throw new Error(error.message);
+      }
+      const real = mapTx(data);
+      setTransactions(prev => prev.map(t => t.id === tempId ? real : t));
+      return real;
+    };
+
+    return { optimistic, persist: persist() };
   }, [user]);
 
   const addInstallmentTransaction = useCallback(async (tx, installmentCount) => {

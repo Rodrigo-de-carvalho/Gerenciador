@@ -461,6 +461,29 @@
 .bar-track { height: 4px; background: var(--chip); border-radius: 2px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
 
+/* ============ donut chart ============ */
+.donut-wrap { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.donut { position: relative; flex-shrink: 0; border-radius: 50%; }
+.donut .donut-center {
+  position: absolute; inset: 26px; background: var(--surface);
+  border-radius: 50%; display: grid; place-items: center; text-align: center;
+}
+.donut .donut-center span { font-size: 11px; color: var(--text-3); display: block; }
+.donut .donut-center b { font-size: 17px; font-weight: 700; display: block; margin-top: 2px; }
+.legend { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 180px; }
+.legend-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.legend-item .lg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-item .lg-name { flex: 1; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-item .lg-val { font-weight: 600; font-family: 'Geist Mono', monospace; }
+.legend-item .lg-pct { color: var(--text-3); font-size: 11.5px; min-width: 36px; text-align: right; }
+
+/* ============ ring gauge ============ */
+.ring { position: relative; display: grid; place-items: center; }
+.ring svg { transform: rotate(-90deg); }
+.ring .ring-bg { stroke: var(--surface-3); }
+.ring .ring-fg { transition: stroke-dashoffset 700ms cubic-bezier(.2,.8,.2,1); }
+.ring .ring-label { position: absolute; font-weight: 800; color: var(--text); }
+
 /* ============ tables ============ */
 .tx-table { width: 100%; border-collapse: collapse; }
 .tx-table th {
@@ -473,7 +496,7 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
 }
-.tx-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.tx-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; overflow-wrap: anywhere; }
 .tx-table tr:last-child td { border-bottom: 0; }
 .tx-table tbody tr:hover td { background: var(--chip); }
 .tx-row-icon {
@@ -534,6 +557,22 @@
 .g-3 { grid-template-columns: 1fr 1fr 1fr; }
 .g-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 .g-dash { grid-template-columns: 1.5fr 1fr; }
+
+/* KPI row (Reports/Investments) and allocation chart+legend grid */
+.kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.alloc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Cards: "total comprometido" summary row */
+.commit-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* Forms: par de campos lado a lado (valor/data, limite/dia, etc.) */
+.modal-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; }
+
+/* Projects: estatísticas (entradas/saídas/saldo) no rodapé do card */
+.proj-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+/* Reports: painel de compartilhar via WhatsApp (preview + telefone) */
+.whatsapp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* ============ tabs ============ */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
@@ -635,6 +674,9 @@
   .hero-num { font-size: 52px; }
   /* Reports: stack category panels on mobile */
   .reports-cat-grid { grid-template-columns: 1fr !important; }
+  .kpi-grid-4 { grid-template-columns: 1fr 1fr; }
+  .alloc-grid { grid-template-columns: 1fr; }
+  .whatsapp-grid { grid-template-columns: 1fr; }
   /* iOS Safari faz zoom automático em inputs com fonte < 16px ao focar.
      Subimos para 16px só no toque para evitar o "pulo" da tela. */
   .field-input, .input-field, .select-field { font-size: 16px; }
@@ -652,10 +694,29 @@
 @media (max-width: 480px) {
   .g-3 { grid-template-columns: 1fr; }
   .g-4 { grid-template-columns: 1fr 1fr; }
+  .kpi-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
   .tabs { overflow-x: auto; padding-bottom: 1px; }
   .tab { font-size: 12px; padding: 10px 10px; white-space: nowrap; }
   /* Saldos grandes (6+ dígitos) não estouram a largura do card em telas pequenas. */
   .hero-num { font-size: 42px; overflow-wrap: anywhere; max-width: 100%; }
+  /* Donut + legend: empilha verticalmente quando não há espaço lateral */
+  .donut-wrap { flex-direction: column; gap: 14px; }
+  .legend { min-width: 0; width: 100%; }
+  /* Cards: resumo "total comprometido" empilha em telas estreitas */
+  .commit-summary { flex-direction: column; align-items: flex-start; }
+  .commit-summary-stats { gap: 16px !important; }
+  /* Pares de campo (valor/data, limite/dia, meta/prazo) empilham em telas bem estreitas */
+  .modal-form-row-2 { grid-template-columns: 1fr; }
+  /* Projects: estatísticas do card em 2 colunas em vez de 3 */
+  .proj-card-stats { grid-template-columns: 1fr 1fr; }
+  /* Chat do assistente: balões usam mais largura em telas pequenas */
+  .bubble { max-width: 85%; }
+}
+
+/* Telas muito estreitas (≤360px): cards de KPI do dashboard empilham
+   pra valores monetários longos não ficarem espremidos em 2 colunas. */
+@media (max-width: 360px) {
+  .g-4 { grid-template-columns: 1fr; }
 }
 
 @media (pointer: coarse) {
@@ -670,7 +731,9 @@
 
 /* ============ Cifra Modals ============ */
 .modal-overlay {
-  position: fixed; inset: 0; z-index: 50;
+  /* z-index 250: acima do FAB (100) e do drawer da sidebar (200),
+     abaixo dos toasts (300) pra confirmações ainda aparecerem por cima. */
+  position: fixed; inset: 0; z-index: 250;
   display: flex; align-items: flex-end; justify-content: center;
   background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
 }
@@ -786,6 +849,9 @@
     transform: scale(0.93);
     box-shadow: 0 2px 10px rgba(0,0,0,0.25);
   }
+  /* Esconde o FAB quando qualquer modal está aberto (evita sobrepor o formulário).
+     O z-index do .modal-overlay já cobre navegadores sem suporte a :has(). */
+  body:has(.modal-overlay) .fab { display: none; }
 }
 
 /* ============ welcome card (onboarding) ============ */

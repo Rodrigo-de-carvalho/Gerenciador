@@ -71,7 +71,10 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
       } else if (!isEdit && form.cardId && Number(form.installments) > 1) {
         await addInstallmentTransaction(payload, Number(form.installments));
       } else {
-        await addTransaction(payload);
+        // Otimista: a transação já aparece na lista, então fechamos na hora
+        // e só ficamos de olho no resultado real em segundo plano.
+        const { persist } = addTransaction(payload);
+        persist.catch(() => showToast(t('common.saveFailedToast'), 'error'));
       }
       showToast(t('common.savedToast'));
       onClose();
@@ -132,7 +135,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
               <input type="text" className="field-input" placeholder="Ex: Salário março" value={form.description} onChange={e => set('description', e.target.value)} required maxLength={120} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('transactionModal.amount')}</label>
                 <input

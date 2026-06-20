@@ -5,12 +5,13 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, PieChart, Pie, Cell, Legend, Area, AreaChart,
+  Tooltip, Area, AreaChart,
 } from 'recharts';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { formatCurrency, formatDate, MONTHS, getCurrentMonthYear } from '../utils/formatters';
 import { exportToExcel, generatePDFReport, generateWhatsAppText } from '../utils/exportUtils';
+import CategoryDonut from '../components/CategoryDonut';
 import { useI18n } from '../i18n';
 
 const ChartTooltip = ({ active, payload, label }) => {
@@ -51,7 +52,8 @@ export default function Reports() {
       const cat = categories.find(c => c.id === tx.categoryId);
       const name = cat?.name || t('common.others');
       const color = cat?.color || '#6b7280';
-      if (!map[name]) map[name] = { name, value: 0, color };
+      const icon = cat?.icon || '📋';
+      if (!map[name]) map[name] = { name, value: 0, color, icon };
       map[name].value += tx.amount;
     });
     return Object.values(map).sort((a, b) => b.value - a.value);
@@ -138,7 +140,7 @@ export default function Reports() {
             </div>
             <span style={{ fontWeight: 600 }}>{t('reports.shareWhatsApp')}</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="whatsapp-grid">
             <div>
               <div className="field-label" style={{ marginBottom: 6 }}>{t('reports.preview')}</div>
               <textarea readOnly value={privacy ? t('reports.privacyMode') : whatsappText} rows={8}
@@ -163,7 +165,7 @@ export default function Reports() {
       )}
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="kpi-grid-4">
         {[
           { label: t('reports.income'), value: income, color: 'var(--positive)', Icon: TrendingUp },
           { label: t('reports.expense'), value: expense, color: 'var(--negative)', Icon: TrendingDown },
@@ -222,7 +224,7 @@ export default function Reports() {
               <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>{t('reports.noTransactionsThisPeriod')}</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table className="tx-table" style={{ minWidth: 400 }}>
+                <table className="tx-table" style={{ minWidth: 'min(100%, 400px)' }}>
                   <thead>
                     <tr>
                       <th>{t('reports.dateHeader')}</th>
@@ -263,19 +265,11 @@ export default function Reports() {
 
       {/* Tab: Categories */}
       {activeTab === 'categories' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="reports-cat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           <div className="card">
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.expenseDistribution')}</div>
             {catBreakdown.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={catBreakdown} cx="50%" cy="45%" outerRadius={90} innerRadius={52} dataKey="value" paddingAngle={3}>
-                    {catBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12 }} />
-                  <Legend iconType="circle" iconSize={8} formatter={v => <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{v}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
+              <CategoryDonut data={catBreakdown} total={expense} privacy={privacy} totalLabel={t('common.total')} />
             ) : (
               <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: 13 }}>
                 {t('reports.noExpensesThisMonth')}
@@ -344,7 +338,7 @@ export default function Reports() {
 
           <div className="card" style={{ overflowX: 'auto' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: 'var(--text-2)' }}>{t('reports.annualTable')}</div>
-            <table className="tx-table" style={{ minWidth: 380 }}>
+            <table className="tx-table" style={{ minWidth: 'min(100%, 380px)' }}>
               <thead>
                 <tr>
                   <th>{t('reports.monthHeader')}</th>

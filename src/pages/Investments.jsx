@@ -80,7 +80,7 @@ function InvestmentModal({ inv, onClose, onSave }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('investments.investedAmount')}</label>
                 <input type="number" step="0.01" min="0" className="field-input" value={form.invested} onChange={e => set('invested', e.target.value)} placeholder="0,00" required />
@@ -159,7 +159,7 @@ export default function Investments() {
       {investments.length > 0 && (
         <>
           {/* Summary KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="kpi-grid-4">
             {[
               { label: t('investments.totalInvested'), value: totals.invested, color: 'var(--text)' },
               { label: t('investments.currentValue'), value: totals.current, color: 'var(--info)' },
@@ -177,7 +177,7 @@ export default function Investments() {
 
           {/* Allocation chart */}
           {allocation.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="alloc-grid">
               <div className="card">
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 12 }}>{t('investments.allocationByType')}</div>
                 <ResponsiveContainer width="100%" height={200}>
