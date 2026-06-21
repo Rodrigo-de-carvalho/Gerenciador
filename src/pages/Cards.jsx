@@ -95,7 +95,7 @@ function CardFormModal({ card, onClose, onSave }) {
 
 export default function Cards() {
   const { t } = useI18n();
-  const { cards, transactions, categories, addCard, updateCard, deleteCard, deleteTransaction, getCardBill, payCardBill, getCardUsedLimit, loading } = useFinance();
+  const { cards, transactions, categories, addCard, updateCard, deleteCard, deleteTransaction, getCardBill, payCardBill, unpayCardBill, getCardUsedLimit, loading } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -109,7 +109,8 @@ export default function Cards() {
   const [deleteTxConfirm, setDeleteTxConfirm] = useState(null); // id do lançamento a excluir
   const [showImport, setShowImport] = useState(false);
   const [activeTab, setActiveTab] = useState('bills');
-  const [paying, setPaying] = useState(false);
+  const [payBillConfirm, setPayBillConfirm] = useState(null);     // cardId da fatura a pagar
+  const [unpayBillConfirm, setUnpayBillConfirm] = useState(null); // cardId da fatura a desfazer
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -155,11 +156,6 @@ export default function Cards() {
 
   const futureTotalAmount = futureInstallments.reduce((s, g) => s + g.total, 0);
   const futureTotalItems  = futureInstallments.reduce((s, g) => s + g.items.length, 0);
-
-  const handlePayBill = async (cardId) => {
-    setPaying(true);
-    try { await payCardBill(cardId, month, year); } finally { setPaying(false); }
-  };
 
   const getCardStyle = (card, index) => CARD_STYLES[index % CARD_STYLES.length];
 
@@ -495,20 +491,28 @@ export default function Cards() {
                         </span>
                         {selectedBill.transactions.length > 0 && (
                           selectedBill.paid ? (
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 4,
-                              fontSize: 11.5, fontWeight: 600, color: 'var(--positive)',
-                            }}>
-                              <CheckCircle2 size={13} /> {t('cards.billPaid')}
-                            </span>
+                            <>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                fontSize: 11.5, fontWeight: 600, color: 'var(--positive)',
+                              }}>
+                                <CheckCircle2 size={13} /> {t('cards.billPaid')}
+                              </span>
+                              <button
+                                className="btn"
+                                style={{ padding: '4px 10px', fontSize: 12 }}
+                                onClick={() => setUnpayBillConfirm(card.id)}
+                              >
+                                {t('cards.unpayBill')}
+                              </button>
+                            </>
                           ) : (
                             <button
                               className="btn primary"
-                              style={{ padding: '4px 10px', fontSize: 12, opacity: paying ? 0.6 : 1 }}
-                              onClick={() => handlePayBill(card.id)}
-                              disabled={paying}
+                              style={{ padding: '4px 10px', fontSize: 12 }}
+                              onClick={() => setPayBillConfirm(card.id)}
                             >
-                              {paying ? t('cards.paying') : t('cards.payBill')}
+                              {t('cards.payBill')}
                             </button>
                           )
                         )}
@@ -561,6 +565,28 @@ export default function Cards() {
           confirmLabel={t('common.delete')}
           onConfirm={async () => { await deleteTransaction(deleteTxConfirm); }}
           onClose={() => setDeleteTxConfirm(null)}
+        />
+      )}
+
+      {payBillConfirm && (
+        <ConfirmModal
+          title={t('cards.payBill')}
+          message={t('cards.payBillConfirmFn')(privacy ? 'R$ ••••' : formatCurrency(getCardBill(payBillConfirm, month, year).total))}
+          confirmLabel={t('cards.payBill')}
+          danger={false}
+          onConfirm={async () => { await payCardBill(payBillConfirm, month, year); }}
+          onClose={() => setPayBillConfirm(null)}
+        />
+      )}
+
+      {unpayBillConfirm && (
+        <ConfirmModal
+          title={t('cards.unpayBill')}
+          message={t('cards.unpayBillConfirmFn')(privacy ? 'R$ ••••' : formatCurrency(getCardBill(unpayBillConfirm, month, year).total))}
+          confirmLabel={t('cards.unpayBill')}
+          danger={false}
+          onConfirm={async () => { await unpayCardBill(unpayBillConfirm, month, year); }}
+          onClose={() => setUnpayBillConfirm(null)}
         />
       )}
 

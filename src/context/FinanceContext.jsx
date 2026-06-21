@@ -634,6 +634,18 @@ export function FinanceProvider({ children }) {
     setTransactions(prev => prev.map(t => ids.includes(t.id) ? { ...t, paid: true } : t));
   }, [getCardBill]);
 
+  // Inverso de payCardBill: desfaz o pagamento de uma fatura marcada por engano,
+  // voltando todos os lançamentos da fatura para paid: false.
+  const unpayCardBill = useCallback(async (cardId, month, year) => {
+    const bill = getCardBill(cardId, month, year);
+    const paid = bill.transactions.filter(t => t.paid);
+    if (paid.length === 0) return;
+    const ids = paid.map(t => t.id);
+    const { error } = await supabase.from('transactions').update({ paid: false }).in('id', ids);
+    if (error) throw new Error(error.message);
+    setTransactions(prev => prev.map(t => ids.includes(t.id) ? { ...t, paid: false } : t));
+  }, [getCardBill]);
+
   // ── Investimentos ─────────────────────────────────────────
 
   const addInvestment = useCallback(async (data) => {
@@ -866,6 +878,7 @@ export function FinanceProvider({ children }) {
     getCardBill,
     getCardUsedLimit,
     payCardBill,
+    unpayCardBill,
     addInvestment,
     updateInvestment,
     deleteInvestment,
@@ -883,7 +896,7 @@ export function FinanceProvider({ children }) {
     bulkDeleteTransactions, updateTransaction, deleteTransaction, addCategory, deleteCategory,
     setBudget, deleteBudget, addRecurring, updateRecurring, deleteRecurring, toggleRecurring,
     addProject, updateProject, deleteProject, addCard, updateCard, deleteCard, getCardBill,
-    getCardUsedLimit, payCardBill, addInvestment, updateInvestment, deleteInvestment,
+    getCardUsedLimit, payCardBill, unpayCardBill, addInvestment, updateInvestment, deleteInvestment,
     addLoan, updateLoan, deleteLoan, registerLoanPayment,
     exportAllData, getSummary, getCumulativeBalance, getProjectSummary,
   ]);
