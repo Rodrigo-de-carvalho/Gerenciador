@@ -95,7 +95,7 @@ function CardFormModal({ card, onClose, onSave }) {
 
 export default function Cards() {
   const { t } = useI18n();
-  const { cards, transactions, categories, addCard, updateCard, deleteCard, getCardBill, payCardBill, getCardUsedLimit, loading } = useFinance();
+  const { cards, transactions, categories, addCard, updateCard, deleteCard, deleteTransaction, getCardBill, payCardBill, getCardUsedLimit, loading } = useFinance();
   const { privacy } = usePrivacy();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
@@ -105,6 +105,8 @@ export default function Cards() {
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showTxModal, setShowTxModal] = useState(false);
+  const [editTx, setEditTx] = useState(null);            // lançamento em edição na fatura
+  const [deleteTxConfirm, setDeleteTxConfirm] = useState(null); // id do lançamento a excluir
   const [showImport, setShowImport] = useState(false);
   const [activeTab, setActiveTab] = useState('bills');
   const [paying, setPaying] = useState(false);
@@ -428,7 +430,7 @@ export default function Cards() {
                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--line)', gap: 8 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 500 }}>{t('cards.invoiceDetails')}</span>
                       <button className="btn" style={{ marginLeft: 'auto', padding: '5px 10px', fontSize: 12 }}
-                        onClick={() => setShowTxModal(true)}>
+                        onClick={() => { setEditTx(null); setShowTxModal(true); }}>
                         <Plus size={12} /> {t('cards.newEntry')}
                       </button>
                     </div>
@@ -442,7 +444,12 @@ export default function Cards() {
                           {selectedBill.transactions.map(tx => {
                             const cat = categories.find(c => c.id === tx.categoryId);
                             return (
-                              <tr key={tx.id}>
+                              <tr
+                                key={tx.id}
+                                onClick={() => { setEditTx(tx); setShowTxModal(true); }}
+                                style={{ cursor: 'pointer' }}
+                                title={t('common.edit')}
+                              >
                                 <td style={{ width: 36, paddingRight: 0 }}>
                                   <div className="tx-row-icon"><span style={{ fontSize: 12 }}>{cat?.icon || '📋'}</span></div>
                                 </td>
@@ -460,6 +467,19 @@ export default function Cards() {
                                     ? <CheckCircle2 size={13} style={{ color: 'var(--positive)' }} />
                                     : <Circle size={13} style={{ color: 'var(--text-3)', opacity: 0.4 }} />
                                   }
+                                </td>
+                                <td style={{ width: 40, paddingLeft: 0 }}>
+                                  <div className="tx-actions" style={{ display: 'flex', justifyContent: 'flex-end', opacity: 0 }}>
+                                    <button
+                                      className="icon-btn"
+                                      style={{ width: 28, height: 28, color: 'var(--negative)' }}
+                                      onClick={(e) => { e.stopPropagation(); setDeleteTxConfirm(tx.id); }}
+                                      title={t('common.delete')}
+                                      aria-label={t('common.delete')}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -528,10 +548,25 @@ export default function Cards() {
 
       {showTxModal && (
         <TransactionModal
+          transaction={editTx}
           defaultCardId={selectedCardId}
-          onClose={() => setShowTxModal(false)}
+          onClose={() => { setShowTxModal(false); setEditTx(null); }}
         />
       )}
+
+      {deleteTxConfirm && (
+        <ConfirmModal
+          title={t('transactions.deleteTransaction')}
+          message={t('transactions.deleteNotReversible')}
+          confirmLabel={t('common.delete')}
+          onConfirm={async () => { await deleteTransaction(deleteTxConfirm); }}
+          onClose={() => setDeleteTxConfirm(null)}
+        />
+      )}
+
+      {/* Revela o botão de excluir ao passar o mouse na linha da fatura
+          (no toque, o índice global @media(pointer:coarse) já mantém visível). */}
+      <style>{`.tx-table tbody tr:hover .tx-actions { opacity: 1 !important; }`}</style>
 
       {showImport && (
         <ImportBoundary onClose={() => setShowImport(false)}>
