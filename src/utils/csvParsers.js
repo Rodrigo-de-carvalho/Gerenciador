@@ -105,10 +105,10 @@ export function parseRows(bank, data) {
   switch (bank) {
 
     case 'nubank_credit': {
-      // Nubank credit CSV sign convention:
-      //   negative amount → expense (purchase charged to card)
-      //   positive amount → income  (refund / cashback)
-      //                  OR transfer (bill payment — excluded below)
+      // Nubank credit CSV sign convention (confirmado contra arquivo real):
+      //   positive amount → expense (compra lançada no cartão)
+      //   negative amount → income  (reembolso / cashback)
+      // Pagamentos de fatura são transferências e ficam de fora (isCreditCardPayment).
       // The English export uses 'date' header; Portuguese uses 'data'.
       return data.map(r => {
         const dateKey   = findKey(r, 'data', 'date');
@@ -125,7 +125,7 @@ export function parseRows(bank, data) {
           description,
           categoryHint: catKey ? String(r[catKey]).trim() : '',
           amount:       Math.abs(amount),
-          type:         amount < 0 ? 'expense' : 'income',
+          type:         amount < 0 ? 'income' : 'expense',
         };
       }).filter(r => r && r.date && r.amount > 0);
     }
