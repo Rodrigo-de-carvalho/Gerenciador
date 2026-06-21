@@ -103,6 +103,17 @@ const mapInvestment = (row) => ({
   date: row.date,
 });
 
+const mapLoan = (row) => ({
+  id: row.id,
+  direction: row.direction,          // 'owe' (eu devo) | 'owed' (me devem)
+  counterparty: row.counterparty,
+  totalAmount: Number(row.total_amount),
+  paidAmount: Number(row.paid_amount),
+  dueDate: row.due_date || null,
+  notes: row.notes || '',
+  createdAt: row.created_at,
+});
+
 // ── localStorage cache (stale-while-revalidate) ────────────────────────────
 const CACHE_VERSION = 2; // bump this to invalidate all caches after schema changes
 
@@ -150,6 +161,7 @@ export function FinanceProvider({ children }) {
   const [budgets, setBudgetsState]      = useState([]);
   const [recurring, setRecurring]       = useState([]);
   const [investments, setInvestments]   = useState([]);
+  const [loans, setLoans]               = useState([]);
   // loading=true only on the very first load (no cache). After that the cache
   // fills the UI instantly and the background refresh is invisible.
   const [loading, setLoading]           = useState(true);
@@ -163,6 +175,7 @@ export function FinanceProvider({ children }) {
       setBudgetsState([]);
       setRecurring([]);
       setInvestments([]); // bug fix: investimentos não eram limpos no logout
+      setLoans([]);
       setLoading(false);
       return;
     }
@@ -177,6 +190,7 @@ export function FinanceProvider({ children }) {
       setBudgetsState(cached.budgets      || []);
       setRecurring(cached.recurring       || []);
       setInvestments(cached.investments   || []);
+      setLoans(cached.loans               || []);
       setLoading(false); // hide spinner — show cached data right away
     } else {
       setLoading(true);  // first-ever load, no cache yet
@@ -184,7 +198,7 @@ export function FinanceProvider({ children }) {
 
     // ── 2. Fetch fresh data from Supabase in background ────────────────────
     try {
-      const [txRes, catRes, projRes, cardsRes, budgetsRes, recurringRes, invRes] = await Promise.all([
+      const [txRes, catRes, projRes, cardsRes, budgetsRes, recurringRes, invRes, loansRes] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
@@ -192,6 +206,7 @@ export function FinanceProvider({ children }) {
         supabase.from('budgets').select('*').eq('user_id', user.id),
         supabase.from('recurring').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
         supabase.from('investments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('loans').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
 
       let cats = catRes.data?.map(mapCat) || [];
@@ -256,6 +271,7 @@ export function FinanceProvider({ children }) {
       const freshCards       = cardsRes.data?.map(mapCard)          || [];
       const freshBudgets     = budgetsRes.data?.map(mapBudget)      || [];
       const freshInvestments = invRes.data?.map(mapInvestment)      || [];
+      const freshLoans       = loansRes.data?.map(mapLoan)          || [];
 
       // ── 3. Update UI with fresh data (silently replaces cached view) ──────
       setTransactions(allTxs);
@@ -265,6 +281,7 @@ export function FinanceProvider({ children }) {
       setBudgetsState(freshBudgets);
       setRecurring(recurringData);
       setInvestments(freshInvestments);
+      setLoans(freshLoans);
 
       // ── 4. Persist fresh data to cache for next reload ────────────────────
       writeCache(user.id, {
@@ -275,6 +292,7 @@ export function FinanceProvider({ children }) {
         budgets:      freshBudgets,
         recurring:    recurringData,
         investments:  freshInvestments,
+        loans:        freshLoans,
       });
     } catch (e) {
       // bug fix: loadData não tinha catch — uma falha de rede/token sumia em silêncio.
@@ -654,6 +672,74 @@ export function FinanceProvider({ children }) {
     setInvestments(prev => prev.filter(i => i.id !== id));
   }, [user]);
 
+  // ── Empréstimos ───────────────────────────────────────────
+  // Mesmo padrão de insert/update/delete de addCard/updateCard/deleteCard.
+
+  const addLoan = useCallback(async (data) => {
+    const { data: row, error } = await supabase.from('loans').insert({
+      user_id:      user.id,
+      direction:    data.direction,
+      counterparty: data.counterparty,
+      total_amount: data.totalAmount,
+      paid_amount:  data.paidAmount || 0,
+      due_date:     data.dueDate || null,
+      notes:        data.notes || null,
+    }).select().single();
+    if (error) throw new Error(error.message);
+    if (row) setLoans(prev => [mapLoan(row), ...prev]);
+  }, [user]);
+
+  const updateLoan = useCallback(async (data) => {
+    // paid_amount não é editado aqui — só evolui via registerLoanPayment.
+    const { data: row, error } = await supabase.from('loans').update({
+      direction:    data.direction,
+      counterparty: data.counterparty,
+      total_amount: data.totalAmount,
+      due_date:     data.dueDate || null,
+      notes:        data.notes || null,
+    }).eq('id', data.id).select().single();
+    if (error) throw new Error(error.message);
+    if (row) setLoans(prev => prev.map(l => l.id === row.id ? mapLoan(row) : l));
+  }, []);
+
+  const deleteLoan = useCallback(async (id) => {
+    const { error } = await supabase.from('loans').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    setLoans(prev => prev.filter(l => l.id !== id));
+  }, []);
+
+  // Registra um pagamento de empréstimo: cria uma transação normal (reaproveitando
+  // addTransaction, sem cardId) e só então incrementa o paid_amount — assim, se a
+  // transação falhar, o saldo do empréstimo não fica adiantado. Sem soma paralela
+  // de saldo: o impacto no caixa vem naturalmente da transação criada.
+  const registerLoanPayment = useCallback(async (loanId, amount) => {
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) throw new Error('Empréstimo não encontrado.');
+    const remaining = round2(loan.totalAmount - loan.paidAmount);
+    const pay = round2(Math.min(amount, remaining));
+    if (!(pay > 0)) return;
+
+    // 1) Transação normal — saída se eu devo, entrada se me devem.
+    const { persist } = addTransaction({
+      type:        loan.direction === 'owe' ? 'expense' : 'income',
+      description: `Pagamento de empréstimo — ${loan.counterparty}`,
+      amount:      pay,
+      date:        new Date().toISOString().split('T')[0],
+      categoryId:  null,
+      projectId:   null,
+      notes:       null,
+      cardId:      null,
+    });
+    await persist;
+
+    // 2) Atualiza o paid_amount (sem ultrapassar o total).
+    const newPaid = round2(loan.paidAmount + pay);
+    const { data: row, error } = await supabase.from('loans')
+      .update({ paid_amount: newPaid }).eq('id', loanId).select().single();
+    if (error) throw new Error(error.message);
+    if (row) setLoans(prev => prev.map(l => l.id === loanId ? mapLoan(row) : l));
+  }, [loans, addTransaction]);
+
   // ── Exportação de dados (LGPD Art. 18 — Portabilidade) ────
 
   const exportAllData = useCallback(async () => {
@@ -754,6 +840,7 @@ export function FinanceProvider({ children }) {
     budgets,
     recurring,
     investments,
+    loans,
     loading,
     clearCache: clearUserCache,
     addTransaction,
@@ -782,17 +869,22 @@ export function FinanceProvider({ children }) {
     addInvestment,
     updateInvestment,
     deleteInvestment,
+    addLoan,
+    updateLoan,
+    deleteLoan,
+    registerLoanPayment,
     exportAllData,
     getSummary,
     getCumulativeBalance,
     getProjectSummary,
   }), [
-    transactions, categories, projects, cards, budgets, recurring, investments, loading,
+    transactions, categories, projects, cards, budgets, recurring, investments, loans, loading,
     clearUserCache, addTransaction, addInstallmentTransaction, bulkAddTransactions,
     bulkDeleteTransactions, updateTransaction, deleteTransaction, addCategory, deleteCategory,
     setBudget, deleteBudget, addRecurring, updateRecurring, deleteRecurring, toggleRecurring,
     addProject, updateProject, deleteProject, addCard, updateCard, deleteCard, getCardBill,
     getCardUsedLimit, payCardBill, addInvestment, updateInvestment, deleteInvestment,
+    addLoan, updateLoan, deleteLoan, registerLoanPayment,
     exportAllData, getSummary, getCumulativeBalance, getProjectSummary,
   ]);
 

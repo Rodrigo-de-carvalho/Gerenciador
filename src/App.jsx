@@ -19,6 +19,7 @@ import Goals from './pages/Goals';
 import Assistant from './pages/Assistant';
 import Investments from './pages/Investments';
 import FinanceEducation from './pages/FinanceEducation';
+import Loans from './pages/Loans';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
 function TermsConsentModal() {
@@ -132,6 +133,7 @@ function AppContent() {
       case 'assistant':    return <Assistant />;
       case 'investments':  return <Investments />;
       case 'financeEducation': return <FinanceEducation />;
+      case 'loans':        return <Loans />;
       default:             return <Dashboard onNavigate={setPage} />;
     }
   };

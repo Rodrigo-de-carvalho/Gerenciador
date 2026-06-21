@@ -173,6 +173,28 @@ ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS installment_current  in
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS installment_group_id uuid;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS paid                 boolean NOT NULL DEFAULT true;
 
+-- ── EMPRÉSTIMOS ───────────────────────────────────────────
+-- Dívidas em dois sentidos: 'owe' = eu devo (vou pagar),
+-- 'owed' = me devem (vou receber). Os pagamentos viram transações normais.
+CREATE TABLE IF NOT EXISTS public.loans (
+  id            uuid          DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id       uuid          NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  direction     text          NOT NULL CHECK (direction IN ('owe', 'owed')),
+  counterparty  text          NOT NULL,
+  total_amount  numeric(15,2) NOT NULL CHECK (total_amount > 0),
+  paid_amount   numeric(15,2) NOT NULL DEFAULT 0,
+  due_date      date,
+  notes         text,
+  created_at    timestamptz   DEFAULT now()
+);
+
+ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own loans"
+  ON public.loans FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- ── ÍNDICES ───────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS transactions_user_date ON public.transactions(user_id, date DESC);
 CREATE INDEX IF NOT EXISTS cards_user_id ON public.cards(user_id);
@@ -183,3 +205,4 @@ CREATE INDEX IF NOT EXISTS goals_user_id ON public.goals(user_id);
 CREATE INDEX IF NOT EXISTS investments_user_id ON public.investments(user_id);
 CREATE INDEX IF NOT EXISTS budgets_user_id ON public.budgets(user_id);
 CREATE INDEX IF NOT EXISTS recurring_user_id ON public.recurring(user_id);
+CREATE INDEX IF NOT EXISTS loans_user_id ON public.loans(user_id);
