@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ArrowLeftRight, FolderOpen, CreditCard, Target,
-  Bot, Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
-  Plus, Menu, X, TrendingUp, Smartphone, GraduationCap, HandCoins,
+  Tags, PieChart, Settings, LogOut, Sun, Moon, Eye, EyeOff,
+  Menu, X, Smartphone, GraduationCap, HandCoins,
 } from 'lucide-react';
 import TransactionModal from './TransactionModal';
 import SettingsModal from './SettingsModal';
@@ -13,14 +13,14 @@ import { usePrivacy } from '../context/PrivacyContext';
 import { useFinance } from '../context/FinanceContext';
 import { useI18n } from '../i18n';
 
+// "Investimentos" e "Cifra IA" saíram do menu: eram itens fantasmas sem uso real.
+// O lançamento rápido por texto no Dashboard cobre o papel do assistente.
 const NAV_MAIN = [
-  { id: 'dashboard',    label: 'Painel',        Icon: LayoutDashboard },
-  { id: 'transactions', label: 'Transações',    Icon: ArrowLeftRight },
-  { id: 'projects',     label: 'Projetos',      Icon: FolderOpen },
-  { id: 'cards',        label: 'Cartões',       Icon: CreditCard },
-  { id: 'goals',        label: 'Metas',         Icon: Target },
-  { id: 'investments',  label: 'Investimentos', Icon: TrendingUp },
-  { id: 'assistant',    label: 'Cifra IA',      Icon: Bot },
+  { id: 'dashboard',    label: 'Painel',     Icon: LayoutDashboard },
+  { id: 'transactions', label: 'Transações', Icon: ArrowLeftRight },
+  { id: 'projects',     label: 'Projetos',   Icon: FolderOpen },
+  { id: 'cards',        label: 'Cartões',    Icon: CreditCard },
+  { id: 'goals',        label: 'Metas',      Icon: Target },
 ];
 
 const NAV_TOOLS = [
@@ -105,7 +105,6 @@ export default function Layout({ currentPage, onNavigate, children }) {
               <Icon size={16} />
             </span>
             {t('nav.' + id)}
-            {id === 'assistant' && <span className="nav-dot" />}
           </button>
         ))}
 
@@ -267,18 +266,13 @@ export default function Layout({ currentPage, onNavigate, children }) {
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showFabModal && <TransactionModal onClose={() => setShowFabModal(false)} />}
 
-      {/* Bottom tab bar — navegação rápida no mobile (complementa a sidebar) */}
-      <BottomNav currentPage={currentPage} onNavigate={navigate} />
-
-      {/* FAB — botão flutuante de adicionar transação (só no mobile) */}
-      <button
-        className="fab"
-        onClick={() => setShowFabModal(true)}
-        aria-label="Adicionar transação"
-        title="Adicionar transação"
-      >
-        <Plus size={26} />
-      </button>
+      {/* Bottom tab bar — Painel | Transações | + | Metas | Perfil (só no mobile) */}
+      <BottomNav
+        currentPage={currentPage}
+        onNavigate={navigate}
+        onAdd={() => setShowFabModal(true)}
+        onProfile={() => setShowSettings(true)}
+      />
 
       {/* Mobile menu button injected via CSS */}
       <style>{`

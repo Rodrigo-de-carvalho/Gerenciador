@@ -18,7 +18,7 @@ const emptyForm = {
   installments: 1,
 };
 
-export default function TransactionModal({ transaction, onClose, defaultProjectId, defaultCardId }) {
+export default function TransactionModal({ transaction, onClose, defaultProjectId, defaultCardId, defaultType }) {
   const { t } = useI18n();
   const { showToast } = useToast();
   const { categories, projects, cards, addTransaction, updateTransaction, addInstallmentTransaction } = useFinance();
@@ -39,12 +39,13 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     } else {
       setForm({
         ...emptyForm,
+        type: defaultType || emptyForm.type,
         date: new Date().toISOString().split('T')[0],
         projectId: defaultProjectId || '',
         cardId: defaultCardId || '',
       });
     }
-  }, [transaction, defaultProjectId, defaultCardId]);
+  }, [transaction, defaultProjectId, defaultCardId, defaultType]);
 
   // Acessibilidade: fecha o modal com a tecla Esc.
   useEffect(() => {

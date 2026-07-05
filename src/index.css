@@ -108,54 +108,61 @@
    CIFRA DESIGN SYSTEM — added outside @layer (takes priority)
    ============================================================ */
 
+/* Paleta "Personal Trainer Financeiro": azul petróleo ultra escuro de fundo,
+   roxo vibrante para ações, verde menta para receitas e laranja queimado para
+   despesas (menos agressivo que vermelho). */
 :root,
 [data-theme="dark"] {
-  --bg: #0A0E14;
-  --bg-2: #0E131B;
-  --surface: #141B25;
-  --surface-2: #1A2330;
-  --surface-3: #232E3D;
-  --line: #1E2733;
-  --line-2: #2E3A49;
-  --text: #F1F6FC;
-  --text-2: #AAB7C8;
-  --text-3: #6B7889;
-  --text-4: #454F5E;
-  --accent: #2DD4A7;
-  --accent-2: #14B88E;
-  --accent-ink: #052017;
+  --bg: #0B1120;
+  --bg-2: #0E1528;
+  --surface: #121A30;
+  --surface-2: #18223C;
+  --surface-3: #22304F;
+  --line: #1C2742;
+  --line-2: #2E3D60;
+  --text: #F1F5FD;
+  --text-2: #A9B6CE;
+  --text-3: #6B7A96;
+  --text-4: #45516A;
+  --accent: #8B5CF6;
+  --accent-2: #7C3AED;
+  --accent-ink: #FFFFFF;
   --positive: #34D399;
-  --negative: #FB7185;
+  --negative: #F97316;
   --warn: #FBBF24;
   --info: #60A5FA;
-  --chip: rgba(150, 200, 255, 0.06);
-  --chip-strong: rgba(150, 200, 255, 0.11);
-  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -16px rgba(0,0,0,0.7);
+  --chip: rgba(139, 92, 246, 0.09);
+  --chip-strong: rgba(139, 92, 246, 0.18);
+  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -16px rgba(2,6,23,0.7);
+  --glow: 0 0 28px -8px rgba(139, 92, 246, 0.45);
+  --glow-mint: 0 0 28px -8px rgba(52, 211, 153, 0.4);
   --grain-opacity: 0.04;
 }
 
 [data-theme="light"] {
-  --bg: #F4F7FB;
-  --bg-2: #EDF1F7;
+  --bg: #F6F5FB;
+  --bg-2: #EFEDF8;
   --surface: #FFFFFF;
-  --surface-2: #F4F7FB;
-  --surface-3: #E8EEF6;
-  --line: #E2E8F1;
-  --line-2: #CFD8E5;
-  --text: #0C121C;
-  --text-2: #475264;
-  --text-3: #76829A;
-  --text-4: #A6B0C0;
-  --accent: #0E9F77;
-  --accent-2: #0B7E5F;
+  --surface-2: #F6F5FB;
+  --surface-3: #EBE8F7;
+  --line: #E5E2F2;
+  --line-2: #CFC9E8;
+  --text: #12101C;
+  --text-2: #4A4664;
+  --text-3: #7B7699;
+  --text-4: #ACA7C4;
+  --accent: #7C3AED;
+  --accent-2: #6D28D9;
   --accent-ink: #FFFFFF;
-  --positive: #0E9F77;
-  --negative: #E11D48;
+  --positive: #0DA678;
+  --negative: #EA580C;
   --warn: #B7791F;
   --info: #2563EB;
-  --chip: rgba(15,30,55,0.05);
-  --chip-strong: rgba(15,30,55,0.09);
-  --shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 14px 34px -14px rgba(30,50,90,0.18);
+  --chip: rgba(124, 58, 237, 0.06);
+  --chip-strong: rgba(124, 58, 237, 0.12);
+  --shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 14px 34px -14px rgba(70,40,140,0.16);
+  --glow: 0 0 26px -8px rgba(124, 58, 237, 0.28);
+  --glow-mint: 0 0 26px -8px rgba(13, 166, 120, 0.25);
   --grain-opacity: 0.03;
 }
 
@@ -416,8 +423,9 @@
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 20px;
+  box-shadow: 0 10px 30px -20px rgba(2, 6, 23, 0.55);
 }
 .card.flat { background: transparent; border-color: var(--line); }
 
@@ -856,48 +864,14 @@
 }
 .sidebar-overlay.show { display: block; }
 
-/* ============ FAB — floating action button (mobile only) ============ */
-.fab {
-  display: none;
-}
-@media (max-width: 768px) {
-  .fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    /* Acima da bottom nav (~58px) pra não sobrepor as abas. */
-    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    right: 20px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: var(--accent-ink);
-    border: none;
-    cursor: pointer;
-    z-index: 100;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-    transition: transform 120ms, box-shadow 120ms;
-    font-family: inherit;
-  }
-  .fab:active {
-    transform: scale(0.93);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-  }
-  /* Esconde o FAB quando qualquer modal está aberto (evita sobrepor o formulário).
-     O z-index do .modal-overlay já cobre navegadores sem suporte a :has(). */
-  body:has(.modal-overlay) .fab { display: none; }
-}
-
 /* ============ Bottom Nav — barra de abas fixa (mobile only) ============ */
-/* Escondida por padrão; só aparece no mobile. Complementa a sidebar: dá acesso
-   de 1 toque às 4 páginas mais usadas, sem passar pelo hambúrguer. */
+/* Painel | Transações | + (central) | Metas | Perfil. O botão central roxo
+   abre o Novo Lançamento — substitui o antigo FAB flutuante. */
 .bottom-nav { display: none; }
 @media (max-width: 768px) {
   .bottom-nav {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 150;
@@ -905,6 +879,29 @@
     border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  .bottom-nav-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav-add-circle {
+    width: 52px; height: 52px;
+    margin-top: -18px; /* sobe acima da barra, estilo dock */
+    border-radius: 50%;
+    background: linear-gradient(140deg, var(--accent), var(--accent-2));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--glow), 0 8px 20px -6px rgba(0,0,0,0.45);
+    border: 3px solid var(--bg);
+    transition: transform 120ms;
+  }
+  .bottom-nav-add:active .bottom-nav-add-circle { transform: scale(0.92); }
   .bottom-nav-item {
     display: flex;
     flex-direction: column;
@@ -1133,3 +1130,212 @@ a:focus:not(:focus-visible) { outline: none; }
   transition: opacity 230ms ease, transform 230ms ease;
   pointer-events: none;
 }
+
+/* ============================================================
+   GAMIFICAÇÃO — Ofensiva (streak), Desafio do Mês, Meta Rápida,
+   Lançamento Rápido e Estado Vazio
+   ============================================================ */
+
+/* Ofensiva (streak) — topo do dashboard */
+.streak-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: linear-gradient(120deg,
+    color-mix(in oklab, var(--accent) 16%, var(--surface)) 0%,
+    var(--surface) 70%);
+  border: 1px solid color-mix(in oklab, var(--accent) 32%, var(--line));
+  box-shadow: var(--glow);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.streak-flame {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-size: 24px;
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  flex-shrink: 0;
+}
+.streak-flame.lit { animation: streak-pulse 1.8s ease-in-out infinite; }
+@keyframes streak-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.streak-info { flex: 1; min-width: 180px; }
+.streak-count { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.streak-msg { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.streak-track {
+  display: flex; gap: 5px; margin-top: 9px; max-width: 240px;
+}
+.streak-track .sd {
+  flex: 1; height: 7px; border-radius: 4px;
+  background: var(--chip-strong);
+}
+.streak-track .sd.on {
+  background: linear-gradient(90deg, var(--accent), var(--positive));
+  box-shadow: 0 0 8px -2px var(--accent);
+}
+.streak-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--warn) 18%, transparent);
+  border: 1px solid color-mix(in oklab, var(--warn) 40%, transparent);
+  color: var(--warn);
+  font-size: 12.5px; font-weight: 700;
+  animation: badge-in 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Desafio do Mês — hero quando o saldo está zerado/negativo */
+.challenge-hero {
+  border-radius: 20px;
+  padding: 30px 26px;
+  background:
+    radial-gradient(120% 140% at 85% -10%, color-mix(in oklab, var(--accent) 26%, transparent) 0%, transparent 55%),
+    radial-gradient(100% 120% at 0% 110%, color-mix(in oklab, var(--positive) 14%, transparent) 0%, transparent 50%),
+    var(--surface);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--line));
+  box-shadow: var(--glow);
+  margin-bottom: 20px;
+}
+.challenge-hero h2 {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(26px, 5vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 8px 0 18px;
+  max-width: 520px;
+}
+.cta-big {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 30px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  box-shadow: var(--glow), 0 14px 30px -10px color-mix(in oklab, var(--accent) 60%, transparent);
+  transition: transform 140ms, filter 140ms;
+}
+.cta-big:hover { filter: brightness(1.08); transform: translateY(-2px); }
+.cta-big:active { transform: scale(0.97); }
+.cta-big.mint {
+  background: linear-gradient(135deg, var(--positive) 0%, #10B981 100%);
+  box-shadow: var(--glow-mint), 0 14px 30px -10px color-mix(in oklab, var(--positive) 55%, transparent);
+}
+
+/* Termômetro de economia (nível de atividade do mês) */
+.thermo { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.thermo-track {
+  flex: 1; height: 10px; border-radius: 6px;
+  background: var(--chip);
+  overflow: hidden;
+}
+.thermo-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--info), var(--positive), var(--warn));
+  transition: width 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Meta Rápida */
+.quick-goal {
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(130deg,
+    color-mix(in oklab, var(--positive) 14%, var(--surface)) 0%,
+    var(--surface) 65%);
+  border: 1px solid color-mix(in oklab, var(--positive) 30%, var(--line));
+  box-shadow: var(--glow-mint);
+}
+.quick-goal .qg-big {
+  font-size: 15px; font-weight: 700; line-height: 1.45; margin-top: 8px;
+}
+.quick-goal .qg-big b { color: var(--positive); font-weight: 800; }
+
+/* Lançamento Rápido por Texto ("IA" local) */
+.quick-add {
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid color-mix(in oklab, var(--accent) 26%, var(--line));
+  box-shadow: var(--glow);
+}
+.quick-add-row { display: flex; gap: 8px; margin-top: 12px; }
+.quick-add-input {
+  flex: 1; min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.quick-add-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+.quick-add-input::placeholder { color: var(--text-4); }
+.quick-add-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  transition: filter 120ms, transform 120ms;
+  flex-shrink: 0;
+}
+.quick-add-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.quick-add-btn:active { transform: scale(0.95); }
+.quick-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.quick-add-preview {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; font-size: 12.5px; color: var(--text-2);
+  min-height: 18px;
+}
+
+/* Estado vazio bonito (jornada) */
+.empty-journey {
+  border-radius: 20px;
+  padding: 44px 24px 40px;
+  text-align: center;
+  background:
+    radial-gradient(90% 100% at 50% 0%, color-mix(in oklab, var(--accent) 12%, transparent) 0%, transparent 60%),
+    var(--surface);
+  border: 1px solid color-mix(in oklab, var(--accent) 24%, var(--line));
+  box-shadow: var(--glow);
+  margin-bottom: 20px;
+}
+.empty-journey svg { max-width: 200px; height: auto; margin: 0 auto 18px; display: block; }
+.empty-journey h3 {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: 26px;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+.empty-journey p { color: var(--text-3); font-size: 13.5px; margin: 0 0 22px; }
+
+/* Grid da linha "quick" (lançamento rápido + meta rápida) */
+.g-quick { grid-template-columns: 1.4fr 1fr; }
+@media (max-width: 900px) { .g-quick { grid-template-columns: 1fr; } }
