@@ -1,8 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, ArrowRight, Sparkles, Send, Award } from 'lucide-react';
-import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine,
-} from 'recharts';
+import { Plus, ArrowRight, Sparkles, Send, Award } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { useToast } from '../context/ToastContext';
@@ -11,6 +8,10 @@ import { parseQuickEntry, resolveCategory } from '../utils/quickParse';
 import TransactionModal from '../components/TransactionModal';
 import CategoryDonut from '../components/CategoryDonut';
 import PageLoader from '../components/PageLoader';
+import DashHeader from '../components/dashboard/DashHeader';
+import Thermometer from '../components/dashboard/Thermometer';
+import BalanceChart from '../components/dashboard/BalanceChart';
+import StatStrip from '../components/dashboard/StatStrip';
 import { useI18n } from '../i18n';
 
 function splitBRL(n) {
@@ -29,38 +30,6 @@ function HeroNumber({ value, privacy }) {
     </div>
   );
 }
-
-function StatCard({ label, value, sub, privacy, positive, percent }) {
-  return (
-    <div className="card" style={{ padding: '16px 18px' }}>
-      <div className="t-label" style={{ marginBottom: 8 }}>{label}</div>
-      <div className="t-num" style={{
-        fontSize: 20, fontWeight: 600,
-        color: positive === true ? 'var(--positive)' : positive === false ? 'var(--negative)' : 'var(--text)',
-      }}>
-        {percent != null ? `${value}%` : privacy ? 'R$ ••••' : formatCurrency(value)}
-      </div>
-      {sub && <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4 }}>{sub}</div>}
-    </div>
-  );
-}
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: 'var(--surface-2)', border: '1px solid var(--line)',
-      borderRadius: 12, padding: '8px 12px', fontSize: 12,
-    }}>
-      <div style={{ color: 'var(--text-3)', marginBottom: 4 }}>Dia {label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.value >= 0 ? 'var(--positive)' : 'var(--negative)', fontFamily: 'Geist Mono, monospace' }}>
-          {formatCurrency(p.value)}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 // ── Ofensiva (streak) ────────────────────────────────────────────────────────
 // Conta dias consecutivos com pelo menos 1 lançamento registrado (pela data de
@@ -84,11 +53,9 @@ function computeStreak(transactions) {
   return { streak, hasToday };
 }
 
-function StreakCard({ transactions }) {
+function StreakCard({ streak, hasToday }) {
   const { t } = useI18n();
-  const { streak, hasToday } = useMemo(() => computeStreak(transactions), [transactions]);
   const goal = 7;
-
   return (
     <div className="streak-card">
       <div className={`streak-flame${hasToday ? ' lit' : ''}`}>🔥</div>
@@ -191,8 +158,6 @@ function QuickAdd() {
 // ── Meta Rápida ──────────────────────────────────────────────────────────────
 function QuickGoal({ totalBalance }) {
   const { t } = useI18n();
-  // Sugestão proporcional ao saldo (1% ao dia), com piso de R$5 e teto de R$50
-  // pra frase continuar parecendo um desafio alcançável, não uma cobrança.
   const daily = totalBalance > 0
     ? Math.min(50, Math.max(5, Math.round(totalBalance * 0.01)))
     : 5;
@@ -210,64 +175,40 @@ function QuickGoal({ totalBalance }) {
   );
 }
 
-// ── Desafio do Mês (substitui o R$ 0,00 gigante quando saldo <= 0) ──────────
-function ChallengeHero({ monthTxCount, balance, privacy, onAddIncome }) {
+// ── Desafio do Mês ───────────────────────────────────────────────────────────
+// REGRA 1 — Aqui vive o ÚNICO botão "Adicionar Entrada" (com efeito pulso, REGRA 7).
+function ChallengeHero({ onAddIncome }) {
   const { t } = useI18n();
-  // Termômetro: cada lançamento no mês sobe 10° (até 100°). Mede engajamento,
-  // não dinheiro — dá sensação de progresso mesmo com saldo no vermelho.
-  const temp = Math.min(100, monthTxCount * 10);
   return (
     <div className="challenge-hero">
-      <div className="t-eyebrow">{t('dashboard.challengeTitle')}</div>
+      <div className="t-eyebrow">🎯 {t('dashboard.challengeTitle')}</div>
       <h2>{t('dashboard.challengeSubtitle')}</h2>
-      <button className="cta-big" onClick={onAddIncome}>
+      <button className="cta-big pulse" onClick={onAddIncome}>
         <Plus size={20} strokeWidth={2.6} /> {t('dashboard.addIncome')}
       </button>
-      <div style={{ marginTop: 24, maxWidth: 380 }}>
-        <div className="t-label">{t('dashboard.thermometer')}</div>
-        <div className="thermo">
-          <span style={{ fontSize: 16 }}>🌡️</span>
-          <div className="thermo-track">
-            <div className="thermo-fill" style={{ width: `${temp}%` }} />
-          </div>
-          <span className="t-num" style={{ fontSize: 12.5, color: 'var(--text-2)', minWidth: 34 }}>{temp}°</span>
-        </div>
-        <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 6 }}>
-          {t('dashboard.thermometerHint')}
-          {balance < 0 && (
-            <span style={{ marginLeft: 6, fontFamily: 'Geist Mono, monospace' }}>
-              · {t('dashboard.totalBalance')}: {privacy ? 'R$ ••••' : formatCurrency(balance)}
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
 
-// ── Estado vazio bonito ──────────────────────────────────────────────────────
+// ── Estado vazio bonito (cofrinho) ───────────────────────────────────────────
 function PiggySVG() {
   return (
     <svg viewBox="0 0 220 150" fill="none" aria-hidden="true">
-      {/* trajetória subindo ao fundo */}
       <path d="M18 118 L64 96 L104 104 L150 62 L196 34" stroke="var(--positive)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 9" opacity="0.7" />
       <path d="M196 34 l-12 -2 m12 2 l-3 12" stroke="var(--positive)" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-      {/* cofrinho */}
       <ellipse cx="102" cy="98" rx="50" ry="36" fill="var(--accent)" opacity="0.9" />
       <ellipse cx="102" cy="98" rx="50" ry="36" stroke="var(--accent-2)" strokeWidth="2" />
       <path d="M58 84 q-12 -2 -14 8 q6 8 14 4" fill="var(--accent)" opacity="0.9" />
       <circle cx="146" cy="92" r="9" fill="var(--accent-2)" />
-      <circle cx="148" cy="92" r="2.6" fill="#0B1120" opacity="0.55" />
-      <circle cx="82" cy="88" r="3.4" fill="#0B1120" opacity="0.55" />
+      <circle cx="148" cy="92" r="2.6" fill="#0F172A" opacity="0.55" />
+      <circle cx="82" cy="88" r="3.4" fill="#0F172A" opacity="0.55" />
       <path d="M70 70 q10 -12 24 -8" stroke="var(--accent-2)" strokeWidth="5" strokeLinecap="round" fill="none" />
       <rect x="78" y="128" width="9" height="12" rx="3.5" fill="var(--accent-2)" />
       <rect x="116" y="128" width="9" height="12" rx="3.5" fill="var(--accent-2)" />
-      {/* moeda entrando */}
       <circle cx="102" cy="46" r="14" fill="var(--warn)" />
-      <circle cx="102" cy="46" r="14" stroke="#0B1120" strokeOpacity="0.2" strokeWidth="2" />
-      <text x="102" y="51" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0B1120" opacity="0.65">$</text>
-      <rect x="90" y="66" width="24" height="4" rx="2" fill="#0B1120" opacity="0.4" />
-      {/* brotinho 🌱 na frente */}
+      <circle cx="102" cy="46" r="14" stroke="#0F172A" strokeOpacity="0.2" strokeWidth="2" />
+      <text x="102" y="51" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0F172A" opacity="0.65">$</text>
+      <rect x="90" y="66" width="24" height="4" rx="2" fill="#0F172A" opacity="0.4" />
       <path d="M40 128 q0 -14 10 -18 q2 10 -6 16" fill="var(--positive)" />
       <path d="M40 128 q0 -10 -8 -13 q-2 8 5 12" fill="var(--positive)" opacity="0.7" />
       <line x1="40" y1="128" x2="40" y2="140" stroke="var(--positive)" strokeWidth="2.5" strokeLinecap="round" />
@@ -275,6 +216,7 @@ function PiggySVG() {
   );
 }
 
+// Estado vazio: reaproveita o CTA único de adicionar (REGRA 1) com pulso (REGRA 7).
 function EmptyJourney({ onAdd }) {
   const { t } = useI18n();
   return (
@@ -282,7 +224,7 @@ function EmptyJourney({ onAdd }) {
       <PiggySVG />
       <h3>{t('dashboard.emptyTitle')}</h3>
       <p>{t('dashboard.emptySubtitle')}</p>
-      <button className="cta-big mint" onClick={onAdd}>
+      <button className="cta-big mint pulse" onClick={onAdd}>
         <Plus size={20} strokeWidth={2.6} /> {t('dashboard.emptyCta')}
       </button>
     </div>
@@ -292,8 +234,9 @@ function EmptyJourney({ onAdd }) {
 // ── Dashboard ────────────────────────────────────────────────────────────────
 export default function Dashboard({ onNavigate }) {
   const { t } = useI18n();
-  const { transactions, categories, projects, budgets, getSummary, getCumulativeBalance, loading } = useFinance();
+  const { transactions, categories, budgets, getSummary, getCumulativeBalance, loading } = useFinance();
   const { privacy } = usePrivacy();
+  const { showToast } = useToast();
   const now = getCurrentMonthYear();
   const [month, setMonth] = useState(now.month);
   const [year, setYear] = useState(now.year);
@@ -305,11 +248,13 @@ export default function Dashboard({ onNavigate }) {
     [getSummary, month, year]
   );
 
-  // Saldo total acumulado: carrega de mês em mês em vez de zerar na virada.
   const totalBalance = useMemo(
     () => getCumulativeBalance(month, year).balance,
     [getCumulativeBalance, month, year]
   );
+
+  // Streak calculado UMA vez e passado ao cabeçalho (mascote) e ao StreakCard.
+  const { streak, hasToday } = useMemo(() => computeStreak(transactions), [transactions]);
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
@@ -324,9 +269,6 @@ export default function Dashboard({ onNavigate }) {
 
   const savingsRate = income > 0 ? Math.round((income - expense) / income * 100) : 0;
 
-  // Evolução diária do saldo no mês: transmite trajetória ("hoje baixo, amanhã
-  // sobe") em vez do comparativo receita vs. despesa, que humilha quando a
-  // receita é zero. Parte do acumulado do mês anterior e anda dia a dia.
   const chartData = useMemo(() => {
     const prev = month === 1 ? { m: 12, y: year - 1 } : { m: month - 1, y: year };
     let run = getCumulativeBalance(prev.m, prev.y).balance;
@@ -368,15 +310,6 @@ export default function Dashboard({ onNavigate }) {
     [monthTxs]
   );
 
-  const projectStats = useMemo(() => {
-    return projects.slice(0, 3).map(p => {
-      const ptxs = transactions.filter(t => t.projectId === p.id);
-      const spent = ptxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-      const received = ptxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-      return { ...p, spent, received, count: ptxs.length };
-    });
-  }, [projects, transactions]);
-
   const budgetProgress = useMemo(() => {
     return budgets.map(b => {
       const cat   = categories.find(c => c.id === b.categoryId);
@@ -388,154 +321,87 @@ export default function Dashboard({ onNavigate }) {
     }).filter(b => b.cat);
   }, [budgets, monthTxs, categories]);
 
-  // 1ª carga sem cache: mostra spinner em vez do estado vazio
-  // (senão um usuário com histórico veria "Vamos registrar a primeira?").
   if (loading && transactions.length === 0) return <PageLoader />;
 
   const isEmpty = transactions.length === 0;
+  // "motivacional" = saldo acumulado ≤ 0 (inclui o estado vazio e o negativo):
+  // é quando a tela precisa animar em vez de mostrar contabilidade fria.
+  const motivational = totalBalance <= 0;
+  const monthLabel = `${t('months')[month - 1]} ${year}`;
 
   return (
-    <div>
-      {/* Ofensiva — o motivo de abrir o app todo dia */}
-      <StreakCard transactions={transactions} />
+    // .dash-root controla a entrada em cascata (fade-up escalonado) dos filhos — REGRA 7.
+    <div className="dash-root">
+      {/* REGRA 1 + 5 — cabeçalho enxuto: sino, mês e mascote */}
+      <DashHeader
+        monthLabel={monthLabel}
+        streak={streak}
+        onPrev={prevMonth}
+        onNext={nextMonth}
+        onBell={() => showToast(t('dashboard.noNews'))}
+      />
 
-      {isEmpty ? (
+      {/* Ofensiva */}
+      <StreakCard streak={streak} hasToday={hasToday} />
+
+      {motivational ? (
+        // ===== TELA MOTIVACIONAL (saldo ≤ 0) — ~90% motivacional (REGRA 4) =====
         <>
-          <EmptyJourney onAdd={() => openModal(null)} />
+          {isEmpty
+            ? <EmptyJourney onAdd={() => openModal(null)} />
+            : <ChallengeHero onAddIncome={() => openModal('income')} />}
+
+          {/* REGRA 2 — termômetro vertical (nº de lançamentos do mês) */}
+          <Thermometer count={monthTxs.length} goal={3} />
+
+          {/* REGRA 3 — gráfico motivacional (linha pontilhada subindo) */}
+          <BalanceChart data={chartData} motivational />
+
           <QuickAdd />
+
+          {/* REGRA 4 — números contábeis pequenos e roláveis no rodapé */}
+          <StatStrip income={income} expense={expense} savingsRate={savingsRate} privacy={privacy} />
         </>
       ) : (
+        // ===== TELA COM SALDO POSITIVO — mostra dados reais =====
         <>
-          {/* Hero: saldo positivo mostra o número; saldo <= 0 vira Desafio do Mês
-              (nunca um "R$ 0,00" gigante e deprimente). */}
-          <div className="dash-hero" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
-            {totalBalance > 0 ? (
-              <div>
-                <div className="t-eyebrow" style={{ marginBottom: 12 }}>
-                  {t('dashboard.totalBalance') + ' · '}{t('dashboard.accumulated')} {t('dashboard.upToMonth')} {t('months')[month - 1]} {year}
-                </div>
-                <HeroNumber value={totalBalance} privacy={privacy} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--text-3)', fontSize: 12.5, flexWrap: 'wrap' }}>
-                  <span style={{ color: balance >= 0 ? 'var(--positive)' : 'var(--negative)', fontFamily: 'Geist Mono, monospace' }}>
-                    {balance >= 0 ? '▲' : '▼'} {privacy ? '••••' : formatCurrency(balance)} {t('dashboard.monthResult').toLowerCase()}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div style={{ flex: '1 1 100%' }}>
-                <ChallengeHero
-                  monthTxCount={monthTxs.length}
-                  balance={totalBalance}
-                  privacy={privacy}
-                  onAddIncome={() => openModal('income')}
-                />
-              </div>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
-              <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500, minWidth: 110, textAlign: 'center' }}>
-                {t('months')[month - 1]} {year}
-              </span>
-              <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
-              <button className="btn primary" onClick={() => openModal(null)} style={{ marginLeft: 8 }}>
-                <Plus size={14} />
-                <span>{t('dashboard.newEntry')}</span>
-              </button>
+          <div className="dash-hero-positive">
+            <div className="t-eyebrow" style={{ marginBottom: 12 }}>
+              {t('dashboard.totalBalance')} · {t('dashboard.accumulated')} {t('dashboard.upToMonth')} {monthLabel}
             </div>
+            <HeroNumber value={totalBalance} privacy={privacy} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 18px', color: 'var(--text-3)', fontSize: 12.5, flexWrap: 'wrap' }}>
+              <span style={{ color: balance >= 0 ? 'var(--positive)' : 'var(--negative)', fontFamily: 'Geist Mono, monospace' }}>
+                {balance >= 0 ? '▲' : '▼'} {privacy ? '••••' : formatCurrency(balance)} {t('dashboard.monthResult').toLowerCase()}
+              </span>
+            </div>
+            {/* REGRA 1 — único botão "Adicionar Entrada" desta tela (com pulso, REGRA 7) */}
+            <button className="cta-big pulse" onClick={() => openModal(null)}>
+              <Plus size={20} strokeWidth={2.6} /> {t('dashboard.addIncome')}
+            </button>
           </div>
 
-          {/* Lançamento rápido + Meta rápida */}
-          <div className="grid-cifra g-quick" style={{ marginBottom: 18 }}>
+          <div className="grid-cifra g-quick">
             <QuickAdd />
             <QuickGoal totalBalance={totalBalance} />
           </div>
 
-          {/* Stats do mês */}
-          <div className="grid-cifra g-3" style={{ marginBottom: 18 }}>
-            <StatCard label={t('dashboard.income')} value={income} privacy={privacy} positive={true} sub={`${monthTxs.filter(t => t.type === 'income').length} ${t('dashboard.incomeStat')}`} />
-            <StatCard label={t('dashboard.expense')} value={expense} privacy={privacy} positive={false} sub={`${monthTxs.filter(t => t.type === 'expense').length} ${t('dashboard.expenseStat')}`} />
-            <StatCard
-              label={t('dashboard.savingsRate')} value={savingsRate} percent
-              positive={savingsRate >= 20 ? true : savingsRate < 0 ? false : undefined}
-            />
-          </div>
-
-          {/* Main grid */}
-          <div className="grid-cifra g-dash" style={{ marginBottom: 18 }}>
-            {/* Evolução diária do saldo */}
-            <div className="card" style={{ padding: 22 }}>
-              <div style={{ marginBottom: 16 }}>
-                <div className="t-eyebrow">{t('dashboard.balanceEvolution')}</div>
-                <h3 className="t-display" style={{ fontSize: 20, marginTop: 4 }}>
-                  <em style={{ fontStyle: 'italic' }}>{t('dashboard.balanceEvolutionSub')}</em>
-                </h3>
-              </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={18} />
-                  <YAxis tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} width={54}
-                    tickFormatter={v => Math.abs(v) >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${Math.round(v)}`} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <ReferenceLine y={0} stroke="var(--line-2)" strokeDasharray="4 4" />
-                  <Line
-                    type="monotone" dataKey="saldo" name={t('common.balance')}
-                    stroke="var(--accent)" strokeWidth={2.5}
-                    dot={false} activeDot={{ r: 4, fill: 'var(--accent)' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Right column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Category breakdown */}
-              <div className="card">
-                <div className="t-eyebrow" style={{ marginBottom: 14 }}>{t('dashboard.whereMoneyWent')}</div>
-                {catBreakdown.length === 0 ? (
-                  <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
-                    {t('dashboard.noExpensesThisMonth')}
-                  </div>
-                ) : (
-                  <CategoryDonut data={catBreakdown} total={expense} privacy={privacy} totalLabel={t('common.total')} />
-                )}
-              </div>
-
-              {/* Projects mini */}
-              {projectStats.length > 0 && (
-                <div className="card">
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-                    <div className="t-eyebrow">{t('dashboard.projects')}</div>
-                    <button
-                      onClick={() => onNavigate('projects')}
-                      style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                    >
-                      {t('dashboard.viewAll')} <ArrowRight size={11} />
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {projectStats.map(p => (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-                        onClick={() => onNavigate('projects')}>
-                        <div style={{ fontSize: 20, flexShrink: 0, width: 28, textAlign: 'center' }}>{p.icon}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                            {privacy ? 'R$ ••••' : formatCurrency(p.spent)} {t('dashboard.spent')}
-                          </div>
-                        </div>
-                        <ArrowRight size={13} style={{ color: 'var(--text-4)', flexShrink: 0 }} />
-                      </div>
-                    ))}
-                  </div>
+          <div className="grid-cifra g-dash">
+            <BalanceChart data={chartData} motivational={false} />
+            <div className="card">
+              <div className="t-eyebrow" style={{ marginBottom: 14 }}>{t('dashboard.whereMoneyWent')}</div>
+              {catBreakdown.length === 0 ? (
+                <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
+                  {t('dashboard.noExpensesThisMonth')}
                 </div>
+              ) : (
+                <CategoryDonut data={catBreakdown} total={expense} privacy={privacy} totalLabel={t('common.total')} />
               )}
             </div>
           </div>
 
-          {/* Budget progress */}
           {budgetProgress.length > 0 && (
-            <div className="card" style={{ marginBottom: 18 }}>
+            <div className="card">
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
                 <div className="t-eyebrow">{t('dashboard.budgets')}</div>
                 <button
@@ -570,7 +436,6 @@ export default function Dashboard({ onNavigate }) {
             </div>
           )}
 
-          {/* Recent transactions */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 12px' }}>
               <div className="t-eyebrow">{t('dashboard.recentTransactions')}</div>
@@ -581,43 +446,36 @@ export default function Dashboard({ onNavigate }) {
                 {t('dashboard.viewAllF')} <ArrowRight size={11} />
               </button>
             </div>
-            {recentTxs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--text-3)' }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🌱</div>
-                <div style={{ fontSize: 13 }}>{t('dashboard.noTransactionsThisMonth')}</div>
-                <button className="btn primary" style={{ marginTop: 16 }} onClick={() => openModal(null)}>
-                  <Plus size={14} /> {t('dashboard.add')}
-                </button>
-              </div>
-            ) : (
-              <table className="tx-table">
-                <tbody>
-                  {recentTxs.map(t => {
-                    const cat = categories.find(c => c.id === t.categoryId);
-                    return (
-                      <tr key={t.id}>
-                        <td style={{ width: 40, paddingRight: 0 }}>
-                          <div className="tx-row-icon">
-                            <span style={{ fontSize: 14 }}>{cat?.icon || '📋'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 500, fontSize: 13.5 }}>{t.description}</div>
-                          <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
-                            {cat?.name} · {new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                          </div>
-                        </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'Geist Mono, monospace', fontWeight: 600, fontSize: 13.5 }}
-                          className={t.type === 'income' ? 'pos' : 'neg'}>
-                          {privacy ? 'R$ ••••' : `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
+            <table className="tx-table">
+              <tbody>
+                {recentTxs.map(t => {
+                  const cat = categories.find(c => c.id === t.categoryId);
+                  return (
+                    <tr key={t.id}>
+                      <td style={{ width: 40, paddingRight: 0 }}>
+                        <div className="tx-row-icon">
+                          <span style={{ fontSize: 14 }}>{cat?.icon || '📋'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 500, fontSize: 13.5 }}>{t.description}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>
+                          {cat?.name} · {new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right', fontFamily: 'Geist Mono, monospace', fontWeight: 600, fontSize: 13.5 }}
+                        className={t.type === 'income' ? 'pos' : 'neg'}>
+                        {privacy ? 'R$ ••••' : `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+
+          {/* REGRA 4 — resumo contábil pequeno no rodapé */}
+          <StatStrip income={income} expense={expense} savingsRate={savingsRate} privacy={privacy} />
         </>
       )}
 

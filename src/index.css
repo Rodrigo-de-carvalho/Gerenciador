@@ -111,19 +111,21 @@
 /* Paleta "Personal Trainer Financeiro": azul petróleo ultra escuro de fundo,
    roxo vibrante para ações, verde menta para receitas e laranja queimado para
    despesas (menos agressivo que vermelho). */
+/* REGRA 6 — paleta slate: fundo #0F172A, cards #1E293B, borda #334155,
+   destaques roxo/verde-menta/laranja. */
 :root,
 [data-theme="dark"] {
-  --bg: #0B1120;
-  --bg-2: #0E1528;
-  --surface: #121A30;
-  --surface-2: #18223C;
-  --surface-3: #22304F;
-  --line: #1C2742;
-  --line-2: #2E3D60;
-  --text: #F1F5FD;
-  --text-2: #A9B6CE;
-  --text-3: #6B7A96;
-  --text-4: #45516A;
+  --bg: #0F172A;
+  --bg-2: #131E36;
+  --surface: #1E293B;
+  --surface-2: #263449;
+  --surface-3: #334155;
+  --line: #334155;
+  --line-2: #3E4C63;
+  --text: #F1F5F9;
+  --text-2: #CBD5E1;
+  --text-3: #94A3B8;
+  --text-4: #64748B;
   --accent: #8B5CF6;
   --accent-2: #7C3AED;
   --accent-ink: #FFFFFF;
@@ -131,9 +133,9 @@
   --negative: #F97316;
   --warn: #FBBF24;
   --info: #60A5FA;
-  --chip: rgba(139, 92, 246, 0.09);
-  --chip-strong: rgba(139, 92, 246, 0.18);
-  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -16px rgba(2,6,23,0.7);
+  --chip: rgba(139, 92, 246, 0.10);
+  --chip-strong: rgba(139, 92, 246, 0.20);
+  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -16px rgba(2,6,23,0.75);
   --glow: 0 0 28px -8px rgba(139, 92, 246, 0.45);
   --glow-mint: 0 0 28px -8px rgba(52, 211, 153, 0.4);
   --grain-opacity: 0.04;
@@ -215,7 +217,8 @@
   overflow: hidden;
   position: relative;
   background: var(--bg);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* REGRA 6 — fonte arredondada e moderna (Space Grotesk, fallback Inter). */
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
   line-height: 1.4;
   color: var(--text);
@@ -255,7 +258,7 @@
 }
 .brand-mark svg { width: 19px; height: 19px; }
 .brand-name {
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -1206,12 +1209,12 @@ a:focus:not(:focus-visible) { outline: none; }
   margin-bottom: 20px;
 }
 .challenge-hero h2 {
-  font-family: 'Instrument Serif', serif;
-  font-weight: 400;
-  font-size: clamp(26px, 5vw, 38px);
-  line-height: 1.1;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: clamp(22px, 4.5vw, 32px);
+  line-height: 1.15;
   letter-spacing: -0.02em;
-  margin: 8px 0 18px;
+  margin: 8px 0 20px;
   max-width: 520px;
 }
 .cta-big {
@@ -1328,9 +1331,9 @@ a:focus:not(:focus-visible) { outline: none; }
 }
 .empty-journey svg { max-width: 200px; height: auto; margin: 0 auto 18px; display: block; }
 .empty-journey h3 {
-  font-family: 'Instrument Serif', serif;
-  font-weight: 400;
-  font-size: 26px;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 23px;
   margin: 0 0 6px;
   letter-spacing: -0.02em;
 }
@@ -1339,3 +1342,228 @@ a:focus:not(:focus-visible) { outline: none; }
 /* Grid da linha "quick" (lançamento rápido + meta rápida) */
 .g-quick { grid-template-columns: 1.4fr 1fr; }
 @media (max-width: 900px) { .g-quick { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   DASHBOARD "PERSONAL TRAINER" v2 — cabeçalho, mascote,
+   termômetro vertical, gráfico vazio, barra de stats,
+   entrada em cascata (fade-up) e pulso do CTA.
+   ============================================================ */
+
+/* REGRA 7 — entrada dos cards em cascata (fade-up com delay escalonado).
+   .dash-root vira uma coluna com espaçamento uniforme; cada filho anima
+   com um pequeno atraso crescente. Sobrescreve o fade genérico de .scroll. */
+.scroll > .dash-root { animation: none; }
+.dash-root {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dash-root > * { margin-bottom: 0; animation: cifra-fade-up 480ms cubic-bezier(0.22, 0.8, 0.2, 1) both; }
+.dash-root > *:nth-child(1) { animation-delay: 0.02s; }
+.dash-root > *:nth-child(2) { animation-delay: 0.09s; }
+.dash-root > *:nth-child(3) { animation-delay: 0.16s; }
+.dash-root > *:nth-child(4) { animation-delay: 0.23s; }
+.dash-root > *:nth-child(5) { animation-delay: 0.30s; }
+.dash-root > *:nth-child(6) { animation-delay: 0.37s; }
+.dash-root > *:nth-child(7) { animation-delay: 0.44s; }
+.dash-root > *:nth-child(8) { animation-delay: 0.51s; }
+
+/* ---- REGRA 1 + 5: cabeçalho enxuto (sino · mês · mascote) ---- */
+.dash-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dash-bell {
+  position: relative;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms, transform 120ms;
+}
+.dash-bell:hover { color: var(--text); background: var(--surface-2); }
+.dash-bell:active { transform: scale(0.92); }
+.dash-bell-dot {
+  position: absolute; top: 9px; right: 10px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--negative);
+  border: 2px solid var(--surface);
+}
+.dash-month {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dash-month-label {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  min-width: 120px;
+  text-align: center;
+}
+.dash-month-nav {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border: none; background: none;
+  color: var(--text-3);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+}
+.dash-month-nav:hover { color: var(--text); background: var(--chip); }
+.mascot { margin-left: auto; flex-shrink: 0; }
+.mascot-happy { animation: mascot-bounce 2.4s ease-in-out infinite; }
+@keyframes mascot-bounce {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-3px) rotate(-3deg); }
+}
+
+/* ---- Hero de saldo positivo ---- */
+.dash-hero-positive { padding: 4px 2px; }
+
+/* ---- REGRA 7: pulso suave do botão "Adicionar Entrada" ---- */
+.cta-big.pulse { position: relative; }
+.cta-big.pulse::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 50%, transparent);
+  animation: cta-ring 2.2s ease-out infinite;
+  pointer-events: none;
+}
+.cta-big.mint.pulse::after {
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--positive) 50%, transparent);
+  animation: cta-ring-mint 2.2s ease-out infinite;
+}
+@keyframes cta-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 50%, transparent); }
+  70%  { box-shadow: 0 0 0 16px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes cta-ring-mint {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--positive) 50%, transparent); }
+  70%  { box-shadow: 0 0 0 16px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ---- REGRA 2: termômetro VERTICAL com gradiente azul→vermelho ---- */
+.thermo-card { }
+.thermo-v-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.thermo-v {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.thermo-v-track {
+  position: relative;
+  width: 16px;
+  height: 130px;
+  border-radius: 10px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.thermo-v-fill {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  border-radius: 10px;
+  /* azul embaixo (frio) → roxo → laranja em cima (quente) */
+  background: linear-gradient(to top, #3B82F6 0%, #8B5CF6 55%, #F97316 100%);
+  transition: height 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  min-height: 8px;
+}
+.thermo-v-bulb {
+  width: 30px; height: 30px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #F97316, #EA580C);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 14px -3px #F97316;
+}
+.thermo-v-side { flex: 1; min-width: 0; }
+.thermo-pct { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.thermo-msg { font-size: 13.5px; color: var(--text-2); margin-top: 4px; line-height: 1.4; font-weight: 600; }
+
+/* ---- REGRA 3: gráfico vazio (linha pontilhada subindo, sem eixos) ---- */
+.balance-chart-title { font-size: 18px; margin: 4px 0 12px; }
+.chart-empty {
+  position: relative;
+  border-radius: 16px;
+  background: var(--bg-2);
+  border: 1px dashed var(--line-2);
+  padding: 6px 6px 10px;
+  overflow: hidden;
+}
+.chart-empty-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-shadow: 0 2px 12px var(--bg-2);
+  pointer-events: none;
+}
+
+/* ---- REGRA 4: barra de stats rolável horizontal (rodapé discreto) ---- */
+.stat-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.stat-strip::-webkit-scrollbar { display: none; }
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  flex: 1 0 auto;
+  min-width: 130px;
+}
+.stat-chip-ic {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--chip);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.stat-chip-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.stat-chip-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Geist Mono', monospace;
+  letter-spacing: -0.01em;
+  margin-top: 1px;
+}
+
+/* Em telas largas o rodapé de stats respira em 3 colunas iguais. */
+@media (min-width: 700px) {
+  .stat-strip { overflow-x: visible; }
+  .stat-chip { min-width: 0; }
+}
