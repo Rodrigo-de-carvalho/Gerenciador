@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { validateEmail, validatePassword, checkRateLimit, recordFailedAttempt, resetRateLimit } from '../utils/validation';

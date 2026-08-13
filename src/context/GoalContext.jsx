@@ -9,19 +9,28 @@ export function GoalProvider({ children }) {
   const [goals, setGoals] = useState([]);
 
   useEffect(() => {
-    if (!user) { setGoals([]); return; }
-    supabase
-      .from('goals')
-      .select('*')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        if (data) setGoals(data.map(r => ({
+    // Guarda de corrida: se o usuário trocar (logout/login) antes da resposta
+    // chegar, o resultado antigo é descartado em vez de sobrescrever o estado.
+    let cancelled = false;
+    (async () => {
+      if (!user) {
+        if (!cancelled) setGoals([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id);
+      if (!cancelled && data) {
+        setGoals(data.map(r => ({
           projectId: r.project_id,
           targetAmount: r.target_amount,
           deadline: r.deadline,
           id: r.id,
         })));
-      });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
   const addGoal = useCallback(async (projectId, meta = {}) => {

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, parseAmount } from '../utils/formatters';
 import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useI18n } from '../i18n';
 
@@ -50,7 +50,7 @@ export default function RecurringModal({ onClose }) {
       const payload = {
         type:        form.type,
         description: form.description.trim(),
-        amount:      parseFloat(String(form.amount).replace(',', '.')),
+        amount:      parseAmount(form.amount),
         categoryId:  form.categoryId || null,
         dayOfMonth:  Number(form.dayOfMonth),
         nextDate:    form.nextDate,

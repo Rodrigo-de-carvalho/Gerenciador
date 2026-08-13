@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, RotateCcw, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -15,13 +15,10 @@ export default function ImportHistory({ onClose }) {
   const { user } = useAuth();
   const { t } = useI18n();
   const { bulkDeleteTransactions } = useFinance();
-  const [entries, setEntries] = useState([]);
+  // localStorage é síncrono: inicializa direto no mount, sem useEffect+setState.
+  const [entries, setEntries] = useState(() => (user ? getImportHistory(user.id) : []));
   const [undoingId, setUndoingId] = useState(null);
   const [errorId, setErrorId] = useState(null);
-
-  useEffect(() => {
-    if (user) setEntries(getImportHistory(user.id));
-  }, [user]);
 
   const handleUndo = async (entry) => {
     if (!entry.txIds?.length) return;

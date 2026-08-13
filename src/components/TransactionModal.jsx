@@ -4,6 +4,7 @@ import { X, Plus, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
 import { friendlyErrorMessage } from '../utils/errorMessages';
+import { parseAmount } from '../utils/formatters';
 import { useI18n } from '../i18n';
 
 const emptyForm = {
@@ -22,30 +23,26 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
   const { t } = useI18n();
   const { showToast } = useToast();
   const { categories, projects, cards, addTransaction, updateTransaction, addInstallmentTransaction } = useFinance();
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const isEdit = !!transaction;
-
-  useEffect(() => {
-    if (transaction) {
-      setForm({
+  // O modal é montado do zero a cada abertura, então o estado inicial pode vir
+  // direto das props (sem useEffect + setState, que causava um render extra).
+  const [form, setForm] = useState(() => transaction
+    ? {
         ...transaction,
         amount: String(transaction.amount),
         projectId: transaction.projectId || '',
         cardId: transaction.cardId || '',
         installments: transaction.installmentTotal || 1,
-      });
-    } else {
-      setForm({
+      }
+    : {
         ...emptyForm,
         type: defaultType || emptyForm.type,
         date: new Date().toISOString().split('T')[0],
         projectId: defaultProjectId || '',
         cardId: defaultCardId || '',
       });
-    }
-  }, [transaction, defaultProjectId, defaultCardId, defaultType]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const isEdit = !!transaction;
 
   // Acessibilidade: fecha o modal com a tecla Esc.
   useEffect(() => {
@@ -62,7 +59,7 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
     if (!form.categoryId) { setError(t('transactionModal.categoryPlaceholder')); return; }
     // Valida o valor antes de tentar salvar: evita parseFloat de texto/vírgula solta
     // e bloqueia zero/negativo, mostrando o erro na hora em vez de só após o submit.
-    const amount = parseFloat(String(form.amount).replace(',', '.'));
+    const amount = parseAmount(form.amount);
     if (isNaN(amount) || amount <= 0) { setError(t('transactionModal.invalidAmount')); return; }
     setSaving(true);
     setError('');
@@ -74,6 +71,11 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
         cardId: form.cardId || null,
       };
       if (isEdit) {
+        // Mover um lançamento para um cartão o torna "pendente" (entra na fatura);
+        // tirá-lo do cartão volta a ser pago à vista. Antes o status antigo era
+        // mantido e o lançamento sumia da fatura ou ficava preso como pendente.
+        if (payload.cardId && !transaction.cardId) payload.paid = false;
+        else if (!payload.cardId && transaction.cardId) payload.paid = true;
         await updateTransaction(payload);
       } else if (!isEdit && form.cardId && Number(form.installments) > 1) {
         await addInstallmentTransaction(payload, Number(form.installments));
@@ -153,9 +155,9 @@ export default function TransactionModal({ transaction, onClose, defaultProjectI
                   value={form.amount}
                   onChange={e => set('amount', e.target.value)}
                   onBlur={e => {
-                    // normalize comma to dot so parseFloat works
-                    const v = e.target.value.replace(',', '.');
-                    if (!isNaN(parseFloat(v)) && parseFloat(v) > 0) set('amount', v);
+                    // normaliza "1.234,56"/"1,234.56"/"12,50" para o formato numérico interno
+                    const v = parseAmount(e.target.value);
+                    if (!isNaN(v) && v > 0) set('amount', String(v));
                   }}
                   required
                 />

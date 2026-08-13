@@ -70,7 +70,7 @@ export function parseCSVFile(text) {
     header: true,
     delimiter,
     skipEmptyLines: true,
-    transformHeader: h => h.trim().replace(/^﻿/, ''), // strip BOM
+    transformHeader: h => h.trim().replace(/^\uFEFF/, ''), // strip BOM
   });
 }
 

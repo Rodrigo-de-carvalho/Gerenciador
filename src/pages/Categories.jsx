@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Plus, Trash2, TrendingUp, TrendingDown, X, Target } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, parseAmount } from '../utils/formatters';
 import ConfirmModal from '../components/ConfirmModal';
 import PageLoader from '../components/PageLoader';
 import { useI18n } from '../i18n';
@@ -47,7 +47,7 @@ export default function Categories() {
 
   const saveBudgetEdit = async () => {
     if (!budgetEdit) return;
-    const amount = parseFloat(budgetInput.replace(',', '.'));
+    const amount = parseAmount(budgetInput);
     if (!isNaN(amount) && amount > 0) {
       await setBudget({ categoryId: budgetEdit, amount });
     } else if (getBudget(budgetEdit)) {

@@ -4,13 +4,13 @@ import { useI18n } from '../i18n';
 export default function CategoryDonut({ data, total, privacy, totalLabel, size = 150 }) {
   const { t } = useI18n();
 
-  let acc = 0;
-  const stops = data.map(d => {
-    const start = total > 0 ? (acc / total) * 360 : 0;
-    acc += d.value;
+  // Acumula sem mutar variável durante o render (regra react-hooks/immutability).
+  const stops = data.reduce((res, d) => {
+    const start = total > 0 ? (res.acc / total) * 360 : 0;
+    const acc = res.acc + d.value;
     const end = total > 0 ? (acc / total) * 360 : 0;
-    return `${d.color} ${start}deg ${end}deg`;
-  }).join(', ');
+    return { acc, parts: [...res.parts, `${d.color} ${start}deg ${end}deg`] };
+  }, { acc: 0, parts: [] }).parts.join(', ');
 
   return (
     <div className="donut-wrap">

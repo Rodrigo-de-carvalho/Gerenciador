@@ -105,11 +105,11 @@ export default function Transactions() {
     <div>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
+        <button className="icon-btn" onClick={prevMonth} aria-label="Mês anterior"><ChevronLeft size={15} /></button>
         <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', minWidth: 110, textAlign: 'center' }}>
           {t('months')[month - 1]} {year}
         </span>
-        <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
+        <button className="icon-btn" onClick={nextMonth} aria-label="Próximo mês"><ChevronRight size={15} /></button>
 
         <div style={{ display: 'flex', gap: 8, marginLeft: 8, flexWrap: 'wrap' }}>
           {['all', 'income', 'expense'].map(type => (
@@ -127,7 +127,7 @@ export default function Transactions() {
           <button className="btn" onClick={() => setShowRecurring(true)}>
             <RefreshCw size={14} /> {t('transactions.recurring')}
           </button>
-          <button className="btn" onClick={() => setShowImportHistory(true)} title="Ver histórico de importações CSV">
+          <button className="btn" onClick={() => setShowImportHistory(true)} title="Ver histórico de importações CSV" aria-label="Ver histórico de importações CSV">
             <History size={14} />
           </button>
           <button className="btn" onClick={() => setShowImport(true)}>

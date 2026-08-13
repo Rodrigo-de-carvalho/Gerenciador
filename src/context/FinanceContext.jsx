@@ -125,7 +125,7 @@ function readCache(userId) {
   try {
     const raw = localStorage.getItem(cacheKey(userId));
     return raw ? JSON.parse(raw) : null;
-  } catch (_) {
+  } catch {
     return null;
   }
 }
@@ -133,13 +133,13 @@ function readCache(userId) {
 function writeCache(userId, data) {
   try {
     localStorage.setItem(cacheKey(userId), JSON.stringify(data));
-  } catch (_) {
+  } catch {
     // Ignore QuotaExceededError — cache is best-effort
   }
 }
 
 function clearCache(userId) {
-  try { localStorage.removeItem(cacheKey(userId)); } catch (_) {}
+  try { localStorage.removeItem(cacheKey(userId)); } catch { /* best-effort */ }
 }
 
 // Trava de sessão: evita que duas execuções concorrentes de loadData (ex.: re-mount
@@ -303,7 +303,13 @@ export function FinanceProvider({ children }) {
     }
   }, [user]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // Difere para um microtask: evita setState síncrono dentro do corpo do effect
+  // (render em cascata) e ignora o resultado se o provider desmontar antes.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) loadData(); });
+    return () => { cancelled = true; };
+  }, [loadData]);
 
   // ── Transactions ──────────────────────────────────────────
 
@@ -602,9 +608,15 @@ export function FinanceProvider({ children }) {
     const card = cards.find(c => c.id === cardId);
     const closingDay = card?.closingDay;
     let txs;
-    if (closingDay && closingDay >= 1 && closingDay <= 28) {
-      const end   = new Date(year, month - 1, closingDay, 23, 59, 59, 999); // fechamento deste mês
-      const start = new Date(year, month - 2, closingDay, 23, 59, 59, 999); // fechamento do mês anterior
+    if (closingDay && closingDay >= 1 && closingDay <= 31) {
+      // bug fix: fechamento 29–31 era ignorado (caía no mês-calendário mesmo com
+      // a UI permitindo até 31). Agora o dia é limitado ao último dia de cada mês
+      // (ex.: fechamento 31 em fevereiro fecha dia 28/29).
+      const clampDay = (y, m1based) => Math.min(closingDay, new Date(y, m1based, 0).getDate());
+      const end   = new Date(year, month - 1, clampDay(year, month), 23, 59, 59, 999); // fechamento deste mês
+      const prevY = month === 1 ? year - 1 : year;
+      const prevM = month === 1 ? 12 : month - 1;
+      const start = new Date(prevY, prevM - 1, clampDay(prevY, prevM), 23, 59, 59, 999); // fechamento do mês anterior
       txs = transactions.filter(t => {
         if (t.cardId !== cardId) return false;
         const d = new Date(t.date + 'T00:00:00');

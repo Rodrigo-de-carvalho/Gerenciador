@@ -85,8 +85,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
           </div>
           <span className="brand-name">Cifra<em>.</em></span>
           <button
-            className="icon-btn"
-            style={{ marginLeft: 'auto', display: 'none' }}
+            className="icon-btn sidebar-close"
             onClick={() => setMobileOpen(false)}
             aria-label="Fechar menu"
           >
@@ -197,6 +196,8 @@ export default function Layout({ currentPage, onNavigate, children }) {
               className="icon-btn"
               onClick={() => setPrivacy(v => !v)}
               title={privacy ? 'Mostrar valores' : 'Ocultar valores'}
+              aria-label={privacy ? 'Mostrar valores' : 'Ocultar valores'}
+              aria-pressed={privacy}
             >
               {privacy
                 ? <EyeOff style={{ width: 15, height: 15 }} />
@@ -205,7 +206,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
             </button>
 
             {/* Theme toggle */}
-            <button className="icon-btn" onClick={toggleDark} title={darkMode ? 'Modo claro' : 'Modo escuro'}>
+            <button className="icon-btn" onClick={toggleDark} title={darkMode ? 'Modo claro' : 'Modo escuro'} aria-label={darkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}>
               {darkMode
                 ? <Sun style={{ width: 15, height: 15, color: '#FFC04A' }} />
                 : <Moon style={{ width: 15, height: 15 }} />

@@ -1,3 +1,5 @@
+import { parseAmount } from './formatters';
+
 // Strips HTML tags and trims whitespace — prevents accidental markup in user input.
 // React already escapes output, but this keeps data clean in the DB.
 export function sanitizeText(str, maxLength = 500) {
@@ -15,7 +17,7 @@ export function validatePassword(password) {
 }
 
 export function validateAmount(value) {
-  const num = parseFloat(String(value).replace(',', '.'));
+  const num = parseAmount(value);
   if (isNaN(num) || num <= 0) return 'Informe um valor maior que zero.';
   return null;
 }

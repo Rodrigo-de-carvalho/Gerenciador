@@ -2,6 +2,8 @@
 // categorizada. É um classificador local por palavras-chave — parece IA para o
 // usuário, mas roda 100% offline (sem custo e sem enviar dados pra fora).
 
+import { parseAmount } from './formatters';
+
 // Palavra-chave → nome de categoria alvo (bate com as categorias padrão do app;
 // o match final é feito contra as categorias reais do usuário, por inclusão).
 const KEYWORD_RULES = [
@@ -27,10 +29,11 @@ export function parseQuickEntry(text) {
   const raw = (text || '').trim();
   if (!raw) return null;
 
-  // Último número do texto é o valor ("Uber 25,00", "mercado R$ 132.50", "pix 300")
-  const match = raw.match(/(\d+(?:[.,]\d{1,2})?)(?!.*\d)/);
+  // Último número do texto é o valor ("Uber 25,00", "mercado R$ 132.50",
+  // "pix 300", "notebook 1.234,56" — aceita separador de milhar).
+  const match = raw.match(/(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!.*\d)/);
   if (!match) return null;
-  const amount = parseFloat(match[1].replace(',', '.'));
+  const amount = parseAmount(match[1]);
   if (!(amount > 0)) return null;
 
   let description = raw

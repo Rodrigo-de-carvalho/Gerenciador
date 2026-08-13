@@ -4,7 +4,7 @@ import { Plus, X, Pencil, Trash2, HandCoins, Check } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { usePrivacy } from '../context/PrivacyContext';
 import { useToast } from '../context/ToastContext';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { formatCurrency, formatDate, parseAmount } from '../utils/formatters';
 import { friendlyErrorMessage } from '../utils/errorMessages';
 import ConfirmModal from '../components/ConfirmModal';
 import PageLoader from '../components/PageLoader';
@@ -33,7 +33,7 @@ function LoanModal({ loan, defaultDirection, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const amount = parseFloat(String(form.totalAmount).replace(',', '.'));
+    const amount = parseAmount(form.totalAmount);
     if (isNaN(amount) || amount <= 0) return; // input já exige número > 0
     setSaving(true);
     try {
@@ -85,7 +85,7 @@ function LoanModal({ loan, defaultDirection, onClose, onSave }) {
             <div className="modal-form-row-2" style={{ gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('loans.totalAmount')}</label>
-                <input type="number" step="0.01" min="0.01" className="field-input"
+                <input type="text" inputMode="decimal" className="field-input"
                   value={form.totalAmount} onChange={e => set('totalAmount', e.target.value)}
                   placeholder="0,00" required />
               </div>
@@ -128,7 +128,7 @@ function PaymentModal({ loan, onClose, onConfirm }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const amount = parseFloat(String(value).replace(',', '.'));
+    const amount = parseAmount(value);
     if (isNaN(amount) || amount <= 0) return;
     setSaving(true);
     try {
@@ -154,7 +154,7 @@ function PaymentModal({ loan, onClose, onConfirm }) {
             </div>
             <div className="field">
               <label className="field-label">{t('loans.paymentAmount')}</label>
-              <input type="number" step="0.01" min="0.01" max={remaining} className="field-input"
+              <input type="text" inputMode="decimal" className="field-input"
                 value={value} onChange={e => setValue(e.target.value)} placeholder="0,00" required autoFocus />
             </div>
           </div>

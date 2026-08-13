@@ -858,6 +858,12 @@
 }
 .toggle-track.on .toggle-thumb { transform: translateX(18px); }
 
+/* Botão "X" que fecha o drawer da sidebar — só existe no mobile. */
+.sidebar-close { display: none; margin-left: auto; }
+@media (max-width: 768px) {
+  .sidebar-close { display: grid; }
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;

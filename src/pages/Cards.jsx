@@ -120,19 +120,17 @@ export default function Cards() {
     else setMonth(m => m + 1);
   };
 
-  const selectedCard = cards.find(c => c.id === selectedCardId);
-
   const cardBills = useMemo(() => {
     return cards.map(card => {
       const bill = getCardBill(card.id, month, year);
       return { ...card, bill };
     });
-  }, [cards, transactions, month, year]);
+  }, [cards, getCardBill, month, year]);
 
   const selectedBill = useMemo(() => {
     if (!selectedCardId) return null;
     return getCardBill(selectedCardId, month, year);
-  }, [selectedCardId, transactions, month, year]);
+  }, [selectedCardId, getCardBill, month, year]);
 
   // Todos os lançamentos de cartão não pagos, agrupados por mês
   // (fatura atual + parcelas futuras + compras avulsas em aberto)
@@ -171,11 +169,11 @@ export default function Cards() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="icon-btn" onClick={prevMonth}><ChevronLeft size={15} /></button>
+          <button className="icon-btn" onClick={prevMonth} aria-label="Mês anterior"><ChevronLeft size={15} /></button>
           <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', minWidth: 110, textAlign: 'center' }}>
             {t('months')[month - 1]} {year}
           </span>
-          <button className="icon-btn" onClick={nextMonth}><ChevronRight size={15} /></button>
+          <button className="icon-btn" onClick={nextMonth} aria-label="Próximo mês"><ChevronRight size={15} /></button>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={() => setShowImport(true)}>
@@ -352,6 +350,16 @@ export default function Cards() {
                   className={`cc ${style}`}
                   style={{ cursor: 'pointer', marginBottom: 12 }}
                   onClick={() => setSelectedCardId(selectedCardId === card.id ? null : card.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={selectedCardId === card.id}
+                  aria-label={`${card.name} — ${selectedCardId === card.id ? 'recolher' : 'ver'} detalhes da fatura`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedCardId(selectedCardId === card.id ? null : card.id);
+                    }
+                  }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>

@@ -171,7 +171,11 @@ function GoalCard({ goal, onEdit, onDelete }) {
             {expense > 0 && <span>{t('goals.spent') + ': '}<span className="neg t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(expense)}</span></span>}
             {target && <span>{t('goals.target') + ': '}<span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(target)}</span></span>}
             {remaining !== null && remaining > 0 && <span>{t('goals.remaining') + ': '}<span className="t-num" style={{ fontWeight: 600 }}>{privacy ? '••••' : formatCurrency(remaining)}</span></span>}
-            {daysLeft !== null && <span style={{ color: daysLeft < 30 ? 'var(--negative)' : 'var(--text-3)' }}>{daysLeft > 0 ? `${daysLeft}${t('goals.daysLeft')}` : t('goals.deadlinePassed')}</span>}
+            {daysLeft !== null && (
+              <span style={{ color: daysLeft < 30 ? 'var(--negative)' : 'var(--text-3)' }}>
+                {daysLeft > 0 ? `${daysLeft}${t('goals.daysLeft')}` : daysLeft === 0 ? t('goals.dueToday') : t('goals.deadlinePassed')}
+              </span>
+            )}
           </div>
         </div>
 

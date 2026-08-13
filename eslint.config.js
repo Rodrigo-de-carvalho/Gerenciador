@@ -18,4 +18,15 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Funções serverless (Vercel) rodam em Node, não no navegador.
+    files: ['api/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    // Contextos e i18n exportam provider + hook no mesmo arquivo de propósito
+    // (padrão do projeto); o aviso de Fast Refresh não se aplica aqui.
+    files: ['src/context/**/*.jsx', 'src/i18n/**/*.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])

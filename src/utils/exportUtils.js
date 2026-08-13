@@ -5,11 +5,13 @@ import { formatCurrency, formatDate, formatMonth } from './formatters';
 
 const pdfSafe = (str) => {
   if (!str) return '';
-  return str.replace(/[^\x00-\xFF]/g, '').replace(/\s+/g, ' ').trim();
+  // Colapsa espaços primeiro e depois remove tudo fora do Latin-1 imprimível
+  // (emojis quebram a fonte padrão do jsPDF; controles não pertencem ao PDF).
+  return str.replace(/\s+/g, ' ').replace(/[^\x20-\xFF]/g, '').trim();
 };
 
 const xlsxSheetName = (str) =>
-  (str || 'Dados').replace(/[[\]:*?/\\]/g, '').replace(/[^\x00-\xFF]/g, '').slice(0, 31) || 'Dados';
+  (str || 'Dados').replace(/[[\]:*?/\\]/g, '').replace(/[^\x20-\xFF]/g, '').slice(0, 31).trim() || 'Dados';
 
 const C = {
   bg:      [14,  13,  11],
